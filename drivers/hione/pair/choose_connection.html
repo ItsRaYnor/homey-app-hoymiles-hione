@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8'>
+  <style>
+    body { font-family: sans-serif; padding: 16px; }
+    h3 { margin: 0 0 12px; font-size: 16px; }
+    .option {
+      border: 2px solid #e0e0e0; border-radius: 8px;
+      padding: 14px 16px; margin-bottom: 10px; cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .option:hover { border-color: #00A94F; background: #f0faf4; }
+    .option.selected { border-color: #00A94F; background: #e8f5e9; }
+    .option strong { display: block; font-size: 14px; margin-bottom: 2px; }
+    .option span { font-size: 12px; color: #666; }
+    .badge { font-size: 11px; background: #e8f5e9; color: #2e7d32;
+             border-radius: 3px; padding: 1px 6px; margin-left: 6px; }
+    button {
+      margin-top: 8px; width: 100%; padding: 10px;
+      background: #00A94F; color: white; border: none;
+      border-radius: 4px; font-size: 15px; cursor: pointer;
+    }
+    button:hover { background: #007d3a; }
+    .disclaimer { font-size: 11px; color: #999; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <h3>Hoe wil je verbinden?</h3>
+
+  <div class='option' id='opt-local' onclick='select("local")'>
+    <strong>Lokaal (LAN) <span class='badge'>offline</span></strong>
+    <span>Direct via IP-adres. Geen account nodig. Werkt ook zonder internet.</span>
+  </div>
+
+  <div class='option' id='opt-both' onclick='select("both")'>
+    <strong>Lokaal + Cloud <span class='badge'>aanbevolen</span></strong>
+    <span>Lokaal primair, S-Miles Cloud als fallback. Vereist account.</span>
+  </div>
+
+  <div class='option' id='opt-cloud' onclick='select("cloud")'>
+    <strong>Alleen Cloud</strong>
+    <span>Via S-Miles Cloud API. Vereist account bij hoymiles.com.</span>
+  </div>
+
+  <button onclick='proceed()'>Volgende</button>
+
+  <p class='disclaimer'>
+    ⚠️ Onofficieel — niet gelieerd aan Hoymiles. Gebruik op eigen risico.
+  </p>
+
+  <script>
+    var _mode = 'local';
+    select('local');
+
+    function select(mode) {
+      _mode = mode;
+      ['local','both','cloud'].forEach(function(m) {
+        document.getElementById('opt-' + m).className = 'option' + (m === mode ? ' selected' : '');
+      });
+    }
+
+    async function proceed() {
+      await Homey.emit('set_connection_mode', { mode: _mode });
+      if (_mode === 'cloud') {
+        Homey.showView('login_credentials');
+      } else {
+        Homey.showView('gateway_ip');
+      }
+    }
+  </script>
+</body>
+</html>

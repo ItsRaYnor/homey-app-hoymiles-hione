@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- House outline -->
+  <polygon points="50,10 90,45 80,45 80,90 20,90 20,45 10,45"
+           fill="none" stroke="white" stroke-width="5" stroke-linejoin="round"/>
+  <!-- Door -->
+  <rect x="40" y="65" width="20" height="25" rx="2" fill="#00A94F"/>
+  <!-- Window -->
+  <rect x="30" y="50" width="15" height="12" rx="2" fill="#00A94F"/>
+  <rect x="55" y="50" width="15" height="12" rx="2" fill="#00A94F"/>
+</svg>

@@ -1,0 +1,11 @@
+{
+  "errors": {
+    "poll_failed": "Could not reach S-Miles Cloud. Check your internet connection.",
+    "login_failed": "Login failed. Check your S-Miles Cloud email and password.",
+    "missing_credentials": "Missing credentials. Please re-pair the device."
+  },
+  "pair": {
+    "login_title": "Log in to S-Miles Cloud",
+    "login_disclaimer": "This app uses an unofficial API. Your credentials are only sent to hoymiles.com."
+  }
+}

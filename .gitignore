@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Homey build artifacts
+.homeybuild/
+*.homeycompose
+
+# Claude
+.claude/
+
+# Environment & secrets
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+npm-debug.log*

@@ -1,0 +1,521 @@
+{
+  "id": "com.hoymiles.hione",
+  "version": "1.0.0",
+  "compatibility": ">=5.0.0",
+  "sdk": 3,
+  "brandColor": "#00A94F",
+  "name": {
+    "en": "Hoymiles HiOne",
+    "nl": "Hoymiles HiOne"
+  },
+  "description": {
+    "en": "Monitor and control your Hoymiles HiOne battery system via S-Miles Cloud",
+    "nl": "Monitor en beheer je Hoymiles HiOne batterijsysteem via S-Miles Cloud"
+  },
+  "tags": {
+    "en": [
+      "hoymiles",
+      "hione",
+      "solar",
+      "battery",
+      "bess",
+      "energy",
+      "smiles"
+    ],
+    "nl": [
+      "hoymiles",
+      "hione",
+      "zonnepanelen",
+      "batterij",
+      "energie"
+    ]
+  },
+  "category": [
+    "energy"
+  ],
+  "permissions": [],
+  "images": {
+    "small": "/assets/images/small.png",
+    "large": "/assets/images/large.png",
+    "xlarge": "/assets/images/xlarge.png"
+  },
+  "author": {
+    "name": "ItsRaYnor",
+    "email": "itsraynor@users.noreply.github.com"
+  },
+  "source": "https://github.com/ItsRaYnor/homey-app-hoymiles-hione",
+  "support": "https://github.com/ItsRaYnor/homey-app-hoymiles-hione/issues",
+  "bugs": {
+    "url": "https://github.com/ItsRaYnor/homey-app-hoymiles-hione/issues"
+  },
+  "homepage": "https://github.com/ItsRaYnor/homey-app-hoymiles-hione",
+  "drivers": [
+    {
+      "id": "hione",
+      "name": {
+        "en": "HiOne Station",
+        "nl": "HiOne Station"
+      },
+      "class": "solarpanel",
+      "capabilities": [
+        "measure_power",
+        "meter_power",
+        "measure_battery",
+        "hoymiles_battery_power",
+        "hoymiles_grid_power",
+        "hoymiles_load_power",
+        "hoymiles_pv_power",
+        "hoymiles_battery_mode",
+        "hoymiles_daily_energy",
+        "hoymiles_total_energy"
+      ],
+      "capabilitiesOptions": {
+        "measure_power": {
+          "title": {
+            "en": "PV Power",
+            "nl": "PV Vermogen"
+          }
+        },
+        "measure_battery": {
+          "title": {
+            "en": "Battery State of Charge (%)",
+            "nl": "Batterij laadniveau (%)"
+          }
+        },
+        "meter_power": {
+          "title": {
+            "en": "Total Energy Generated",
+            "nl": "Totale energie opgewekt"
+          }
+        }
+      },
+      "energy": {
+        "batteries": ["OTHER"]
+      },
+      "energy": {
+        "batteries": [
+          "INTERNAL"
+        ]
+      },
+      "images": {
+        "small": "/drivers/hione/assets/icon.png",
+        "large": "/drivers/hione/assets/icon_large.png"
+      },
+      "pair": [
+        {
+          "id": "choose_connection"
+        },
+        {
+          "id": "gateway_ip"
+        },
+        {
+          "id": "login_credentials"
+        },
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "settings": [
+        {
+          "id": "gateway_ip",
+          "type": "text",
+          "label": {
+            "en": "HiBox Gateway IP Address (optional)",
+            "nl": "HiBox Gateway IP-adres (optioneel)"
+          },
+          "hint": {
+            "en": "Local LAN IP of the HiBox-63T-G3 gateway for offline access (e.g. 192.168.1.100). Leave empty to use cloud only.",
+            "nl": "Lokaal LAN IP-adres van de HiBox-63T-G3 gateway voor offline toegang (bijv. 192.168.1.100). Leeg laten voor cloud only."
+          },
+          "value": ""
+        },
+        {
+          "id": "cloud_api_url",
+          "type": "text",
+          "label": {
+            "en": "Cloud API URL",
+            "nl": "Cloud API URL"
+          },
+          "hint": {
+            "en": "Base URL of the S-Miles Cloud API (default: https://neapi.hoymiles.com). Only change this if Hoymiles migrates to a different endpoint.",
+            "nl": "Basis-URL van de S-Miles Cloud API (standaard: https://neapi.hoymiles.com). Wijzig dit alleen als Hoymiles naar een ander endpoint migreert."
+          },
+          "value": "https://neapi.hoymiles.com"
+        }
+      ]
+    }
+  ],
+  "capabilities": {
+    "hoymiles_battery_power": {
+      "type": "number",
+      "title": {
+        "en": "Battery Power",
+        "nl": "Batterijvermogen"
+      },
+      "units": "W",
+      "insights": true,
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/battery.svg"
+    },
+    "hoymiles_grid_power": {
+      "type": "number",
+      "title": {
+        "en": "Grid Power",
+        "nl": "Netvermogen"
+      },
+      "units": "W",
+      "insights": true,
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/grid.svg"
+    },
+    "hoymiles_load_power": {
+      "type": "number",
+      "title": {
+        "en": "Load Power",
+        "nl": "Belastingsvermogen"
+      },
+      "units": "W",
+      "insights": true,
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/load.svg"
+    },
+    "hoymiles_pv_power": {
+      "type": "number",
+      "title": {
+        "en": "PV Power",
+        "nl": "Zonnepaneelvermogen"
+      },
+      "units": "W",
+      "insights": true,
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/pv.svg"
+    },
+    "hoymiles_battery_mode": {
+      "type": "enum",
+      "title": {
+        "en": "Battery Mode",
+        "nl": "Batterijmodus"
+      },
+      "values": [
+        {
+          "id": "0",
+          "title": {
+            "en": "Self-Consumption",
+            "nl": "Eigen verbruik"
+          }
+        },
+        {
+          "id": "1",
+          "title": {
+            "en": "Economy",
+            "nl": "Economie"
+          }
+        },
+        {
+          "id": "2",
+          "title": {
+            "en": "Backup",
+            "nl": "Noodstroom"
+          }
+        },
+        {
+          "id": "3",
+          "title": {
+            "en": "Off-Grid",
+            "nl": "Off-Grid"
+          }
+        },
+        {
+          "id": "4",
+          "title": {
+            "en": "Peak Shaving",
+            "nl": "Pieksturing"
+          }
+        },
+        {
+          "id": "5",
+          "title": {
+            "en": "Time of Use",
+            "nl": "Tijdafhankelijk"
+          }
+        }
+      ],
+      "insights": false,
+      "getable": true,
+      "setable": true,
+      "uiComponent": "picker",
+      "icon": "/assets/battery.svg"
+    },
+    "hoymiles_daily_energy": {
+      "type": "number",
+      "title": {
+        "en": "Daily Energy",
+        "nl": "Dagelijkse energie"
+      },
+      "units": "kWh",
+      "insights": true,
+      "decimals": 2,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/pv.svg"
+    },
+    "hoymiles_total_energy": {
+      "type": "number",
+      "title": {
+        "en": "Total Energy",
+        "nl": "Totale energie"
+      },
+      "units": "kWh",
+      "insights": true,
+      "decimals": 2,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/pv.svg"
+    },
+    "hoymiles_connection_source": {
+      "type": "enum",
+      "title": {
+        "en": "Connection Source",
+        "nl": "Verbindingsbron"
+      },
+      "values": [
+        {
+          "id": "local",
+          "title": {
+            "en": "Local (LAN)",
+            "nl": "Lokaal (LAN)"
+          }
+        },
+        {
+          "id": "cloud",
+          "title": {
+            "en": "Cloud",
+            "nl": "Cloud"
+          }
+        },
+        {
+          "id": "unknown",
+          "title": {
+            "en": "Unknown",
+            "nl": "Onbekend"
+          }
+        }
+      ],
+      "insights": false,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/grid.svg"
+    }
+  },
+  "flow": {
+    "actions": [
+      {
+        "id": "set_battery_mode",
+        "title": {
+          "en": "Set battery mode",
+          "nl": "Stel batterijmodus in"
+        },
+        "titleFormatted": {
+          "en": "Set battery mode to [[mode]]",
+          "nl": "Stel batterijmodus in op [[mode]]"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "mode",
+            "type": "dropdown",
+            "title": {
+              "en": "Mode",
+              "nl": "Modus"
+            },
+            "values": [
+              {
+                "id": "0",
+                "label": {
+                  "en": "Self-Consumption",
+                  "nl": "Eigen verbruik"
+                }
+              },
+              {
+                "id": "1",
+                "label": {
+                  "en": "Economy",
+                  "nl": "Economie"
+                }
+              },
+              {
+                "id": "2",
+                "label": {
+                  "en": "Backup",
+                  "nl": "Noodstroom"
+                }
+              },
+              {
+                "id": "3",
+                "label": {
+                  "en": "Off-Grid",
+                  "nl": "Off-Grid"
+                }
+              },
+              {
+                "id": "4",
+                "label": {
+                  "en": "Peak Shaving",
+                  "nl": "Pieksturing"
+                }
+              },
+              {
+                "id": "5",
+                "label": {
+                  "en": "Time of Use",
+                  "nl": "Tijdafhankelijk"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "conditions": [
+      {
+        "id": "battery_mode_is",
+        "title": {
+          "en": "Battery mode !{{is|is not}}",
+          "nl": "Batterijmodus !{{is|is niet}}"
+        },
+        "titleFormatted": {
+          "en": "Battery mode !{{is|is not}} [[mode]]",
+          "nl": "Batterijmodus !{{is|is niet}} [[mode]]"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "mode",
+            "type": "dropdown",
+            "title": {
+              "en": "Mode",
+              "nl": "Modus"
+            },
+            "values": [
+              {
+                "id": "0",
+                "label": {
+                  "en": "Self-Consumption",
+                  "nl": "Eigen verbruik"
+                }
+              },
+              {
+                "id": "1",
+                "label": {
+                  "en": "Economy",
+                  "nl": "Economie"
+                }
+              },
+              {
+                "id": "2",
+                "label": {
+                  "en": "Backup",
+                  "nl": "Noodstroom"
+                }
+              },
+              {
+                "id": "3",
+                "label": {
+                  "en": "Off-Grid",
+                  "nl": "Off-Grid"
+                }
+              },
+              {
+                "id": "4",
+                "label": {
+                  "en": "Peak Shaving",
+                  "nl": "Pieksturing"
+                }
+              },
+              {
+                "id": "5",
+                "label": {
+                  "en": "Time of Use",
+                  "nl": "Tijdafhankelijk"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "battery_charging",
+        "title": {
+          "en": "Battery !{{is|is not}} charging",
+          "nl": "Batterij is !{{aan het laden|niet aan het laden}}"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          }
+        ]
+      },
+      {
+        "id": "grid_importing",
+        "title": {
+          "en": "Grid !{{is|is not}} importing power",
+          "nl": "Net !{{importeert|exporteert}} stroom"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          }
+        ]
+      },
+      {
+        "id": "connection_is_local",
+        "title": {
+          "en": "Connection !{{is|is not}} local (LAN)",
+          "nl": "Verbinding is !{{lokaal|niet lokaal}} (LAN)"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          }
+        ]
+      }
+    ]
+  }
+}

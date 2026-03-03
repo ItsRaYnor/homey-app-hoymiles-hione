@@ -1,0 +1,11 @@
+{
+  "errors": {
+    "poll_failed": "Kan S-Miles Cloud niet bereiken. Controleer je internetverbinding.",
+    "login_failed": "Inloggen mislukt. Controleer je S-Miles Cloud e-mail en wachtwoord.",
+    "missing_credentials": "Ontbrekende inloggegevens. Koppel het apparaat opnieuw."
+  },
+  "pair": {
+    "login_title": "Inloggen bij S-Miles Cloud",
+    "login_disclaimer": "Deze app gebruikt een niet-officiële API. Je inloggegevens worden alleen verstuurd naar hoymiles.com."
+  }
+}

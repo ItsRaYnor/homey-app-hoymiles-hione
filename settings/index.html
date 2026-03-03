@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8'>
+  <script type="text/javascript" src="/homey.js" data-origin="settings"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 500px; }
+    h2 { font-size: 18px; margin: 0 0 16px; }
+    label { display: block; font-size: 13px; color: #333; margin-top: 16px; }
+    input { width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #ccc;
+            border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+    .hint { font-size: 11px; color: #888; margin-top: 4px; }
+    button { margin-top: 20px; padding: 10px 24px; background: #00A94F;
+             color: white; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; }
+    button:hover { background: #007d3a; }
+    .status { margin-top: 12px; font-size: 13px; display: none; }
+    .status.ok { color: #2e7d32; }
+    .status.err { color: #c00; }
+    .disclaimer { background: #fff8e1; border-left: 4px solid #ffc107;
+                  padding: 10px 12px; margin-bottom: 16px; font-size: 12px; color: #555; }
+  </style>
+</head>
+<body>
+  <h2>Hoymiles HiOne — Instellingen</h2>
+
+  <div class='disclaimer'>
+    Wijzig de API URL alleen als Hoymiles naar een ander endpoint migreert.
+    De standaard URL is <strong>https://neapi.hoymiles.com</strong>.
+  </div>
+
+  <label>Cloud API URL
+    <input type='url' id='cloud_api_url' placeholder='https://neapi.hoymiles.com'>
+  </label>
+  <div class='hint'>Basis-URL van de S-Miles Cloud API. Laat leeg voor de standaard URL.</div>
+
+  <button id='save'>Opslaan</button>
+  <div class='status' id='status'></div>
+
+  <script>
+    function onHomeyReady(Homey) {
+      Homey.get('cloud_api_url', function(err, value) {
+        if (!err && value) {
+          document.getElementById('cloud_api_url').value = value;
+        }
+      });
+
+      document.getElementById('save').addEventListener('click', function() {
+        var url = document.getElementById('cloud_api_url').value.trim();
+        var statusEl = document.getElementById('status');
+
+        // Strip trailing slash
+        if (url.endsWith('/')) url = url.replace(/\/+$/, '');
+
+        // Validate URL format if not empty
+        if (url && !/^https?:\/\/.+/.test(url)) {
+          statusEl.textContent = 'Ongeldige URL. Gebruik het format https://...';
+          statusEl.className = 'status err';
+          statusEl.style.display = 'block';
+          return;
+        }
+
+        Homey.set('cloud_api_url', url || null, function(err) {
+          if (err) {
+            statusEl.textContent = 'Opslaan mislukt: ' + err.message;
+            statusEl.className = 'status err';
+          } else {
+            statusEl.textContent = 'Opgeslagen! Bestaande apparaten gebruiken de nieuwe URL na herstart.';
+            statusEl.className = 'status ok';
+          }
+          statusEl.style.display = 'block';
+        });
+      });
+
+      Homey.ready();
+    }
+  </script>
+</body>
+</html>
