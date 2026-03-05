@@ -26,32 +26,69 @@
   </style>
 </head>
 <body>
-  <h3>Hoe wil je verbinden?</h3>
+  <h3 id='t-title'></h3>
 
   <div class='option' id='opt-local' onclick='select("local")'>
-    <strong>Lokaal (LAN) <span class='badge'>offline</span></strong>
-    <span>Direct via IP-adres. Geen account nodig. Werkt ook zonder internet.</span>
+    <strong id='t-local-title'></strong>
+    <span id='t-local-desc'></span>
   </div>
 
   <div class='option' id='opt-both' onclick='select("both")'>
-    <strong>Lokaal + Cloud <span class='badge'>aanbevolen</span></strong>
-    <span>Lokaal primair, S-Miles Cloud als fallback. Vereist account.</span>
+    <strong id='t-both-title'></strong>
+    <span id='t-both-desc'></span>
   </div>
 
   <div class='option' id='opt-cloud' onclick='select("cloud")'>
-    <strong>Alleen Cloud</strong>
-    <span>Via S-Miles Cloud API. Vereist account bij hoymiles.com.</span>
+    <strong id='t-cloud-title'></strong>
+    <span id='t-cloud-desc'></span>
   </div>
 
-  <button onclick='proceed()'>Volgende</button>
+  <button id='t-next' onclick='proceed()'></button>
 
-  <p class='disclaimer'>
-    ⚠️ Onofficieel — niet gelieerd aan Hoymiles. Gebruik op eigen risico.
-  </p>
+  <p class='disclaimer' id='t-disclaimer'></p>
 
   <script>
+    var i18n = {
+      nl: {
+        title: 'Hoe wil je verbinden?',
+        localTitle: 'Lokaal (LAN) <span class="badge">offline</span>',
+        localDesc: 'Direct via IP-adres. Geen account nodig. Werkt ook zonder internet.',
+        bothTitle: 'Lokaal + Cloud <span class="badge">aanbevolen</span>',
+        bothDesc: 'Lokaal primair, S-Miles Cloud als fallback. Vereist account.',
+        cloudTitle: 'Alleen Cloud',
+        cloudDesc: 'Via S-Miles Cloud API. Vereist account bij hoymiles.com.',
+        next: 'Volgende',
+        disclaimer: '\u26a0\ufe0f Onofficieel \u2014 niet gelieerd aan Hoymiles. Gebruik op eigen risico.'
+      },
+      en: {
+        title: 'How do you want to connect?',
+        localTitle: 'Local (LAN) <span class="badge">offline</span>',
+        localDesc: 'Direct via IP address. No account needed. Works without internet.',
+        bothTitle: 'Local + Cloud <span class="badge">recommended</span>',
+        bothDesc: 'Local primary, S-Miles Cloud as fallback. Requires account.',
+        cloudTitle: 'Cloud only',
+        cloudDesc: 'Via S-Miles Cloud API. Requires account at hoymiles.com.',
+        next: 'Next',
+        disclaimer: '\u26a0\ufe0f Unofficial \u2014 not affiliated with Hoymiles. Use at your own risk.'
+      }
+    };
+
+    function applyLang(lang) {
+      var t = i18n[lang] || i18n.en;
+      document.getElementById('t-title').textContent = t.title;
+      document.getElementById('t-local-title').innerHTML = t.localTitle;
+      document.getElementById('t-local-desc').textContent = t.localDesc;
+      document.getElementById('t-both-title').innerHTML = t.bothTitle;
+      document.getElementById('t-both-desc').textContent = t.bothDesc;
+      document.getElementById('t-cloud-title').textContent = t.cloudTitle;
+      document.getElementById('t-cloud-desc').textContent = t.cloudDesc;
+      document.getElementById('t-next').textContent = t.next;
+      document.getElementById('t-disclaimer').textContent = t.disclaimer;
+    }
+
     var _mode = 'local';
     select('local');
+    Homey.getLanguage().then(function(lang) { applyLang(lang); });
 
     function select(mode) {
       _mode = mode;
