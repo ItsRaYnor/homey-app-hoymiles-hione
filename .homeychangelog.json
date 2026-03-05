@@ -1,0 +1,5 @@
+{
+  "1.0.0": {
+    "en": "Initial release. Monitor and control your Hoymiles HiOne battery system from Homey via S-Miles Cloud or local LAN."
+  }
+}
