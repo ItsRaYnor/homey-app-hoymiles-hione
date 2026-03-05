@@ -19,28 +19,63 @@
   </style>
 </head>
 <body>
-  <h3>IP-adres HiBox gateway</h3>
-  <div class='tip'>
-    Vind het IP in je router onder 'verbonden apparaten'.<br>
-    Zoek op <strong>DTUBI-…</strong> of <strong>HiBox</strong>.
-  </div>
-  <label>IP-adres
+  <h3 id='t-title'></h3>
+  <div class='tip' id='t-tip'></div>
+  <label id='t-label'>
+    <span id='t-label-text'></span>
     <input type='text' id='ip' placeholder='192.168.1.100'>
   </label>
-  <div class='hint'>Poort 10081 wordt automatisch gebruikt.</div>
-  <div class='error' id='error'>Ongeldig IP-adres formaat.</div>
-  <button onclick='proceed()'>Volgende</button>
+  <div class='hint' id='t-hint'></div>
+  <div class='error' id='error'></div>
+  <button id='t-next' onclick='proceed()'></button>
   <script>
+    var i18n = {
+      nl: {
+        title: 'IP-adres HiBox gateway',
+        tip: 'Vind het IP in je router onder \'verbonden apparaten\'.<br>Zoek op <strong>DTUBI-\u2026</strong> of <strong>HiBox</strong>.',
+        label: 'IP-adres',
+        hint: 'Poort 10081 wordt automatisch gebruikt.',
+        next: 'Volgende',
+        errorEmpty: 'Vul een IP-adres in.',
+        errorInvalid: 'Ongeldig IP-adres formaat.'
+      },
+      en: {
+        title: 'HiBox gateway IP address',
+        tip: 'Find the IP in your router under \'connected devices\'.<br>Look for <strong>DTUBI-\u2026</strong> or <strong>HiBox</strong>.',
+        label: 'IP address',
+        hint: 'Port 10081 is used automatically.',
+        next: 'Next',
+        errorEmpty: 'Please enter an IP address.',
+        errorInvalid: 'Invalid IP address format.'
+      }
+    };
+
+    var _lang = 'en';
+
+    function applyLang(lang) {
+      _lang = lang;
+      var t = i18n[lang] || i18n.en;
+      document.getElementById('t-title').textContent = t.title;
+      document.getElementById('t-tip').innerHTML = t.tip;
+      document.getElementById('t-label-text').textContent = t.label;
+      document.getElementById('t-hint').textContent = t.hint;
+      document.getElementById('t-next').textContent = t.next;
+    }
+
+    Homey.getLanguage().then(function(lang) { applyLang(lang); });
+
     function isValidIp(ip) {
       return /^(\d{1,3}\.){3}\d{1,3}$/.test(ip) &&
         ip.split('.').every(function(n){ return parseInt(n) <= 255; });
     }
+
     async function proceed() {
       var ip = document.getElementById('ip').value.trim();
       var errEl = document.getElementById('error');
+      var t = i18n[_lang] || i18n.en;
       errEl.style.display = 'none';
-      if (!ip) { errEl.textContent='Vul een IP-adres in.'; errEl.style.display='block'; return; }
-      if (!isValidIp(ip)) { errEl.textContent='Ongeldig IP-adres formaat.'; errEl.style.display='block'; return; }
+      if (!ip) { errEl.textContent = t.errorEmpty; errEl.style.display = 'block'; return; }
+      if (!isValidIp(ip)) { errEl.textContent = t.errorInvalid; errEl.style.display = 'block'; return; }
       await Homey.emit('set_gateway_ip', { ip });
       var mode = await Homey.emit('get_connection_mode');
       if (mode === 'local') {

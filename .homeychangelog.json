@@ -1,7 +1,7 @@
 {
   "1.0.1": {
-    "en": "Added App Store and Play Store links for account creation. Improved login disclaimer clarity.",
-    "nl": "App Store en Play Store links toegevoegd voor het aanmaken van een account. Disclaimer bij inloggen verduidelijkt."
+    "en": "Added App Store and Play Store links for account creation. Improved login disclaimer clarity. Added English translations for all pairing views.",
+    "nl": "App Store en Play Store links toegevoegd voor het aanmaken van een account. Disclaimer bij inloggen verduidelijkt. Engelse vertalingen toegevoegd voor alle koppelingsstappen."
   },
   "1.0.0": {
     "en": "Initial release. Monitor and control your Hoymiles HiOne battery system from Homey via S-Miles Cloud or local LAN."
