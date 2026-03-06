@@ -3,56 +3,64 @@
 <head>
   <meta charset='utf-8'>
   <style>
-    body { font-family: sans-serif; padding: 16px; }
-    h3 { margin: 0 0 12px; font-size: 16px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+           padding: 20px; color: #1a1a1a; line-height: 1.5; }
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    h3 { font-size: 17px; font-weight: 600; }
+    .compat { font-size: 12px; color: #888; margin-bottom: 16px; }
     .option {
-      border: 2px solid #e0e0e0; border-radius: 8px;
-      padding: 14px 16px; margin-bottom: 10px; cursor: pointer;
-      transition: border-color 0.15s, background 0.15s;
+      border: 2px solid #e8e8e8; border-radius: 12px;
+      padding: 16px; margin-bottom: 10px; cursor: pointer;
+      transition: all 0.2s ease;
     }
-    .option:hover { border-color: #00A94F; background: #f0faf4; }
-    .option.selected { border-color: #00A94F; background: #e8f5e9; }
-    .option strong { display: block; font-size: 14px; margin-bottom: 2px; }
-    .option span { font-size: 12px; color: #666; }
-    .badge { font-size: 11px; background: #e8f5e9; color: #2e7d32;
-             border-radius: 3px; padding: 1px 6px; margin-left: 6px; }
-    button {
-      margin-top: 8px; width: 100%; padding: 10px;
-      background: #00A94F; color: white; border: none;
-      border-radius: 4px; font-size: 15px; cursor: pointer;
+    .option:hover { border-color: #00A94F; background: #f7fdf9; }
+    .option.selected { border-color: #00A94F; background: #f0faf4; box-shadow: 0 0 0 1px #00A94F; }
+    .option-title { display: flex; align-items: center; font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+    .option-desc { font-size: 12px; color: #666; line-height: 1.4; }
+    .badge { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+             background: #e8f5e9; color: #2e7d32; border-radius: 4px; padding: 2px 8px; margin-left: 8px; }
+    .btn-primary {
+      margin-top: 14px; width: 100%; padding: 12px; font-size: 15px; font-weight: 600;
+      background: #00A94F; color: white; border: none; border-radius: 10px; cursor: pointer;
+      transition: background 0.2s;
     }
-    button:hover { background: #007d3a; }
-    .disclaimer { font-size: 11px; color: #999; margin-top: 12px; }
-    .compat { font-size: 11px; color: #666; margin: 0 0 12px; }
-    .lang-toggle { float: right; font-size: 12px; cursor: pointer; color: #1976d2;
-                   border: 1px solid #1976d2; border-radius: 3px; padding: 2px 8px;
-                   background: none; width: auto; margin: 0; }
-    .lang-toggle:hover { background: #e3f2fd; }
+    .btn-primary:hover { background: #008f42; }
+    .btn-primary:active { background: #007d3a; transform: scale(0.99); }
+    .footer { text-align: center; font-size: 11px; color: #aaa; margin-top: 16px; }
+    .lang-toggle {
+      font-size: 11px; font-weight: 600; cursor: pointer; color: #666;
+      border: 1px solid #ddd; border-radius: 6px; padding: 4px 10px;
+      background: #f5f5f5; transition: all 0.15s;
+    }
+    .lang-toggle:hover { background: #e8e8e8; color: #333; }
   </style>
 </head>
 <body>
-  <button class='lang-toggle' id='lang-toggle' onclick='toggleLang()'>EN</button>
-  <h3 id='t-title'>How do you want to connect?</h3>
+  <div class='header'>
+    <h3 id='t-title'>How do you want to connect?</h3>
+    <button class='lang-toggle' id='lang-toggle' onclick='toggleLang()'>NL</button>
+  </div>
   <p class='compat' id='t-compat'>Compatible with all HiOne inverters (single-phase &amp; three-phase).</p>
 
   <div class='option' id='opt-local' onclick='select("local")'>
-    <strong id='t-local-title'>Local (LAN) <span class="badge">offline</span></strong>
-    <span id='t-local-desc'>Direct via IP address. No account needed. Works without internet.</span>
+    <div class='option-title' id='t-local-title'>Local (LAN) <span class="badge">offline</span></div>
+    <div class='option-desc' id='t-local-desc'>Direct via IP address. No account needed. Works without internet.</div>
   </div>
 
   <div class='option' id='opt-both' onclick='select("both")'>
-    <strong id='t-both-title'>Local + Cloud <span class="badge">recommended</span></strong>
-    <span id='t-both-desc'>Local primary, S-Miles Cloud as fallback. Requires account.</span>
+    <div class='option-title' id='t-both-title'>Local + Cloud <span class="badge">recommended</span></div>
+    <div class='option-desc' id='t-both-desc'>Local primary, S-Miles Cloud as fallback. Requires account.</div>
   </div>
 
   <div class='option' id='opt-cloud' onclick='select("cloud")'>
-    <strong id='t-cloud-title'>Cloud only</strong>
-    <span id='t-cloud-desc'>Via S-Miles Cloud API. Requires account at hoymiles.com.</span>
+    <div class='option-title' id='t-cloud-title'>Cloud only</div>
+    <div class='option-desc' id='t-cloud-desc'>Via S-Miles Cloud API. Requires account at hoymiles.com.</div>
   </div>
 
-  <button id='t-next' onclick='proceed()'>Next</button>
+  <button class='btn-primary' id='t-next' onclick='proceed()'>Next</button>
 
-  <p class='disclaimer' id='t-disclaimer'>&#x26a0;&#xfe0f; Unofficial — not affiliated with Hoymiles. Use at your own risk.</p>
+  <p class='footer' id='t-disclaimer'>&#x26a0;&#xfe0f; Unofficial — not affiliated with Hoymiles. Use at your own risk.</p>
 
   <script>
     var i18n = {
