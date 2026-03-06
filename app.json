@@ -149,6 +149,57 @@
             "nl": "Basis-URL van de S-Miles Cloud API (standaard: https://neapi.hoymiles.com). Wijzig dit alleen als Hoymiles naar een ander endpoint migreert."
           },
           "value": "https://neapi.hoymiles.com"
+        },
+        {
+          "id": "poll_interval",
+          "type": "number",
+          "label": {
+            "en": "Poll interval (seconds)",
+            "nl": "Poll-interval (seconden)"
+          },
+          "hint": {
+            "en": "How often to fetch data (30–300 seconds). Default: 60.",
+            "nl": "Hoe vaak data ophalen (30–300 seconden). Standaard: 60."
+          },
+          "value": 60,
+          "min": 30,
+          "max": 300
+        },
+        {
+          "type": "group",
+          "label": {
+            "en": "Gateway info",
+            "nl": "Gateway info"
+          },
+          "children": [
+            {
+              "id": "dtu_serial",
+              "type": "label",
+              "label": {
+                "en": "Serial number",
+                "nl": "Serienummer"
+              },
+              "value": "-"
+            },
+            {
+              "id": "firmware_version",
+              "type": "label",
+              "label": {
+                "en": "Firmware version",
+                "nl": "Firmwareversie"
+              },
+              "value": "-"
+            },
+            {
+              "id": "hardware_version",
+              "type": "label",
+              "label": {
+                "en": "Hardware version",
+                "nl": "Hardwareversie"
+              },
+              "value": "-"
+            }
+          ]
         }
       ]
     }
@@ -331,6 +382,35 @@
     }
   },
   "flow": {
+    "triggers": [
+      {
+        "id": "battery_mode_changed",
+        "title": {
+          "en": "Battery mode changed",
+          "nl": "Batterijmodus is veranderd"
+        },
+        "tokens": [
+          {
+            "name": "mode",
+            "type": "string",
+            "title": {
+              "en": "Mode",
+              "nl": "Modus"
+            },
+            "example": {
+              "en": "Self-Consumption"
+            }
+          }
+        ],
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          }
+        ]
+      }
+    ],
     "actions": [
       {
         "id": "set_battery_mode",
