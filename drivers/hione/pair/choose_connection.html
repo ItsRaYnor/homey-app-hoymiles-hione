@@ -23,29 +23,36 @@
     }
     button:hover { background: #007d3a; }
     .disclaimer { font-size: 11px; color: #999; margin-top: 12px; }
+    .compat { font-size: 11px; color: #666; margin: 0 0 12px; }
+    .lang-toggle { float: right; font-size: 12px; cursor: pointer; color: #1976d2;
+                   border: 1px solid #1976d2; border-radius: 3px; padding: 2px 8px;
+                   background: none; width: auto; margin: 0; }
+    .lang-toggle:hover { background: #e3f2fd; }
   </style>
 </head>
 <body>
-  <h3 id='t-title'></h3>
+  <button class='lang-toggle' id='lang-toggle' onclick='toggleLang()'>EN</button>
+  <h3 id='t-title'>How do you want to connect?</h3>
+  <p class='compat' id='t-compat'>Compatible with all HiOne inverters (single-phase &amp; three-phase).</p>
 
   <div class='option' id='opt-local' onclick='select("local")'>
-    <strong id='t-local-title'></strong>
-    <span id='t-local-desc'></span>
+    <strong id='t-local-title'>Local (LAN) <span class="badge">offline</span></strong>
+    <span id='t-local-desc'>Direct via IP address. No account needed. Works without internet.</span>
   </div>
 
   <div class='option' id='opt-both' onclick='select("both")'>
-    <strong id='t-both-title'></strong>
-    <span id='t-both-desc'></span>
+    <strong id='t-both-title'>Local + Cloud <span class="badge">recommended</span></strong>
+    <span id='t-both-desc'>Local primary, S-Miles Cloud as fallback. Requires account.</span>
   </div>
 
   <div class='option' id='opt-cloud' onclick='select("cloud")'>
-    <strong id='t-cloud-title'></strong>
-    <span id='t-cloud-desc'></span>
+    <strong id='t-cloud-title'>Cloud only</strong>
+    <span id='t-cloud-desc'>Via S-Miles Cloud API. Requires account at hoymiles.com.</span>
   </div>
 
-  <button id='t-next' onclick='proceed()'></button>
+  <button id='t-next' onclick='proceed()'>Next</button>
 
-  <p class='disclaimer' id='t-disclaimer'></p>
+  <p class='disclaimer' id='t-disclaimer'>&#x26a0;&#xfe0f; Unofficial — not affiliated with Hoymiles. Use at your own risk.</p>
 
   <script>
     var i18n = {
@@ -58,7 +65,8 @@
         cloudTitle: 'Alleen Cloud',
         cloudDesc: 'Via S-Miles Cloud API. Vereist account bij hoymiles.com.',
         next: 'Volgende',
-        disclaimer: '\u26a0\ufe0f Onofficieel \u2014 niet gelieerd aan Hoymiles. Gebruik op eigen risico.'
+        disclaimer: '\u26a0\ufe0f Onofficieel \u2014 niet gelieerd aan Hoymiles. Gebruik op eigen risico.',
+        compat: 'Compatibel met alle HiOne omvormers (1-fase & 3-fase).'
       },
       en: {
         title: 'How do you want to connect?',
@@ -69,13 +77,18 @@
         cloudTitle: 'Cloud only',
         cloudDesc: 'Via S-Miles Cloud API. Requires account at hoymiles.com.',
         next: 'Next',
-        disclaimer: '\u26a0\ufe0f Unofficial \u2014 not affiliated with Hoymiles. Use at your own risk.'
+        disclaimer: '\u26a0\ufe0f Unofficial \u2014 not affiliated with Hoymiles. Use at your own risk.',
+        compat: 'Compatible with all HiOne inverters (single-phase & three-phase).'
       }
     };
 
+    var _lang = 'en';
+
     function applyLang(lang) {
+      _lang = lang;
       var t = i18n[lang] || i18n.en;
       document.getElementById('t-title').textContent = t.title;
+      document.getElementById('t-compat').textContent = t.compat;
       document.getElementById('t-local-title').innerHTML = t.localTitle;
       document.getElementById('t-local-desc').textContent = t.localDesc;
       document.getElementById('t-both-title').innerHTML = t.bothTitle;
@@ -84,11 +97,16 @@
       document.getElementById('t-cloud-desc').textContent = t.cloudDesc;
       document.getElementById('t-next').textContent = t.next;
       document.getElementById('t-disclaimer').textContent = t.disclaimer;
+      document.getElementById('lang-toggle').textContent = lang === 'nl' ? 'EN' : 'NL';
+    }
+
+    function toggleLang() {
+      applyLang(_lang === 'nl' ? 'en' : 'nl');
     }
 
     var _mode = 'local';
     select('local');
-    Homey.getLanguage().then(function(lang) { applyLang(lang); });
+    Homey.getLanguage().then(function(lang) { applyLang(lang); }).catch(function() {});
 
     function select(mode) {
       _mode = mode;

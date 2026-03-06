@@ -18,26 +18,72 @@
     .status.err { color: #c00; }
     .disclaimer { background: #fff8e1; border-left: 4px solid #ffc107;
                   padding: 10px 12px; margin-bottom: 16px; font-size: 12px; color: #555; }
+    .lang-toggle { float: right; font-size: 12px; cursor: pointer; color: #1976d2;
+                   border: 1px solid #1976d2; border-radius: 3px; padding: 2px 8px;
+                   background: none; }
+    .lang-toggle:hover { background: #e3f2fd; }
   </style>
 </head>
 <body>
-  <h2>Hoymiles HiOne — Instellingen</h2>
+  <button class='lang-toggle' id='lang-toggle' onclick='toggleLang()'>EN</button>
+  <h2 id='t-title'>Hoymiles HiOne — Settings</h2>
 
-  <div class='disclaimer'>
-    Wijzig de API URL alleen als Hoymiles naar een ander endpoint migreert.
-    De standaard URL is <strong>https://neapi.hoymiles.com</strong>.
+  <div class='disclaimer' id='t-disclaimer'>
+    Only change the API URL if Hoymiles migrates to a different endpoint.
+    The default URL is <strong>https://neapi.hoymiles.com</strong>.
   </div>
 
   <label>Cloud API URL
     <input type='url' id='cloud_api_url' placeholder='https://neapi.hoymiles.com'>
   </label>
-  <div class='hint'>Basis-URL van de S-Miles Cloud API. Laat leeg voor de standaard URL.</div>
+  <div class='hint' id='t-hint'>Base URL of the S-Miles Cloud API. Leave empty for the default URL.</div>
 
-  <button id='save'>Opslaan</button>
+  <button id='save'>Save</button>
   <div class='status' id='status'></div>
 
   <script>
+    var i18n = {
+      nl: {
+        title: 'Hoymiles HiOne — Instellingen',
+        disclaimer: 'Wijzig de API URL alleen als Hoymiles naar een ander endpoint migreert. De standaard URL is <strong>https://neapi.hoymiles.com</strong>.',
+        hint: 'Basis-URL van de S-Miles Cloud API. Laat leeg voor de standaard URL.',
+        save: 'Opslaan',
+        invalidUrl: 'Ongeldige URL. Gebruik het format https://...',
+        saveFailed: 'Opslaan mislukt: ',
+        saveOk: 'Opgeslagen! Bestaande apparaten gebruiken de nieuwe URL na herstart.'
+      },
+      en: {
+        title: 'Hoymiles HiOne — Settings',
+        disclaimer: 'Only change the API URL if Hoymiles migrates to a different endpoint. The default URL is <strong>https://neapi.hoymiles.com</strong>.',
+        hint: 'Base URL of the S-Miles Cloud API. Leave empty for the default URL.',
+        save: 'Save',
+        invalidUrl: 'Invalid URL. Use the format https://...',
+        saveFailed: 'Save failed: ',
+        saveOk: 'Saved! Existing devices will use the new URL after restart.'
+      }
+    };
+
+    var _lang = 'en';
+
+    function applyLang(lang) {
+      _lang = lang;
+      var t = i18n[lang] || i18n.en;
+      document.getElementById('t-title').textContent = t.title;
+      document.getElementById('t-disclaimer').innerHTML = t.disclaimer;
+      document.getElementById('t-hint').textContent = t.hint;
+      document.getElementById('save').textContent = t.save;
+      document.getElementById('lang-toggle').textContent = lang === 'nl' ? 'EN' : 'NL';
+    }
+
+    function toggleLang() {
+      applyLang(_lang === 'nl' ? 'en' : 'nl');
+    }
+
     function onHomeyReady(Homey) {
+      Homey.getLanguage(function(err, lang) {
+        if (!err && lang) applyLang(lang);
+      });
+
       Homey.get('cloud_api_url', function(err, value) {
         if (!err && value) {
           document.getElementById('cloud_api_url').value = value;
@@ -47,13 +93,12 @@
       document.getElementById('save').addEventListener('click', function() {
         var url = document.getElementById('cloud_api_url').value.trim();
         var statusEl = document.getElementById('status');
+        var t = i18n[_lang] || i18n.en;
 
-        // Strip trailing slash
         if (url.endsWith('/')) url = url.replace(/\/+$/, '');
 
-        // Validate URL format if not empty
         if (url && !/^https?:\/\/.+/.test(url)) {
-          statusEl.textContent = 'Ongeldige URL. Gebruik het format https://...';
+          statusEl.textContent = t.invalidUrl;
           statusEl.className = 'status err';
           statusEl.style.display = 'block';
           return;
@@ -61,10 +106,10 @@
 
         Homey.set('cloud_api_url', url || null, function(err) {
           if (err) {
-            statusEl.textContent = 'Opslaan mislukt: ' + err.message;
+            statusEl.textContent = t.saveFailed + err.message;
             statusEl.className = 'status err';
           } else {
-            statusEl.textContent = 'Opgeslagen! Bestaande apparaten gebruiken de nieuwe URL na herstart.';
+            statusEl.textContent = t.saveOk;
             statusEl.className = 'status ok';
           }
           statusEl.style.display = 'block';
