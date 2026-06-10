@@ -5,22 +5,34 @@ node_modules/
 .homeybuild/
 *.homeycompose
 
-# Claude
+# Claude / AI tooling
 .claude/
+CLAUDE.local.md
 
 # Environment & secrets
+# env.json is Homey's standard file for app secrets (API keys etc.)
+env.json
 .env
 .env.*
+*.pem
+*.key
+credentials*.json
 
 # OS files
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Editor
 .vscode/
 .idea/
 *.swp
+*.swo
 
 # Logs
 *.log
 npm-debug.log*
+
+# Archives / local exports
+*.tar.gz
+*.zip

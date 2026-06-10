@@ -6,6 +6,7 @@
   },
   "pair": {
     "login_title": "Inloggen bij S-Miles Cloud",
-    "login_disclaimer": "Deze app gebruikt een niet-officiële API. Je inloggegevens worden alleen verstuurd naar hoymiles.com."
+    "login_disclaimer": "Deze app gebruikt een niet-officiële API. Je inloggegevens worden alleen verstuurd naar hoymiles.com.",
+    "no_stations": "Inloggen gelukt, maar er is nog geen installatie (station) gevonden op je S-Miles Cloud-account. Installeer je HiOne-systeem en voeg het eerst toe in de S-Miles app, probeer het daarna opnieuw."
   }
 }

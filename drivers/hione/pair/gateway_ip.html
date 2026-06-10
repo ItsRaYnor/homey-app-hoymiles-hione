@@ -56,8 +56,8 @@
   <script>
     var i18n = {
       nl: {
-        title: 'IP-adres HiBox gateway',
-        tip: 'Vind het IP in je router onder \'verbonden apparaten\'.<br>Zoek op <strong>DTUBI-\u2026</strong> of <strong>HiBox</strong>.',
+        title: 'IP-adres gateway/DTS',
+        tip: 'Vind het IP in je router onder \'verbonden apparaten\'.<br>Zoek op <strong>DTS-\u2026</strong>, <strong>DTUBI-\u2026</strong> of <strong>HiBox</strong>.<br>Tip: geef de gateway een <strong>vast IP-adres</strong> (DHCP-reservering) in je router, dan blijft de lokale verbinding altijd werken.',
         label: 'IP-adres',
         hint: 'Poort 10081 wordt automatisch gebruikt.',
         next: 'Volgende',
@@ -65,8 +65,8 @@
         errorInvalid: 'Ongeldig IP-adres formaat.'
       },
       en: {
-        title: 'HiBox gateway IP address',
-        tip: 'Find the IP in your router under \'connected devices\'.<br>Look for <strong>DTUBI-\u2026</strong> or <strong>HiBox</strong>.',
+        title: 'Gateway/DTS IP address',
+        tip: 'Find the IP in your router under \'connected devices\'.<br>Look for <strong>DTS-\u2026</strong>, <strong>DTUBI-\u2026</strong> or <strong>HiBox</strong>.<br>Tip: give the gateway a <strong>fixed IP address</strong> (DHCP reservation) in your router so the local connection keeps working.',
         label: 'IP address',
         hint: 'Port 10081 is used automatically.',
         next: 'Next',
@@ -93,6 +93,13 @@
     }
 
     Homey.getLanguage().then(function(lang) { applyLang(lang); }).catch(function() {});
+
+    // Prefill the IP from a previous successful pairing — still editable,
+    // and a changed IP is saved again automatically when pairing succeeds.
+    Homey.emit('get_saved_gateway_ip').then(function(ip) {
+      var input = document.getElementById('ip');
+      if (ip && !input.value) input.value = ip;
+    }).catch(function() {});
 
     function isValidIp(ip) {
       return /^(\d{1,3}\.){3}\d{1,3}$/.test(ip) &&
