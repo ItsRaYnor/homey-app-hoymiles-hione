@@ -6,6 +6,16 @@
   "engines": {
     "node": ">=18"
   },
-  "keywords": ["homey", "hoymiles", "hione", "battery", "solar", "energy"],
-  "license": "MIT"
+  "keywords": [
+    "homey",
+    "hoymiles",
+    "hione",
+    "battery",
+    "solar",
+    "energy"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "hash-wasm": "^4.12.0"
+  }
 }

@@ -38,6 +38,17 @@
       background: #f5f5f5; transition: all 0.15s;
     }
     .lang-toggle:hover { background: #e8e8e8; color: #333; }
+    .section-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .saved-box {
+      background: #f0fff4; border: 1px solid #c6efd5; border-radius: 10px;
+      padding: 12px 14px; margin-bottom: 12px; font-size: 13px; display: none;
+    }
+    .btn-link {
+      display: block; margin-top: 8px; background: none; border: none;
+      color: #d32f2f; font-size: 12px; font-weight: 500; cursor: pointer; padding: 0;
+    }
+    .btn-link:hover { text-decoration: underline; }
+    .btn-primary:disabled { background: #9bd4b3; cursor: wait; }
   </style>
 </head>
 <body>
@@ -46,6 +57,42 @@
     <button class='lang-toggle' id='lang-toggle' onclick='toggleLang()'>NL</button>
   </div>
 
+  <h3 class='section-title' id='t-accTitle'>S-Miles Cloud account</h3>
+  <div class='hint' id='t-accHint' style='margin-bottom:10px'>
+    Log in once here — adding a device via Cloud then works with a single tap.
+  </div>
+
+  <div class='saved-box' id='acc-saved'>
+    <span id='t-savedAs'></span>
+    <button class='btn-link' id='t-forget' onclick='forgetAccount()'>Forget account</button>
+  </div>
+
+  <div id='acc-form'>
+    <label><span id='t-email'>Email address</span>
+      <input type='email' id='acc_email' placeholder='you@example.com'>
+    </label>
+    <label style='margin-top:10px'><span id='t-password'>Password</span>
+      <input type='password' id='acc_password'>
+    </label>
+    <button class='btn-primary' id='login-btn' onclick='loginAccount()'>Log in &amp; save</button>
+  </div>
+  <div class='status' id='acc_status'></div>
+
+  <h3 class='section-title' id='t-lanTitle' style='margin-top:28px'>Local connection (LAN)</h3>
+  <div class='hint' id='t-lanHint' style='margin-bottom:10px'>
+    The IP address of the DTS-WL-G3 stick on your network. Saved here, it is prefilled when pairing.
+  </div>
+  <label><span id='t-lanIp'>Gateway/DTS IP address</span>
+    <input type='text' id='lan_ip' placeholder='192.168.1.100'>
+  </label>
+  <label style='margin-top:10px'><span id='t-lanPort'>Local port</span>
+    <input type='number' id='lan_port' placeholder='10081' min='1' max='65535'>
+  </label>
+  <div class='hint' id='t-lanPortHint'>Default 10081 (Hoymiles local protocol — not Modbus). Only change this if your device uses a different port.</div>
+  <button class='btn-primary' id='lan-save' onclick='saveLan()'>Save</button>
+  <div class='status' id='lan_status'></div>
+
+  <h3 class='section-title' id='t-advTitle' style='margin-top:28px'>Advanced</h3>
   <div class='disclaimer' id='t-disclaimer'>
     Only change the API URL if Hoymiles migrates to a different endpoint.
     The default URL is <strong>https://neapi.hoymiles.com</strong>.
@@ -68,7 +115,29 @@
         save: 'Opslaan',
         invalidUrl: 'Ongeldige URL. Gebruik het format https://...',
         saveFailed: 'Opslaan mislukt: ',
-        saveOk: 'Opgeslagen! Bestaande apparaten gebruiken de nieuwe URL na herstart.'
+        saveOk: 'Opgeslagen! Bestaande apparaten gebruiken de nieuwe URL na herstart.',
+        accTitle: 'S-Miles Cloud account',
+        accHint: 'Log hier eenmalig in — een apparaat toevoegen via Cloud werkt daarna met één druk op de knop.',
+        advTitle: 'Geavanceerd',
+        email: 'E-mailadres',
+        password: 'Wachtwoord',
+        loginSave: 'Inloggen & opslaan',
+        loginBusy: 'Bezig met inloggen…',
+        loginOk: 'Ingelogd! Je account is opgeslagen voor het koppelen.',
+        loginFailed: 'Inloggen mislukt: ',
+        loginEmpty: 'Vul beide velden in.',
+        savedAs: 'Opgeslagen account: <strong>{email}</strong>',
+        forget: 'Account vergeten',
+        forgotten: 'Account verwijderd.',
+        lanTitle: 'Lokale verbinding (LAN)',
+        lanHint: 'Het IP-adres van de DTS-WL-G3 stick in je netwerk. Hier opgeslagen wordt het automatisch ingevuld bij het koppelen.',
+        lanIp: 'Gateway/DTS IP-adres',
+        lanPort: 'Lokale poort',
+        lanPortHint: 'Standaard 10081 (Hoymiles lokaal protocol — geen Modbus). Wijzig dit alleen als je apparaat een andere poort gebruikt.',
+        lanSave: 'Opslaan',
+        lanInvalidIp: 'Ongeldig IP-adres formaat.',
+        lanInvalidPort: 'Ongeldige poort (1-65535).',
+        lanSaved: 'Opgeslagen! Wordt gebruikt bij het koppelen en door bestaande apparaten na herstart.'
       },
       en: {
         title: 'Hoymiles HiOne — Settings',
@@ -77,11 +146,36 @@
         save: 'Save',
         invalidUrl: 'Invalid URL. Use the format https://...',
         saveFailed: 'Save failed: ',
-        saveOk: 'Saved! Existing devices will use the new URL after restart.'
+        saveOk: 'Saved! Existing devices will use the new URL after restart.',
+        accTitle: 'S-Miles Cloud account',
+        accHint: 'Log in once here — adding a device via Cloud then works with a single tap.',
+        advTitle: 'Advanced',
+        email: 'Email address',
+        password: 'Password',
+        loginSave: 'Log in & save',
+        loginBusy: 'Logging in…',
+        loginOk: 'Logged in! Your account is saved for pairing.',
+        loginFailed: 'Login failed: ',
+        loginEmpty: 'Please fill in both fields.',
+        savedAs: 'Saved account: <strong>{email}</strong>',
+        forget: 'Forget account',
+        forgotten: 'Account removed.',
+        lanTitle: 'Local connection (LAN)',
+        lanHint: 'The IP address of the DTS-WL-G3 stick on your network. Saved here, it is prefilled when pairing.',
+        lanIp: 'Gateway/DTS IP address',
+        lanPort: 'Local port',
+        lanPortHint: 'Default 10081 (Hoymiles local protocol — not Modbus). Only change this if your device uses a different port.',
+        lanSave: 'Save',
+        lanInvalidIp: 'Invalid IP address format.',
+        lanInvalidPort: 'Invalid port (1-65535).',
+        lanSaved: 'Saved! Used when pairing and by existing devices after restart.'
       }
     };
 
     var _lang = 'en';
+
+    var _homey = null;
+    var _savedEmail = null;
 
     function applyLang(lang) {
       _lang = lang;
@@ -91,13 +185,118 @@
       document.getElementById('t-hint').textContent = t.hint;
       document.getElementById('save').textContent = t.save;
       document.getElementById('lang-toggle').textContent = lang === 'nl' ? 'EN' : 'NL';
+      document.getElementById('t-accTitle').textContent = t.accTitle;
+      document.getElementById('t-accHint').textContent = t.accHint;
+      document.getElementById('t-advTitle').textContent = t.advTitle;
+      document.getElementById('t-lanTitle').textContent = t.lanTitle;
+      document.getElementById('t-lanHint').textContent = t.lanHint;
+      document.getElementById('t-lanIp').textContent = t.lanIp;
+      document.getElementById('t-lanPort').textContent = t.lanPort;
+      document.getElementById('t-lanPortHint').textContent = t.lanPortHint;
+      document.getElementById('lan-save').textContent = t.lanSave;
+      document.getElementById('t-email').textContent = t.email;
+      document.getElementById('t-password').textContent = t.password;
+      document.getElementById('login-btn').textContent = t.loginSave;
+      document.getElementById('t-forget').textContent = t.forget;
+      if (_savedEmail) {
+        document.getElementById('t-savedAs').innerHTML = t.savedAs.replace('{email}', _savedEmail);
+      }
     }
 
     function toggleLang() {
       applyLang(_lang === 'nl' ? 'en' : 'nl');
     }
 
+    function showSavedAccount(email) {
+      _savedEmail = email || null;
+      document.getElementById('acc-saved').style.display = _savedEmail ? 'block' : 'none';
+      applyLang(_lang);
+    }
+
+    function showAccStatus(message, ok) {
+      var el = document.getElementById('acc_status');
+      el.textContent = message;
+      el.className = 'status ' + (ok ? 'ok' : 'err');
+      el.style.display = 'block';
+    }
+
+    function loginAccount() {
+      var t = i18n[_lang] || i18n.en;
+      var email = document.getElementById('acc_email').value.trim();
+      var pass  = document.getElementById('acc_password').value;
+      document.getElementById('acc_status').style.display = 'none';
+      if (!email || !pass) { showAccStatus(t.loginEmpty, false); return; }
+
+      var btn = document.getElementById('login-btn');
+      btn.disabled = true;
+      btn.textContent = t.loginBusy;
+
+      _homey.api('POST', '/login', { email: email, password: pass }, function(err, result) {
+        btn.disabled = false;
+        btn.textContent = t.loginSave;
+        if (err) {
+          showAccStatus(t.loginFailed + (err.message || err), false);
+          return;
+        }
+        document.getElementById('acc_password').value = '';
+        showAccStatus(t.loginOk, true);
+        showSavedAccount((result && result.email) || email);
+      });
+    }
+
+    function isValidIp(ip) {
+      return /^(\d{1,3}\.){3}\d{1,3}$/.test(ip) &&
+        ip.split('.').every(function(n){ return parseInt(n) <= 255; });
+    }
+
+    function showLanStatus(message, ok) {
+      var el = document.getElementById('lan_status');
+      el.textContent = message;
+      el.className = 'status ' + (ok ? 'ok' : 'err');
+      el.style.display = 'block';
+    }
+
+    function saveLan() {
+      var t = i18n[_lang] || i18n.en;
+      var ip   = document.getElementById('lan_ip').value.trim();
+      var port = String(document.getElementById('lan_port').value || '').trim();
+      document.getElementById('lan_status').style.display = 'none';
+
+      if (ip && !isValidIp(ip)) { showLanStatus(t.lanInvalidIp, false); return; }
+
+      // Port is optional — empty or the default 10081 means "use default"
+      var portValue = null;
+      if (port !== '' && +port !== 10081) {
+        if (!/^\d+$/.test(port) || +port < 1 || +port > 65535) {
+          showLanStatus(t.lanInvalidPort, false);
+          return;
+        }
+        portValue = +port;
+      }
+
+      _homey.set('saved_gateway_ip', ip || null, function(err) {
+        if (err) { showLanStatus(err.message || String(err), false); return; }
+        _homey.set('local_port', portValue, function(err2) {
+          if (err2) { showLanStatus(err2.message || String(err2), false); return; }
+          if (!portValue) document.getElementById('lan_port').value = 10081;
+          showLanStatus(t.lanSaved, true);
+        });
+      });
+    }
+
+    function forgetAccount() {
+      var t = i18n[_lang] || i18n.en;
+      _homey.api('POST', '/logout', {}, function() {
+        showSavedAccount(null);
+        document.getElementById('acc_email').value = '';
+        document.getElementById('acc_password').value = '';
+        showAccStatus(t.forgotten, true);
+      });
+    }
+
     function onHomeyReady(Homey) {
+      _homey = Homey;
+
       Homey.getLanguage(function(err, lang) {
         if (!err && lang) applyLang(lang);
       });
@@ -106,6 +305,22 @@
         if (!err && value) {
           document.getElementById('cloud_api_url').value = value;
         }
+      });
+
+      Homey.get('saved_email', function(err, value) {
+        if (!err && value) {
+          document.getElementById('acc_email').value = value;
+          showSavedAccount(value);
+        }
+      });
+
+      Homey.get('saved_gateway_ip', function(err, value) {
+        if (!err && value) document.getElementById('lan_ip').value = value;
+      });
+
+      Homey.get('local_port', function(err, value) {
+        // Show the effective port — the default 10081 when nothing is saved
+        document.getElementById('lan_port').value = (!err && value) ? value : 10081;
       });
 
       document.getElementById('save').addEventListener('click', function() {

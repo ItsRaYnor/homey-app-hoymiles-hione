@@ -21,6 +21,32 @@ class HiOneDriver extends Driver {
     );
 
     registerListener(
+      this.homey.flow.getActionCard('set_reserve_soc'),
+      async ({ device, soc }) => device.triggerCapabilityListener('hoymiles_reserve_soc', soc)
+    );
+
+    registerListener(
+      this.homey.flow.getActionCard('set_peak_shaving'),
+      async ({ device, reserve_soc, max_soc, meter_power }) =>
+        device.setPeakShaving({ reserveSoc: reserve_soc, maxSoc: max_soc, meterPower: meter_power })
+    );
+
+    registerListener(
+      this.homey.flow.getActionCard('set_relay'),
+      async ({ device, state }) => device.setRelayEnabled(state === 'on')
+    );
+
+    registerListener(
+      this.homey.flow.getActionCard('set_power_limit'),
+      async ({ device, limit }) => device.setPowerLimit(limit)
+    );
+
+    registerListener(
+      this.homey.flow.getActionCard('set_inverter_state'),
+      async ({ device, state, serial }) => device.setInverterState(serial, state === 'on')
+    );
+
+    registerListener(
       this.homey.flow.getConditionCard('battery_mode_is'),
       async ({ device, mode }) => device.getCapabilityValue('hoymiles_battery_mode') === mode
     );
@@ -67,17 +93,52 @@ class HiOneDriver extends Driver {
       return true;
     });
 
+    // Prefill the IP from a previous successful pairing (still editable)
+    session.setHandler('get_saved_gateway_ip', async () => {
+      return this.homey.settings.get('saved_gateway_ip') || null;
+    });
+
     // Step 2b: cloud login
     session.setHandler('login', async ({ username, password }) => {
       _email    = username;
       _password = password;
       try {
         await _api.login(_email, _password);
+        // Remember for the next pairing session
+        this.homey.settings.set('saved_email', _email);
+        this.homey.settings.set('saved_password', _password);
         return true;
       } catch (err) {
         this.error('Login failed: ' + err.message);
         return false;
       }
+    });
+
+    // Saved-login support: reuse credentials from a previous pairing
+    session.setHandler('get_saved_login', async () => {
+      const email = this.homey.settings.get('saved_email');
+      return email ? { email } : null;
+    });
+
+    session.setHandler('login_saved', async () => {
+      const email    = this.homey.settings.get('saved_email');
+      const password = this.homey.settings.get('saved_password');
+      if (!email || !password) return false;
+      try {
+        await _api.login(email, password);
+        _email    = email;
+        _password = password;
+        return true;
+      } catch (err) {
+        this.error('Saved login failed: ' + err.message);
+        return false;
+      }
+    });
+
+    session.setHandler('forget_login', async () => {
+      this.homey.settings.unset('saved_email');
+      this.homey.settings.unset('saved_password');
+      return true;
     });
 
     // Let pair views query the chosen connection mode
@@ -91,6 +152,7 @@ class HiOneDriver extends Driver {
 
         const local = new HoymilesLocal({
           host:  _gatewayIp,
+          port:  this.homey.settings.get('local_port') || undefined,
           log:   this.log.bind(this),
           error: this.error.bind(this),
         });
@@ -99,6 +161,8 @@ class HiOneDriver extends Driver {
         try {
           const info = await local.getGatewayInfo();
           if (info.dtuSn) name = 'HiOne ' + info.dtuSn;
+          // Gateway responded — remember this IP for the next pairing
+          this.homey.settings.set('saved_gateway_ip', _gatewayIp);
         } catch (_) {
           this.log('Could not fetch gateway info — using IP as name');
         }
@@ -113,6 +177,11 @@ class HiOneDriver extends Driver {
 
       // CLOUD or BOTH: fetch stations from S-Miles Cloud
       const stations = await _api.getStations();
+      if (stations.length === 0) {
+        throw new Error(this.homey.__('pair.no_stations'));
+      }
+      // Pairing succeeded — remember the gateway IP for the next pairing
+      if (_gatewayIp) this.homey.settings.set('saved_gateway_ip', _gatewayIp);
       return stations.map(s => ({
         name:     s.name,
         data:     { id: s.id, stationId: s.id },

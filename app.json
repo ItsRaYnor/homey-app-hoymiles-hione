@@ -1,6 +1,6 @@
 {
   "id": "com.hoymiles.hione",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "compatibility": ">=5.0.0",
   "sdk": 3,
   "brandColor": "#00A94F",
@@ -34,6 +34,16 @@
     "energy"
   ],
   "permissions": [],
+  "api": {
+    "testLogin": {
+      "method": "POST",
+      "path": "/login"
+    },
+    "forgetLogin": {
+      "method": "POST",
+      "path": "/logout"
+    }
+  },
   "images": {
     "small": "/assets/images/small.png",
     "large": "/assets/images/large.png",
@@ -66,8 +76,16 @@
         "hoymiles_load_power",
         "hoymiles_pv_power",
         "hoymiles_battery_mode",
+        "hoymiles_reserve_soc",
         "hoymiles_daily_energy",
-        "hoymiles_total_energy"
+        "hoymiles_monthly_energy",
+        "hoymiles_yearly_energy",
+        "hoymiles_total_energy",
+        "hoymiles_battery_in_energy",
+        "hoymiles_battery_out_energy",
+        "hoymiles_co2_reduction",
+        "hoymiles_profit_today",
+        "hoymiles_profit_total"
       ],
       "capabilitiesOptions": {
         "measure_power": {
@@ -90,12 +108,10 @@
         }
       },
       "energy": {
-        "batteries": ["OTHER"]
-      },
-      "energy": {
         "batteries": [
           "INTERNAL"
-        ]
+        ],
+        "cumulative": true
       },
       "images": {
         "small": "/drivers/hione/assets/icon.png",
@@ -128,12 +144,12 @@
           "id": "gateway_ip",
           "type": "text",
           "label": {
-            "en": "HiBox Gateway IP Address (optional)",
-            "nl": "HiBox Gateway IP-adres (optioneel)"
+            "en": "Gateway/DTS IP Address (optional)",
+            "nl": "Gateway/DTS IP-adres (optioneel)"
           },
           "hint": {
-            "en": "Local LAN IP of the HiBox-63T-G3 gateway for offline access (e.g. 192.168.1.100). Leave empty to use cloud only.",
-            "nl": "Lokaal LAN IP-adres van de HiBox-63T-G3 gateway voor offline toegang (bijv. 192.168.1.100). Leeg laten voor cloud only."
+            "en": "Local LAN IP of the DTS-WL-G3 stick or HiBox gateway for offline access (e.g. 192.168.1.100). Leave empty to use cloud only.",
+            "nl": "Lokaal LAN IP-adres van de DTS-WL-G3 stick of HiBox gateway voor offline toegang (bijv. 192.168.1.100). Leeg laten voor cloud only."
           },
           "value": ""
         },
@@ -269,42 +285,56 @@
       },
       "values": [
         {
-          "id": "0",
+          "id": "1",
           "title": {
             "en": "Self-Consumption",
             "nl": "Eigen verbruik"
           }
         },
         {
-          "id": "1",
+          "id": "2",
           "title": {
             "en": "Economy",
             "nl": "Economie"
           }
         },
         {
-          "id": "2",
+          "id": "3",
           "title": {
             "en": "Backup",
             "nl": "Noodstroom"
           }
         },
         {
-          "id": "3",
+          "id": "4",
           "title": {
             "en": "Off-Grid",
             "nl": "Off-Grid"
           }
         },
         {
-          "id": "4",
+          "id": "5",
+          "title": {
+            "en": "Self-Consumption + Max Power",
+            "nl": "Eigen verbruik + Max vermogen"
+          }
+        },
+        {
+          "id": "6",
+          "title": {
+            "en": "Backup + Max Power",
+            "nl": "Noodstroom + Max vermogen"
+          }
+        },
+        {
+          "id": "7",
           "title": {
             "en": "Peak Shaving",
             "nl": "Pieksturing"
           }
         },
         {
-          "id": "5",
+          "id": "8",
           "title": {
             "en": "Time of Use",
             "nl": "Tijdafhankelijk"
@@ -317,6 +347,23 @@
       "uiComponent": "picker",
       "icon": "/assets/battery.svg"
     },
+    "hoymiles_reserve_soc": {
+      "type": "number",
+      "title": {
+        "en": "Reserve SOC",
+        "nl": "Reserve laadniveau"
+      },
+      "units": "%",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "decimals": 0,
+      "insights": true,
+      "getable": true,
+      "setable": true,
+      "uiComponent": "slider",
+      "icon": "/assets/battery.svg"
+    },
     "hoymiles_daily_energy": {
       "type": "number",
       "title": {
@@ -326,6 +373,76 @@
       "units": "kWh",
       "insights": true,
       "decimals": 2,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/pv.svg"
+    },
+    "hoymiles_monthly_energy": {
+      "type": "number",
+      "title": {
+        "en": "Monthly Energy",
+        "nl": "Maandelijkse energie"
+      },
+      "units": "kWh",
+      "insights": true,
+      "decimals": 2,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/pv.svg"
+    },
+    "hoymiles_yearly_energy": {
+      "type": "number",
+      "title": {
+        "en": "Yearly Energy",
+        "nl": "Jaarlijkse energie"
+      },
+      "units": "kWh",
+      "insights": true,
+      "decimals": 2,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/pv.svg"
+    },
+    "hoymiles_battery_in_energy": {
+      "type": "number",
+      "title": {
+        "en": "Battery Charged",
+        "nl": "Batterij geladen"
+      },
+      "units": "kWh",
+      "insights": true,
+      "decimals": 2,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/battery.svg"
+    },
+    "hoymiles_battery_out_energy": {
+      "type": "number",
+      "title": {
+        "en": "Battery Discharged",
+        "nl": "Batterij ontladen"
+      },
+      "units": "kWh",
+      "insights": true,
+      "decimals": 2,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/battery.svg"
+    },
+    "hoymiles_co2_reduction": {
+      "type": "number",
+      "title": {
+        "en": "CO₂ Reduction",
+        "nl": "CO₂-besparing"
+      },
+      "units": "kg",
+      "insights": true,
+      "decimals": 1,
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
@@ -344,6 +461,32 @@
       "setable": false,
       "uiComponent": "sensor",
       "icon": "/assets/pv.svg"
+    },
+    "hoymiles_profit_today": {
+      "type": "number",
+      "title": {
+        "en": "Savings Today",
+        "nl": "Besparing vandaag"
+      },
+      "insights": true,
+      "decimals": 2,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/grid.svg"
+    },
+    "hoymiles_profit_total": {
+      "type": "number",
+      "title": {
+        "en": "Savings Total",
+        "nl": "Besparing totaal"
+      },
+      "insights": true,
+      "decimals": 2,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/grid.svg"
     },
     "hoymiles_connection_source": {
       "type": "enum",
@@ -437,45 +580,284 @@
             },
             "values": [
               {
-                "id": "0",
+                "id": "1",
                 "label": {
                   "en": "Self-Consumption",
                   "nl": "Eigen verbruik"
                 }
               },
               {
-                "id": "1",
+                "id": "2",
                 "label": {
                   "en": "Economy",
                   "nl": "Economie"
                 }
               },
               {
-                "id": "2",
+                "id": "3",
                 "label": {
                   "en": "Backup",
                   "nl": "Noodstroom"
                 }
               },
               {
-                "id": "3",
+                "id": "4",
                 "label": {
                   "en": "Off-Grid",
                   "nl": "Off-Grid"
                 }
               },
               {
-                "id": "4",
+                "id": "5",
+                "label": {
+                  "en": "Self-Consumption + Max Power",
+                  "nl": "Eigen verbruik + Max vermogen"
+                }
+              },
+              {
+                "id": "6",
+                "label": {
+                  "en": "Backup + Max Power",
+                  "nl": "Noodstroom + Max vermogen"
+                }
+              },
+              {
+                "id": "7",
                 "label": {
                   "en": "Peak Shaving",
                   "nl": "Pieksturing"
                 }
               },
               {
-                "id": "5",
+                "id": "8",
                 "label": {
                   "en": "Time of Use",
                   "nl": "Tijdafhankelijk"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "set_reserve_soc",
+        "title": {
+          "en": "Set reserve SOC",
+          "nl": "Stel reserve laadniveau in"
+        },
+        "titleFormatted": {
+          "en": "Set reserve SOC to [[soc]]%",
+          "nl": "Stel reserve laadniveau in op [[soc]]%"
+        },
+        "hint": {
+          "en": "Sets the minimum battery state of charge for the active battery mode (cloud connection required).",
+          "nl": "Stelt het minimale laadniveau van de batterij in voor de actieve batterijmodus (cloudverbinding vereist)."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "soc",
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "title": {
+              "en": "Reserve SOC (%)",
+              "nl": "Reserve laadniveau (%)"
+            }
+          }
+        ]
+      },
+      {
+        "id": "set_peak_shaving",
+        "title": {
+          "en": "Set Peak Shaving parameters",
+          "nl": "Stel Pieksturing-parameters in"
+        },
+        "titleFormatted": {
+          "en": "Set Peak Shaving: reserve [[reserve_soc]]%, max [[max_soc]]%, grid limit [[meter_power]]W",
+          "nl": "Stel Pieksturing in: reserve [[reserve_soc]]%, max [[max_soc]]%, netgrens [[meter_power]]W"
+        },
+        "hint": {
+          "en": "Configures and activates Peak Shaving mode (cloud connection required).",
+          "nl": "Configureert en activeert de Pieksturing-modus (cloudverbinding vereist)."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "reserve_soc",
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "title": {
+              "en": "Reserve SOC (%)",
+              "nl": "Reserve laadniveau (%)"
+            }
+          },
+          {
+            "name": "max_soc",
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "title": {
+              "en": "Max SOC (%)",
+              "nl": "Max laadniveau (%)"
+            }
+          },
+          {
+            "name": "meter_power",
+            "type": "number",
+            "min": 0,
+            "max": 50000,
+            "step": 100,
+            "title": {
+              "en": "Grid power limit (W)",
+              "nl": "Netvermogensgrens (W)"
+            }
+          }
+        ]
+      },
+      {
+        "id": "set_relay",
+        "title": {
+          "en": "Switch dry contact",
+          "nl": "Schakel droogcontact"
+        },
+        "titleFormatted": {
+          "en": "Switch dry contact [[state]]",
+          "nl": "Schakel droogcontact [[state]]"
+        },
+        "hint": {
+          "en": "Enables or disables the relay / dry contact output (cloud connection and compatible hardware required).",
+          "nl": "Schakelt de relais-/droogcontactuitgang in of uit (cloudverbinding en geschikte hardware vereist)."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "title": {
+              "en": "State",
+              "nl": "Stand"
+            },
+            "values": [
+              {
+                "id": "on",
+                "label": {
+                  "en": "On",
+                  "nl": "Aan"
+                }
+              },
+              {
+                "id": "off",
+                "label": {
+                  "en": "Off",
+                  "nl": "Uit"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "set_power_limit",
+        "title": {
+          "en": "Set power limit (local)",
+          "nl": "Stel vermogenslimiet in (lokaal)"
+        },
+        "titleFormatted": {
+          "en": "Limit inverter output to [[limit]]%",
+          "nl": "Beperk omvormervermogen tot [[limit]]%"
+        },
+        "hint": {
+          "en": "Limits the inverter output via the local gateway connection (LAN, port 10081). Warning: every change writes to the inverter's EEPROM — avoid changing it more than a few times per day to prevent wear.",
+          "nl": "Beperkt het omvormervermogen via de lokale gateway-verbinding (LAN, poort 10081). Waarschuwing: elke wijziging schrijft naar het EEPROM-geheugen van de omvormer — wijzig dit hooguit een paar keer per dag om slijtage te voorkomen."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "limit",
+            "type": "number",
+            "min": 2,
+            "max": 100,
+            "step": 1,
+            "title": {
+              "en": "Power limit (%)",
+              "nl": "Vermogenslimiet (%)"
+            }
+          }
+        ]
+      },
+      {
+        "id": "set_inverter_state",
+        "title": {
+          "en": "Turn inverter on/off (local)",
+          "nl": "Zet omvormer aan/uit (lokaal)"
+        },
+        "titleFormatted": {
+          "en": "Turn inverter [[serial]] [[state]]",
+          "nl": "Zet omvormer [[serial]] [[state]]"
+        },
+        "hint": {
+          "en": "Turns an inverter on or off via the local gateway connection. Enter the inverter serial number (from the type plate or the S-Miles app). Useful at negative energy prices.",
+          "nl": "Zet een omvormer aan of uit via de lokale gateway-verbinding. Vul het serienummer van de omvormer in (zie typeplaatje of de S-Miles app). Handig bij negatieve stroomprijzen."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "serial",
+            "type": "text",
+            "title": {
+              "en": "Inverter serial number",
+              "nl": "Serienummer omvormer"
+            },
+            "placeholder": {
+              "en": "e.g. 1164aabbccdd",
+              "nl": "bijv. 1164aabbccdd"
+            }
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "title": {
+              "en": "State",
+              "nl": "Stand"
+            },
+            "values": [
+              {
+                "id": "on",
+                "label": {
+                  "en": "On",
+                  "nl": "Aan"
+                }
+              },
+              {
+                "id": "off",
+                "label": {
+                  "en": "Off",
+                  "nl": "Uit"
                 }
               }
             ]
@@ -509,42 +891,56 @@
             },
             "values": [
               {
-                "id": "0",
+                "id": "1",
                 "label": {
                   "en": "Self-Consumption",
                   "nl": "Eigen verbruik"
                 }
               },
               {
-                "id": "1",
+                "id": "2",
                 "label": {
                   "en": "Economy",
                   "nl": "Economie"
                 }
               },
               {
-                "id": "2",
+                "id": "3",
                 "label": {
                   "en": "Backup",
                   "nl": "Noodstroom"
                 }
               },
               {
-                "id": "3",
+                "id": "4",
                 "label": {
                   "en": "Off-Grid",
                   "nl": "Off-Grid"
                 }
               },
               {
-                "id": "4",
+                "id": "5",
+                "label": {
+                  "en": "Self-Consumption + Max Power",
+                  "nl": "Eigen verbruik + Max vermogen"
+                }
+              },
+              {
+                "id": "6",
+                "label": {
+                  "en": "Backup + Max Power",
+                  "nl": "Noodstroom + Max vermogen"
+                }
+              },
+              {
+                "id": "7",
                 "label": {
                   "en": "Peak Shaving",
                   "nl": "Pieksturing"
                 }
               },
               {
-                "id": "5",
+                "id": "8",
                 "label": {
                   "en": "Time of Use",
                   "nl": "Tijdafhankelijk"
