@@ -36,7 +36,7 @@ Monitor and control your **Hoymiles HiOne** all-in-one battery energy storage sy
 
 ## Requirements
 
-- Homey Pro (2019 or 2023) with firmware >= 5.0.0
+- Homey Pro (2023) with firmware >= 12.4.5 (required for the home battery device type)
 - Hoymiles **HiOne** all-in-one BESS (tested: 3-phase models with HiBox-63T-G3 gateway)
 - For cloud/hybrid mode: an active **S-Miles Cloud** account (the same credentials used in the Hoymiles app)
 - For local mode: the IP address of the HiBox gateway on your LAN

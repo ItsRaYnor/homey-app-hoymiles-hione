@@ -7,16 +7,41 @@ const { BATTERY_MODES } = require('../../lib/HoymilesApi');
 // Battery settings use a slow async cloud command — refresh every Nth poll
 const SETTINGS_POLL_EVERY = 5;
 
+// The local power limit is persisted to the inverter's EEPROM on every write.
+// Cap automated writes per day and skip no-op writes to limit chip wear.
+const POWER_LIMIT_MAX_WRITES_PER_DAY = 10;
+
 // Capabilities added after v1.0.x — added to existing devices on init
-const NEW_CAPABILITIES = [
+// Homey % sliders store 0–1; API/Flows use 0–100
+const PCT_CAPABILITIES = new Set([
   'hoymiles_reserve_soc',
+  'hoymiles_max_soc',
+  'hoymiles_max_power',
+]);
+
+const NEW_CAPABILITIES = [
+  'meter_power.charged',
+  'meter_power.discharged',
+  'hoymiles_reserve_soc',
+  'hoymiles_max_soc',
+  'hoymiles_max_power',
+  'hoymiles_meter_power',
   'hoymiles_monthly_energy',
   'hoymiles_yearly_energy',
-  'hoymiles_battery_in_energy',
-  'hoymiles_battery_out_energy',
   'hoymiles_co2_reduction',
   'hoymiles_profit_today',
   'hoymiles_profit_total',
+];
+
+// Capabilities replaced by a better equivalent — removed from existing devices.
+// The device is now a Homey "home battery": measure_power = battery power and
+// charged/discharged energy is tracked via meter_power.charged/.discharged.
+const REMOVED_CAPABILITIES = [
+  'hoymiles_battery_power',
+  'measure_power.battery',
+  'meter_power',                  // base PV total — not used for a battery device
+  'hoymiles_battery_in_energy',   // → meter_power.charged
+  'hoymiles_battery_out_energy',  // → meter_power.discharged
 ];
 
 class HiOneDevice extends Device {
@@ -36,7 +61,22 @@ class HiOneDevice extends Device {
     });
 
     this.registerCapabilityListener('hoymiles_reserve_soc', async (value) => {
-      await this._hybrid.setReserveSoc(value);
+      await this._hybrid.setReserveSoc(this._capToPercent(value));
+      this._refreshBatterySettings().catch(() => {});
+    });
+
+    this.registerCapabilityListener('hoymiles_max_power', async (value) => {
+      await this._hybrid.setMaxPower(this._capToPercent(value));
+      this._refreshBatterySettings().catch(() => {});
+    });
+
+    this.registerCapabilityListener('hoymiles_max_soc', async (value) => {
+      await this._hybrid.setMaxSoc(this._capToPercent(value));
+      this._refreshBatterySettings().catch(() => {});
+    });
+
+    this.registerCapabilityListener('hoymiles_meter_power', async (value) => {
+      await this._hybrid.setGridLimit(value);
       this._refreshBatterySettings().catch(() => {});
     });
 
@@ -73,6 +113,16 @@ class HiOneDevice extends Device {
         }
       }
     }
+    for (const capability of REMOVED_CAPABILITIES) {
+      if (this.hasCapability(capability)) {
+        try {
+          await this.removeCapability(capability);
+          this.log('Removed capability ' + capability);
+        } catch (err) {
+          this.error('Could not remove capability ' + capability + ': ' + err.message);
+        }
+      }
+    }
   }
 
   _getPollMs() {
@@ -94,11 +144,29 @@ class HiOneDevice extends Device {
     }
   }
 
+  _percentToCap(percent) {
+    if (percent === null || percent === undefined) return null;
+    const n = Number(percent);
+    if (isNaN(n)) return null;
+    return Math.round(n) / 100;
+  }
+
+  // Slider passes 0–1; Flow cards pass 0–100
+  _capToPercent(value) {
+    const n = Number(value);
+    if (isNaN(n)) throw new Error('Invalid percentage value: ' + value);
+    return n <= 1 ? Math.round(n * 100) : Math.round(n);
+  }
+
   async _setCapabilitySafe(capability, value) {
     if (value === null || value === undefined) return;
     if (!this.hasCapability(capability)) return;
+    const capValue = PCT_CAPABILITIES.has(capability) ? this._percentToCap(value) : value;
     try {
-      await this.setCapabilityValue(capability, value);
+      await this.setCapabilityValue(capability, capValue);
+      if (PCT_CAPABILITIES.has(capability)) {
+        this.log(`[cap] set ${capability} = ${capValue} (${this._capToPercent(capValue)}%) → readback ${this.getCapabilityValue(capability)}`);
+      }
     } catch (err) {
       this.error('setCapabilityValue(' + capability + ') failed: ' + err.message);
     }
@@ -108,9 +176,8 @@ class HiOneDevice extends Device {
     try {
       const data = await this._hybrid.getData();
 
-      await this._setCapabilitySafe('measure_power',                data.pvPower);
+      await this._setCapabilitySafe('measure_power',                data.batteryPower);
       await this._setCapabilitySafe('hoymiles_pv_power',            data.pvPower);
-      await this._setCapabilitySafe('hoymiles_battery_power',       data.batteryPower);
       await this._setCapabilitySafe('measure_battery',              data.batterySoc);
       await this._setCapabilitySafe('hoymiles_grid_power',          data.gridPower);
       await this._setCapabilitySafe('hoymiles_load_power',          data.loadPower);
@@ -118,9 +185,8 @@ class HiOneDevice extends Device {
       await this._setCapabilitySafe('hoymiles_monthly_energy',      data.monthlyEnergy);
       await this._setCapabilitySafe('hoymiles_yearly_energy',       data.yearlyEnergy);
       await this._setCapabilitySafe('hoymiles_total_energy',        data.totalEnergy);
-      await this._setCapabilitySafe('meter_power',                  data.totalEnergy);
-      await this._setCapabilitySafe('hoymiles_battery_in_energy',   data.batteryInEnergy);
-      await this._setCapabilitySafe('hoymiles_battery_out_energy',  data.batteryOutEnergy);
+      await this._setCapabilitySafe('meter_power.charged',          data.batteryInEnergy);
+      await this._setCapabilitySafe('meter_power.discharged',       data.batteryOutEnergy);
       await this._setCapabilitySafe('hoymiles_co2_reduction',       data.co2Reduction);
       await this._setCapabilitySafe('hoymiles_connection_source',   data.source);
 
@@ -146,6 +212,9 @@ class HiOneDevice extends Device {
     if (settings) {
       await this._updateBatteryMode(settings.mode);
       await this._setCapabilitySafe('hoymiles_reserve_soc', settings.reserveSoc);
+      await this._setCapabilitySafe('hoymiles_max_power',   settings.maxPower);
+      await this._setCapabilitySafe('hoymiles_max_soc',     settings.maxSoc);
+      await this._setCapabilitySafe('hoymiles_meter_power', settings.meterPower);
     }
 
     const profit = await this._hybrid.getEpsProfit();
@@ -165,8 +234,56 @@ class HiOneDevice extends Device {
     await this._hybrid.setRelayEnabled(enabled);
   }
 
+  async setMaxPower(percent) {
+    await this._hybrid.setMaxPower(percent);
+    this._refreshBatterySettings().catch(() => {});
+  }
+
+  async setMaxSoc(percent) {
+    await this._hybrid.setMaxSoc(percent);
+    this._refreshBatterySettings().catch(() => {});
+  }
+
+  async setGridLimit(watts) {
+    await this._hybrid.setGridLimit(watts);
+    this._refreshBatterySettings().catch(() => {});
+  }
+
+  async setTouPeriod(period) {
+    await this._hybrid.setTouPeriod(period);
+    this._refreshBatterySettings().catch(() => {});
+  }
+
   async setPowerLimit(limitPercent) {
-    await this._hybrid.setPowerLimit(limitPercent);
+    const limit = Math.round(Number(limitPercent));
+    if (isNaN(limit) || limit < 2 || limit > 100) {
+      throw new Error('Invalid power limit (2-100%): ' + limitPercent);
+    }
+
+    // Skip redundant writes — the inverter stores the limit in EEPROM, so
+    // re-writing the same value only wastes a limited erase/write budget.
+    if (this.getStoreValue('power_limit_last') === limit) {
+      this.log(`[EEPROM] power limit already ${limit}% — skipping write`);
+      return;
+    }
+
+    // Daily write budget to protect the EEPROM against runaway automations.
+    const today = new Date().toISOString().slice(0, 10);
+    let day   = this.getStoreValue('power_limit_day');
+    let count = this.getStoreValue('power_limit_count') || 0;
+    if (day !== today) { day = today; count = 0; }
+    if (count >= POWER_LIMIT_MAX_WRITES_PER_DAY) {
+      throw new Error(
+        `Power-limit write budget reached (${POWER_LIMIT_MAX_WRITES_PER_DAY}/day) to protect the inverter EEPROM. Try again tomorrow.`,
+      );
+    }
+
+    await this._hybrid.setPowerLimit(limit);
+
+    await this.setStoreValue('power_limit_last', limit);
+    await this.setStoreValue('power_limit_day', day);
+    await this.setStoreValue('power_limit_count', count + 1);
+    this.log(`[EEPROM] power limit -> ${limit}% (write ${count + 1}/${POWER_LIMIT_MAX_WRITES_PER_DAY} today)`);
   }
 
   async setInverterState(serial, on) {
@@ -217,7 +334,9 @@ class HiOneDevice extends Device {
 
     this._hybrid = new HoymilesHybrid({
       gatewayIp,
-      localPort: this.homey.settings.get('local_port') || undefined,
+      localPort:     this.homey.settings.get('local_port') || undefined,
+      localProtocol: this.homey.settings.get('local_protocol') || 'auto',
+      modbusUnitId:  this.homey.settings.get('modbus_unit_id') || undefined,
       email:     store.email,
       password:  store.password,
       stationId: this.getData().stationId,

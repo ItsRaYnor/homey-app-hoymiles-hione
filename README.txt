@@ -12,7 +12,7 @@ FEATURES
 - Three connection modes: Local (LAN), Local + Cloud (recommended), or Cloud only
 
 REQUIREMENTS
-- Homey Pro (2019 or 2023) with firmware >= 5.0.0
+- Homey Pro (2023) with firmware >= 12.4.5 (required for the home battery device type)
 - Hoymiles HiOne system: HiOne-(8-20)T-G3 hybrid inverter with the included
   DTS-WL-G3 data transfer stick (WiFi or LAN mode) and one or more
   HiOne-8B-G3 battery modules. The Backup Box (e.g. 63T-G3) is optional
