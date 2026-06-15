@@ -3,6 +3,7 @@
 const { Driver } = require('homey');
 const HoymilesApi   = require('../../lib/HoymilesApi');
 const HoymilesLocal = require('../../lib/HoymilesLocal');
+const { discoverGateways, subnetBaseFromAddress } = require('../../lib/NetworkScan');
 
 class HiOneDriver extends Driver {
 
@@ -93,10 +94,11 @@ class HiOneDriver extends Driver {
   }
 
   async onPair(session) {
-    let _mode      = 'local';   // 'local' | 'cloud' | 'both'
-    let _email     = null;
-    let _password  = null;
-    let _gatewayIp = null;
+    let _mode          = 'local';   // 'local' | 'cloud' | 'both'
+    let _email         = null;
+    let _password      = null;
+    let _gatewayIp     = null;
+    let _localProtocol = null;      // 'native' | 'modbus' — set when picked from a scan
 
     const _api = new HoymilesApi({
       log:     this.log.bind(this),
@@ -118,9 +120,40 @@ class HiOneDriver extends Driver {
       return true;
     });
 
+    // Optional: protocol detected by the network scan for the chosen IP.
+    // Pins the new device to that transport so it doesn't probe the wrong port.
+    // Null (manual IP entry) keeps the default 'auto' behaviour.
+    session.setHandler('set_local_protocol', async ({ protocol }) => {
+      _localProtocol = (protocol === 'native' || protocol === 'modbus') ? protocol : null;
+      this.log('Local protocol: ' + (_localProtocol || 'auto'));
+      return true;
+    });
+
     // Prefill the IP from a previous successful pairing (still editable)
     session.setHandler('get_saved_gateway_ip', async () => {
       return this.homey.settings.get('saved_gateway_ip') || null;
+    });
+
+    // Auto-detect: sweep the local /24 for sticks on port 10081 (native) or
+    // 502 (Modbus) and verify each hit. Returns the found-device list.
+    session.setHandler('scan_network', async () => {
+      let base = null;
+      try {
+        base = subnetBaseFromAddress(await this.homey.cloud.getLocalAddress());
+      } catch (err) {
+        this.error('Could not read Homey local address: ' + err.message);
+      }
+      // Fall back to the subnet of a previously paired IP
+      if (!base) base = subnetBaseFromAddress(this.homey.settings.get('saved_gateway_ip'));
+      if (!base) throw new Error('Could not determine the local subnet to scan');
+
+      const found = await discoverGateways({
+        subnetBase: base,
+        log:   this.log.bind(this),
+        error: this.error.bind(this),
+      });
+      this.log(`Network scan on ${base}0/24 found ${found.length} device(s)`);
+      return found;
     });
 
     // Step 2b: cloud login
@@ -183,19 +216,25 @@ class HiOneDriver extends Driver {
         });
 
         let name = 'HiOne (' + _gatewayIp + ')';
-        try {
-          const info = await local.getGatewayInfo();
-          if (info.dtuSn) name = 'HiOne ' + info.dtuSn;
-          // Gateway responded — remember this IP for the next pairing
+        // The gateway-info probe uses the native (10081) protocol; skip it for
+        // Modbus-only sticks, which would only refuse the connection.
+        if (_localProtocol === 'modbus') {
           this.homey.settings.set('saved_gateway_ip', _gatewayIp);
-        } catch (_) {
-          this.log('Could not fetch gateway info — using IP as name');
+        } else {
+          try {
+            const info = await local.getGatewayInfo();
+            if (info.dtuSn) name = 'HiOne ' + info.dtuSn;
+            // Gateway responded — remember this IP for the next pairing
+            this.homey.settings.set('saved_gateway_ip', _gatewayIp);
+          } catch (_) {
+            this.log('Could not fetch gateway info — using IP as name');
+          }
         }
 
         return [{
           name,
           data:     { id: _gatewayIp, stationId: null },
-          store:    { email: null, password: null, gatewayIp: _gatewayIp },
+          store:    { email: null, password: null, gatewayIp: _gatewayIp, localProtocol: _localProtocol },
           settings: { gateway_ip: _gatewayIp },
         }];
       }
@@ -210,7 +249,7 @@ class HiOneDriver extends Driver {
       return stations.map(s => ({
         name:     s.name,
         data:     { id: s.id, stationId: s.id },
-        store:    { email: _email, password: _password, gatewayIp: _gatewayIp },
+        store:    { email: _email, password: _password, gatewayIp: _gatewayIp, localProtocol: _localProtocol },
         settings: { gateway_ip: _gatewayIp || '' },
       }));
     });

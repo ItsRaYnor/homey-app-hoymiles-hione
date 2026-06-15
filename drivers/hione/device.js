@@ -335,7 +335,7 @@ class HiOneDevice extends Device {
     this._hybrid = new HoymilesHybrid({
       gatewayIp,
       localPort:     this.homey.settings.get('local_port') || undefined,
-      localProtocol: this.homey.settings.get('local_protocol') || 'auto',
+      localProtocol: store.localProtocol || this.homey.settings.get('local_protocol') || 'auto',
       modbusUnitId:  this.homey.settings.get('modbus_unit_id') || undefined,
       email:     store.email,
       password:  store.password,
