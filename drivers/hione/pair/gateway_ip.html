@@ -21,6 +21,52 @@
     }
     input:focus { border-color: #00A94F; }
     .hint { font-size: 11px; color: #999; margin-top: 6px; }
+    .btn-scan {
+      margin-top: 12px; width: 100%; padding: 11px; font-size: 14px; font-weight: 600;
+      background: #fff; color: #00A94F; border: 2px solid #00A94F; border-radius: 10px;
+      cursor: pointer; transition: all 0.2s; display: flex; align-items: center;
+      justify-content: center; gap: 8px;
+    }
+    .btn-scan:hover { background: #f0faf4; }
+    .btn-scan:disabled { opacity: 0.6; cursor: default; }
+    .spinner {
+      width: 14px; height: 14px; border: 2px solid #cdeedd; border-top-color: #00A94F;
+      border-radius: 50%; animation: spin 0.7s linear infinite; display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .scan-status { font-size: 12px; color: #777; margin-top: 8px; text-align: center; }
+    .scan-results { margin-top: 10px; }
+    .scan-item {
+      display: flex; align-items: center; justify-content: space-between;
+      border: 2px solid #e8e8e8; border-radius: 10px; padding: 10px 14px;
+      margin-bottom: 8px; cursor: pointer; transition: all 0.15s;
+    }
+    .scan-item:hover { border-color: #00A94F; background: #f7fdf9; }
+    .scan-ip { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+    .scan-badge {
+      font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px;
+      border-radius: 4px; padding: 2px 8px;
+    }
+    .scan-badge.native { background: #e8f5e9; color: #2e7d32; }
+    .scan-badge.modbus { background: #e3f2fd; color: #1565c0; }
+    .scan-badge.unverified { background: #fff4e5; color: #b26a00; }
+    .help-toggle {
+      display: inline-flex; align-items: center; gap: 6px; margin-top: 16px;
+      font-size: 13px; font-weight: 600; color: #00A94F; cursor: pointer;
+      background: none; border: none; padding: 0;
+    }
+    .help-toggle .chevron { transition: transform 0.2s; font-size: 11px; }
+    .help-toggle.open .chevron { transform: rotate(90deg); }
+    .help-box {
+      display: none; margin-top: 12px; background: #f7fdf9; border: 1px solid #d8efe1;
+      border-radius: 10px; padding: 14px 16px; font-size: 13px; color: #333; line-height: 1.55;
+    }
+    .help-box.open { display: block; }
+    .help-box ol { margin: 0; padding-left: 18px; }
+    .help-box li { margin-bottom: 8px; }
+    .help-box li:last-child { margin-bottom: 0; }
+    .help-box strong { color: #1565c0; }
+    .help-box .note { margin-top: 10px; font-size: 12px; color: #777; }
     .btn-primary {
       margin-top: 20px; width: 100%; padding: 12px; font-size: 15px; font-weight: 600;
       background: #00A94F; color: white; border: none; border-radius: 10px; cursor: pointer;
@@ -48,9 +94,22 @@
   <div class='tip' id='t-tip'>Find the IP in your router under 'connected devices'.<br>Look for <strong>DTUBI-…</strong> or <strong>HiBox</strong>.</div>
   <label>
     <span id='t-label-text'>IP address</span>
-    <input type='text' id='ip' placeholder='192.168.1.100'>
+    <input type='text' id='ip' placeholder='192.168.1.100' oninput='clearScanProtocol()'>
   </label>
   <div class='hint' id='t-hint'>Port 10081 is used automatically.</div>
+
+  <button class='btn-scan' id='btn-scan' onclick='scanNetwork()'>
+    <span class='spinner' id='scan-spinner'></span>
+    <span id='t-scan-btn'>Scan my network</span>
+  </button>
+  <div class='scan-status' id='scan-status'></div>
+  <div class='scan-results' id='scan-results'></div>
+
+  <button class='help-toggle' id='help-toggle' onclick='toggleHelp()'>
+    <span class='chevron'>&#x25b6;</span><span id='t-help-toggle'>How do I find the IP address?</span>
+  </button>
+  <div class='help-box' id='help-box'></div>
+
   <div class='error' id='error'></div>
   <button class='btn-primary' id='t-next' onclick='proceed()'>Next</button>
   <script>
@@ -59,23 +118,76 @@
         title: 'IP-adres gateway/DTS',
         tip: 'Vind het IP in je router onder \'verbonden apparaten\'.<br>Zoek op <strong>DTS-\u2026</strong>, <strong>DTUBI-\u2026</strong> of <strong>HiBox</strong>.<br>Tip: geef de gateway een <strong>vast IP-adres</strong> (DHCP-reservering) in je router, dan blijft de lokale verbinding altijd werken.',
         label: 'IP-adres',
-        hint: 'Poort 10081 wordt automatisch gebruikt.',
+        hint: 'De poort (10081 native of 502 Modbus) wordt automatisch bepaald.',
+        hintNative: 'Poort 10081 (native) wordt gebruikt.',
+        hintModbus: 'Poort 502 (Modbus) wordt gebruikt.',
         next: 'Volgende',
         errorEmpty: 'Vul een IP-adres in.',
-        errorInvalid: 'Ongeldig IP-adres formaat.'
+        errorInvalid: 'Ongeldig IP-adres formaat.',
+        scanBtn: 'Scan mijn netwerk',
+        scanning: 'Bezig met scannen… (dit duurt ~5 sec)',
+        scanFound: 'Gevonden apparaten — klik om te kiezen:',
+        scanNone: 'Geen Hoymiles-apparaat gevonden. Vul het IP-adres handmatig in.',
+        scanError: 'Scannen mislukt. Vul het IP-adres handmatig in.',
+        badgeNative: 'Native 10081',
+        badgeModbus: 'Modbus 502',
+        badgeUnverified: 'Poort open',
+        helpToggle: 'Hoe vind ik het IP-adres?',
+        helpHtml:
+          '<ol>' +
+          '<li>Sluit de <strong>DTS-G3</strong> datastick met de <strong>UTP-kabel (ethernet)</strong> aan op je router of switch. De stick krijgt automatisch een IP-adres via DHCP.</li>' +
+          '<li>Open de beheerpagina van je router (meestal <strong>192.168.1.1</strong> of <strong>192.168.0.1</strong>) en ga naar de lijst <strong>‘verbonden apparaten’</strong> of <strong>‘DHCP-clients’</strong>.</li>' +
+          '<li>Zoek een apparaat met de naam <strong>DTS-…</strong>, <strong>DTUBI-…</strong> of <strong>HiBox</strong>. Geen duidelijke naam? Zoek dan een onbekende fabrikant met MAC-adres dat begint met <strong>48:53:25</strong>.</li>' +
+          '<li>Geen toegang tot de router? Gebruik een netwerkscanner-app zoals <strong>Fing</strong> en scan je netwerk op een open poort <strong>502</strong> of <strong>10081</strong>.</li>' +
+          '<li>Noteer het IP-adres (bijv. <strong>192.168.1.100</strong>) en vul het hierboven in.</li>' +
+          '</ol>' +
+          '<div class="note">Tip: geef de stick een <strong>vast IP-adres</strong> (DHCP-reservering) in je router, zodat het niet verandert na een herstart.</div>'
       },
       en: {
         title: 'Gateway/DTS IP address',
         tip: 'Find the IP in your router under \'connected devices\'.<br>Look for <strong>DTS-\u2026</strong>, <strong>DTUBI-\u2026</strong> or <strong>HiBox</strong>.<br>Tip: give the gateway a <strong>fixed IP address</strong> (DHCP reservation) in your router so the local connection keeps working.',
         label: 'IP address',
-        hint: 'Port 10081 is used automatically.',
+        hint: 'The port (10081 native or 502 Modbus) is detected automatically.',
+        hintNative: 'Port 10081 (native) is used.',
+        hintModbus: 'Port 502 (Modbus) is used.',
         next: 'Next',
         errorEmpty: 'Please enter an IP address.',
-        errorInvalid: 'Invalid IP address format.'
+        errorInvalid: 'Invalid IP address format.',
+        scanBtn: 'Scan my network',
+        scanning: 'Scanning… (takes ~5 sec)',
+        scanFound: 'Found devices — click to select:',
+        scanNone: 'No Hoymiles device found. Enter the IP address manually.',
+        scanError: 'Scan failed. Enter the IP address manually.',
+        badgeNative: 'Native 10081',
+        badgeModbus: 'Modbus 502',
+        badgeUnverified: 'Port open',
+        helpToggle: 'How do I find the IP address?',
+        helpHtml:
+          '<ol>' +
+          '<li>Connect the <strong>DTS-G3</strong> data stick to your router or switch using the <strong>UTP (ethernet) cable</strong>. The stick gets an IP address automatically via DHCP.</li>' +
+          '<li>Open your router\'s admin page (usually <strong>192.168.1.1</strong> or <strong>192.168.0.1</strong>) and go to the <strong>‘connected devices’</strong> or <strong>‘DHCP clients’</strong> list.</li>' +
+          '<li>Look for a device named <strong>DTS-…</strong>, <strong>DTUBI-…</strong> or <strong>HiBox</strong>. No clear name? Look for an unknown manufacturer with a MAC address starting with <strong>48:53:25</strong>.</li>' +
+          '<li>No router access? Use a network scanner app such as <strong>Fing</strong> and scan your network for an open port <strong>502</strong> or <strong>10081</strong>.</li>' +
+          '<li>Note the IP address (e.g. <strong>192.168.1.100</strong>) and enter it above.</li>' +
+          '</ol>' +
+          '<div class="note">Tip: give the stick a <strong>fixed IP address</strong> (DHCP reservation) in your router so it does not change after a restart.</div>'
       }
     };
 
     var _lang = 'en';
+    var _scanProtocol = null;  // protocol of the IP picked from a scan result
+
+    // Manual edits invalidate a scan selection → back to 'auto' transport
+    function clearScanProtocol() { _scanProtocol = null; refreshHint(); }
+
+    // Show the port that will actually be used, based on the detected protocol
+    function refreshHint() {
+      var t = i18n[_lang] || i18n.en;
+      document.getElementById('t-hint').textContent =
+          _scanProtocol === 'modbus' ? t.hintModbus
+        : _scanProtocol === 'native' ? t.hintNative
+        : t.hint;
+    }
 
     function applyLang(lang) {
       _lang = lang;
@@ -83,13 +195,77 @@
       document.getElementById('t-title').textContent = t.title;
       document.getElementById('t-tip').innerHTML = t.tip;
       document.getElementById('t-label-text').textContent = t.label;
-      document.getElementById('t-hint').textContent = t.hint;
+      refreshHint();
+      document.getElementById('t-scan-btn').textContent = t.scanBtn;
+      document.getElementById('t-help-toggle').textContent = t.helpToggle;
+      document.getElementById('help-box').innerHTML = t.helpHtml;
       document.getElementById('t-next').textContent = t.next;
       document.getElementById('lang-toggle').textContent = lang === 'nl' ? 'EN' : 'NL';
     }
 
     function toggleLang() {
       applyLang(_lang === 'nl' ? 'en' : 'nl');
+    }
+
+    function toggleHelp() {
+      document.getElementById('help-toggle').classList.toggle('open');
+      document.getElementById('help-box').classList.toggle('open');
+    }
+
+    async function scanNetwork() {
+      var t = i18n[_lang] || i18n.en;
+      var btn     = document.getElementById('btn-scan');
+      var spinner = document.getElementById('scan-spinner');
+      var status  = document.getElementById('scan-status');
+      var results = document.getElementById('scan-results');
+
+      btn.disabled = true;
+      spinner.style.display = 'inline-block';
+      status.textContent = t.scanning;
+      results.innerHTML = '';
+
+      try {
+        var found = await Homey.emit('scan_network');
+        if (!found || !found.length) {
+          status.textContent = t.scanNone;
+        } else {
+          status.textContent = t.scanFound;
+          found.forEach(function(dev) {
+            var label = dev.protocol === 'native' ? t.badgeNative
+                      : dev.verified ? t.badgeModbus : t.badgeUnverified;
+            var cls = dev.protocol === 'native' ? 'native'
+                    : dev.verified ? 'modbus' : 'unverified';
+            var row = document.createElement('div');
+            row.className = 'scan-item';
+            row.onclick = function() {
+              document.getElementById('ip').value = dev.ip;
+              _scanProtocol = dev.protocol; // 'native' | 'modbus'
+              refreshHint();
+            };
+            row.innerHTML = '<span class="scan-ip">' + dev.ip + '</span>'
+              + '<span class="scan-badge ' + cls + '">' + label + '</span>';
+            results.appendChild(row);
+          });
+
+          // Adopt the protocol automatically so users don't have to click the
+          // row: if the (pre)filled IP matches a scanned device, use its
+          // protocol; if the field is empty and there's a single hit, take it.
+          var currentIp = document.getElementById('ip').value.trim();
+          var match = found.filter(function(d) { return d.ip === currentIp; })[0];
+          if (match) {
+            _scanProtocol = match.protocol;
+          } else if (!currentIp && found.length === 1) {
+            document.getElementById('ip').value = found[0].ip;
+            _scanProtocol = found[0].protocol;
+          }
+          refreshHint();
+        }
+      } catch (err) {
+        status.textContent = t.scanError;
+      } finally {
+        btn.disabled = false;
+        spinner.style.display = 'none';
+      }
     }
 
     Homey.getLanguage().then(function(lang) { applyLang(lang); }).catch(function() {});
@@ -114,6 +290,7 @@
       if (!ip) { errEl.textContent = t.errorEmpty; errEl.style.display = 'block'; return; }
       if (!isValidIp(ip)) { errEl.textContent = t.errorInvalid; errEl.style.display = 'block'; return; }
       await Homey.emit('set_gateway_ip', { ip });
+      await Homey.emit('set_local_protocol', { protocol: _scanProtocol });
       var mode = await Homey.emit('get_connection_mode');
       if (mode === 'local') {
         Homey.showView('list_devices');
