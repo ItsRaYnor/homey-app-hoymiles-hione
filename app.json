@@ -1,7 +1,7 @@
 {
   "id": "com.hoymiles.hione",
-  "version": "1.0.3",
-  "compatibility": ">=5.0.0",
+  "version": "1.0.4",
+  "compatibility": ">=12.4.5",
   "sdk": 3,
   "brandColor": "#00A94F",
   "name": {
@@ -42,6 +42,14 @@
     "forgetLogin": {
       "method": "POST",
       "path": "/logout"
+    },
+    "scanModbus": {
+      "method": "POST",
+      "path": "/modbus/scan"
+    },
+    "getDiagnostics": {
+      "method": "POST",
+      "path": "/diagnostics"
     }
   },
   "images": {
@@ -66,23 +74,24 @@
         "en": "HiOne Station",
         "nl": "HiOne Station"
       },
-      "class": "solarpanel",
+      "class": "battery",
       "capabilities": [
         "measure_power",
-        "meter_power",
         "measure_battery",
-        "hoymiles_battery_power",
+        "meter_power.charged",
+        "meter_power.discharged",
         "hoymiles_grid_power",
         "hoymiles_load_power",
         "hoymiles_pv_power",
         "hoymiles_battery_mode",
         "hoymiles_reserve_soc",
+        "hoymiles_max_soc",
+        "hoymiles_max_power",
+        "hoymiles_meter_power",
         "hoymiles_daily_energy",
         "hoymiles_monthly_energy",
         "hoymiles_yearly_energy",
         "hoymiles_total_energy",
-        "hoymiles_battery_in_energy",
-        "hoymiles_battery_out_energy",
         "hoymiles_co2_reduction",
         "hoymiles_profit_today",
         "hoymiles_profit_total"
@@ -90,8 +99,8 @@
       "capabilitiesOptions": {
         "measure_power": {
           "title": {
-            "en": "PV Power",
-            "nl": "PV Vermogen"
+            "en": "Battery Power (+ charge / − discharge)",
+            "nl": "Accuvermogen (+ laden / − ontladen)"
           }
         },
         "measure_battery": {
@@ -100,18 +109,27 @@
             "nl": "Batterij laadniveau (%)"
           }
         },
-        "meter_power": {
+        "meter_power.charged": {
           "title": {
-            "en": "Total Energy Generated",
-            "nl": "Totale energie opgewekt"
-          }
+            "en": "Battery Charged",
+            "nl": "Accu geladen"
+          },
+          "insights": true,
+          "decimals": 2
+        },
+        "meter_power.discharged": {
+          "title": {
+            "en": "Battery Discharged",
+            "nl": "Accu ontladen"
+          },
+          "insights": true,
+          "decimals": 2
         }
       },
       "energy": {
-        "batteries": [
-          "INTERNAL"
-        ],
-        "cumulative": true
+        "homeBattery": true,
+        "meterPowerImportedCapability": "meter_power.charged",
+        "meterPowerExportedCapability": "meter_power.discharged"
       },
       "images": {
         "small": "/drivers/hione/assets/icon.png",
@@ -221,20 +239,6 @@
     }
   ],
   "capabilities": {
-    "hoymiles_battery_power": {
-      "type": "number",
-      "title": {
-        "en": "Battery Power",
-        "nl": "Batterijvermogen"
-      },
-      "units": "W",
-      "insights": true,
-      "decimals": 0,
-      "getable": true,
-      "setable": false,
-      "uiComponent": "sensor",
-      "icon": "/assets/battery.svg"
-    },
     "hoymiles_grid_power": {
       "type": "number",
       "title": {
@@ -350,19 +354,70 @@
     "hoymiles_reserve_soc": {
       "type": "number",
       "title": {
-        "en": "Reserve SOC",
-        "nl": "Reserve laadniveau"
+        "en": "Reserve SOC (battery minimum)",
+        "nl": "Reserve laadniveau (ondergrens accu)"
       },
       "units": "%",
       "min": 0,
-      "max": 100,
-      "step": 1,
+      "max": 1,
+      "step": 0.01,
       "decimals": 0,
       "insights": true,
       "getable": true,
       "setable": true,
       "uiComponent": "slider",
       "icon": "/assets/battery.svg"
+    },
+    "hoymiles_max_soc": {
+      "type": "number",
+      "title": {
+        "en": "Max SOC (battery maximum)",
+        "nl": "Max laadniveau (bovengrens accu)"
+      },
+      "units": "%",
+      "min": 0,
+      "max": 1,
+      "step": 0.01,
+      "decimals": 0,
+      "insights": true,
+      "getable": true,
+      "setable": true,
+      "uiComponent": "slider",
+      "icon": "/assets/battery.svg"
+    },
+    "hoymiles_max_power": {
+      "type": "number",
+      "title": {
+        "en": "Max Power (charge/discharge limit)",
+        "nl": "Max vermogen (laad-/ontlaadlimiet)"
+      },
+      "units": "%",
+      "min": 0,
+      "max": 1,
+      "step": 0.01,
+      "decimals": 0,
+      "insights": true,
+      "getable": true,
+      "setable": true,
+      "uiComponent": "slider",
+      "icon": "/assets/battery.svg"
+    },
+    "hoymiles_meter_power": {
+      "type": "number",
+      "title": {
+        "en": "Grid Power Limit (peak shaving)",
+        "nl": "Netvermogensgrens (pieksturing)"
+      },
+      "units": "W",
+      "min": 0,
+      "max": 50000,
+      "step": 100,
+      "decimals": 0,
+      "insights": false,
+      "getable": true,
+      "setable": true,
+      "uiComponent": "slider",
+      "icon": "/assets/grid.svg"
     },
     "hoymiles_daily_energy": {
       "type": "number",
@@ -405,34 +460,6 @@
       "setable": false,
       "uiComponent": "sensor",
       "icon": "/assets/pv.svg"
-    },
-    "hoymiles_battery_in_energy": {
-      "type": "number",
-      "title": {
-        "en": "Battery Charged",
-        "nl": "Batterij geladen"
-      },
-      "units": "kWh",
-      "insights": true,
-      "decimals": 2,
-      "getable": true,
-      "setable": false,
-      "uiComponent": "sensor",
-      "icon": "/assets/battery.svg"
-    },
-    "hoymiles_battery_out_energy": {
-      "type": "number",
-      "title": {
-        "en": "Battery Discharged",
-        "nl": "Batterij ontladen"
-      },
-      "units": "kWh",
-      "insights": true,
-      "decimals": 2,
-      "getable": true,
-      "setable": false,
-      "uiComponent": "sensor",
-      "icon": "/assets/battery.svg"
     },
     "hoymiles_co2_reduction": {
       "type": "number",
@@ -771,6 +798,135 @@
               }
             ]
           }
+        ]
+      },
+      {
+        "id": "set_max_power",
+        "title": {
+          "en": "Set max power",
+          "nl": "Stel max vermogen in"
+        },
+        "titleFormatted": {
+          "en": "Set max charge/discharge power to [[power]]%",
+          "nl": "Stel max laad/ontlaadvermogen in op [[power]]%"
+        },
+        "hint": {
+          "en": "Sets the maximum charge/discharge power for the Max-Power modes (applies to the active mode if it is a Max-Power mode, otherwise activates Self-Consumption + Max Power). Cloud connection required.",
+          "nl": "Stelt het maximale laad/ontlaadvermogen in voor de Max-vermogen-modi (past de actieve modus aan als dat een Max-modus is, anders wordt Eigen verbruik + Max vermogen geactiveerd). Cloudverbinding vereist."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "power",
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "title": {
+              "en": "Max power (%)",
+              "nl": "Max vermogen (%)"
+            }
+          }
+        ]
+      },
+      {
+        "id": "set_max_soc",
+        "title": {
+          "en": "Set max SOC",
+          "nl": "Stel max laadniveau in"
+        },
+        "titleFormatted": {
+          "en": "Set max SOC to [[soc]]%",
+          "nl": "Stel max laadniveau in op [[soc]]%"
+        },
+        "hint": {
+          "en": "Sets the maximum battery state of charge (applies to the active mode if it supports it, otherwise activates Peak Shaving). Cloud connection required.",
+          "nl": "Stelt het maximale laadniveau van de batterij in (past de actieve modus aan als die het ondersteunt, anders wordt Pieksturing geactiveerd). Cloudverbinding vereist."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "soc",
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "title": {
+              "en": "Max SOC (%)",
+              "nl": "Max laadniveau (%)"
+            }
+          }
+        ]
+      },
+      {
+        "id": "set_grid_limit",
+        "title": {
+          "en": "Set grid power limit",
+          "nl": "Stel netvermogensgrens in"
+        },
+        "titleFormatted": {
+          "en": "Set grid power limit to [[watts]]W",
+          "nl": "Stel netvermogensgrens in op [[watts]]W"
+        },
+        "hint": {
+          "en": "Sets the grid power limit for Peak Shaving mode and activates it. Cloud connection required.",
+          "nl": "Stelt de netvermogensgrens in voor de Pieksturing-modus en activeert die. Cloudverbinding vereist."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "watts",
+            "type": "number",
+            "min": 0,
+            "max": 50000,
+            "step": 100,
+            "title": {
+              "en": "Grid power limit (W)",
+              "nl": "Netvermogensgrens (W)"
+            }
+          }
+        ]
+      },
+      {
+        "id": "set_tou_period",
+        "title": {
+          "en": "Set Time of Use period",
+          "nl": "Stel Time of Use periode in"
+        },
+        "titleFormatted": {
+          "en": "Time of Use: charge [[charge_from]]–[[charge_to]] at [[charge_power]]% to [[charge_soc]]%, discharge [[discharge_from]]–[[discharge_to]] at [[discharge_power]]% to [[discharge_soc]]%",
+          "nl": "Time of Use: laden [[charge_from]]–[[charge_to]] op [[charge_power]]% tot [[charge_soc]]%, ontladen [[discharge_from]]–[[discharge_to]] op [[discharge_power]]% tot [[discharge_soc]]%"
+        },
+        "hint": {
+          "en": "Sets a single Time of Use charge/discharge period and activates Time of Use mode. Times in HH:MM. For multi-period schedules use the S-Miles app. Cloud connection required.",
+          "nl": "Stelt één Time of Use laad/ontlaadperiode in en activeert de Time of Use-modus. Tijden in UU:MM. Voor schema's met meerdere periodes gebruik je de S-Miles app. Cloudverbinding vereist."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          { "name": "charge_from", "type": "text", "title": { "en": "Charge from (HH:MM)", "nl": "Laden vanaf (UU:MM)" }, "placeholder": { "en": "10:00", "nl": "10:00" } },
+          { "name": "charge_to", "type": "text", "title": { "en": "Charge until (HH:MM)", "nl": "Laden tot (UU:MM)" }, "placeholder": { "en": "17:00", "nl": "17:00" } },
+          { "name": "charge_power", "type": "number", "min": 0, "max": 100, "step": 1, "title": { "en": "Charge power (%)", "nl": "Laadvermogen (%)" } },
+          { "name": "charge_soc", "type": "number", "min": 0, "max": 100, "step": 1, "title": { "en": "Charge up to SOC (%)", "nl": "Laden tot SOC (%)" } },
+          { "name": "discharge_from", "type": "text", "title": { "en": "Discharge from (HH:MM)", "nl": "Ontladen vanaf (UU:MM)" }, "placeholder": { "en": "17:01", "nl": "17:01" } },
+          { "name": "discharge_to", "type": "text", "title": { "en": "Discharge until (HH:MM)", "nl": "Ontladen tot (UU:MM)" }, "placeholder": { "en": "22:00", "nl": "22:00" } },
+          { "name": "discharge_power", "type": "number", "min": 0, "max": 100, "step": 1, "title": { "en": "Discharge power (%)", "nl": "Ontlaadvermogen (%)" } },
+          { "name": "discharge_soc", "type": "number", "min": 0, "max": 100, "step": 1, "title": { "en": "Discharge down to SOC (%)", "nl": "Ontladen tot SOC (%)" } }
         ]
       },
       {

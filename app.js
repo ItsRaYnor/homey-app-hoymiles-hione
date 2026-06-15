@@ -32,7 +32,7 @@ class HoymilesHiOneApp extends App {
     this.homey.flow
       .getConditionCard('battery_charging')
       .registerRunListener(async ({ device }) => {
-        const batteryPower = device.getCapabilityValue('hoymiles_battery_power') ?? 0;
+        const batteryPower = device.getCapabilityValue('measure_power') ?? 0;
         return batteryPower > 0; // positive = charging
       });
 

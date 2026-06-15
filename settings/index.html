@@ -49,6 +49,18 @@
     }
     .btn-link:hover { text-decoration: underline; }
     .btn-primary:disabled { background: #9bd4b3; cursor: wait; }
+    select {
+      width: 100%; padding: 12px; margin-top: 6px; border: 2px solid #e8e8e8;
+      border-radius: 10px; font-size: 14px; background: #fff; outline: none;
+    }
+    select:focus { border-color: #00A94F; }
+    .btn-secondary {
+      width: 100%; padding: 11px; font-size: 13px; font-weight: 600;
+      background: transparent; color: #00A94F; border: 2px solid #00A94F;
+      border-radius: 10px; cursor: pointer;
+    }
+    .btn-secondary:hover { background: #f0faf4; }
+    .btn-secondary:disabled { color: #9bd4b3; border-color: #9bd4b3; cursor: wait; }
   </style>
 </head>
 <body>
@@ -78,19 +90,44 @@
   </div>
   <div class='status' id='acc_status'></div>
 
+  <button class='btn-secondary' id='t-diagBtn' onclick='runDiagnostics()' style='margin-top:10px'>Show supported battery modes</button>
+  <div class='status' id='diag_status'></div>
+  <pre id='diag_out' style='display:none; font-size:11px; background:#f5f5f5; border-radius:8px; padding:10px; margin-top:8px; max-height:300px; overflow:auto; white-space:pre-wrap;'></pre>
+
   <h3 class='section-title' id='t-lanTitle' style='margin-top:28px'>Local connection (LAN)</h3>
   <div class='hint' id='t-lanHint' style='margin-bottom:10px'>
-    The IP address of the DTS-WL-G3 stick on your network. Saved here, it is prefilled when pairing.
+    The IP address of the DTS-G3 stick on your network. Saved here, it is prefilled when pairing.
   </div>
   <label><span id='t-lanIp'>Gateway/DTS IP address</span>
     <input type='text' id='lan_ip' placeholder='192.168.1.100'>
   </label>
-  <label style='margin-top:10px'><span id='t-lanPort'>Local port</span>
-    <input type='number' id='lan_port' placeholder='10081' min='1' max='65535'>
+  <label style='margin-top:10px'><span id='t-lanProto'>Local protocol</span>
+    <select id='lan_protocol'>
+      <option value='auto'>Auto</option>
+      <option value='modbus'>Modbus TCP (DTS-G3, port 502)</option>
+      <option value='native'>Hoymiles native (port 10081)</option>
+    </select>
   </label>
-  <div class='hint' id='t-lanPortHint'>Default 10081 (Hoymiles local protocol — not Modbus). Only change this if your device uses a different port.</div>
+  <label style='margin-top:10px'><span id='t-lanPort'>Local port</span>
+    <input type='text' inputmode='numeric' pattern='[0-9]*' id='lan_port' placeholder='502'>
+  </label>
+  <label style='margin-top:10px'><span id='t-lanUnit'>Modbus unit ID</span>
+    <input type='text' inputmode='numeric' pattern='[0-9]*' id='lan_unit' placeholder='1'>
+  </label>
+  <div class='hint' id='t-lanPortHint'>For the DTS-G3 use Modbus TCP on port 502. The Modbus unit ID is usually in the 101–254 range. First enable "Remote Control" on the stick (see below).</div>
   <button class='btn-primary' id='lan-save' onclick='saveLan()'>Save</button>
   <div class='status' id='lan_status'></div>
+
+  <div class='disclaimer' id='t-modbusHelp' style='margin-top:14px'>
+    <strong>Enable Modbus on the DTS-G3:</strong> open the S-Miles Installer app →
+    Me → Local Install Assistant / Toolkit → DTU Information → RS485 Port Config →
+    choose <strong>Remote Control</strong> (NOT Export Control — that blocks Modbus).
+    Set the Modbus/RS485 address in the 101–254 range.
+  </div>
+
+  <button class='btn-secondary' id='t-scanBtn' onclick='scanModbus()' style='margin-top:10px'>Test &amp; scan Modbus registers</button>
+  <div class='status' id='scan_status'></div>
+  <pre id='scan_out' style='display:none; font-size:11px; background:#f5f5f5; border-radius:8px; padding:10px; margin-top:8px; max-height:240px; overflow:auto; white-space:pre-wrap;'></pre>
 
   <h3 class='section-title' id='t-advTitle' style='margin-top:28px'>Advanced</h3>
   <div class='disclaimer' id='t-disclaimer'>
@@ -129,15 +166,29 @@
         savedAs: 'Opgeslagen account: <strong>{email}</strong>',
         forget: 'Account vergeten',
         forgotten: 'Account verwijderd.',
+        diagBtn: 'Toon ondersteunde batterijmodi',
+        diagBusy: 'Bezig met ophalen…',
+        diagErr: 'Diagnose mislukt: ',
+        diagNoAcc: 'Log eerst in met je account hierboven.',
         lanTitle: 'Lokale verbinding (LAN)',
         lanHint: 'Het IP-adres van de DTS-WL-G3 stick in je netwerk. Hier opgeslagen wordt het automatisch ingevuld bij het koppelen.',
         lanIp: 'Gateway/DTS IP-adres',
+        lanProto: 'Lokaal protocol',
         lanPort: 'Lokale poort',
-        lanPortHint: 'Standaard 10081 (Hoymiles lokaal protocol — geen Modbus). Wijzig dit alleen als je apparaat een andere poort gebruikt.',
+        lanUnit: 'Modbus unit-ID',
+        lanPortHint: 'Gebruik voor de DTS-G3 Modbus TCP op poort 502. De Modbus unit-ID ligt meestal in het bereik 101–254. Zet eerst "Remote Control" aan op de stick (zie hieronder).',
+        modbusHelp: '<strong>Modbus inschakelen op de DTS-G3:</strong> open de S-Miles Installateur-app → Ik → Local Install Assistant / Toolkit → DTU-informatie → RS485 Port Config → kies <strong>Remote Control</strong> (NIET Export Control — dat blokkeert Modbus). Stel het Modbus/RS485-adres in tussen 101–254.',
         lanSave: 'Opslaan',
         lanInvalidIp: 'Ongeldig IP-adres formaat.',
         lanInvalidPort: 'Ongeldige poort (1-65535).',
-        lanSaved: 'Opgeslagen! Wordt gebruikt bij het koppelen en door bestaande apparaten na herstart.'
+        lanInvalidUnit: 'Ongeldige unit-ID (1-254).',
+        lanSaved: 'Opgeslagen! Wordt gebruikt bij het koppelen en door bestaande apparaten na herstart.',
+        scanBtn: 'Modbus testen & registers scannen',
+        scanBusy: 'Bezig met scannen…',
+        scanNoIp: 'Vul eerst een IP-adres in en sla op.',
+        scanUnreach: 'Geen Modbus-antwoord op poort 502. Staat "Remote Control" aan op de stick?',
+        scanReach: 'Modbus reageert! Registers hieronder — stuur deze door zodat de accuwaarden gekoppeld kunnen worden.',
+        scanErr: 'Scan mislukt: '
       },
       en: {
         title: 'Hoymiles HiOne — Settings',
@@ -160,15 +211,29 @@
         savedAs: 'Saved account: <strong>{email}</strong>',
         forget: 'Forget account',
         forgotten: 'Account removed.',
+        diagBtn: 'Show supported battery modes',
+        diagBusy: 'Fetching…',
+        diagErr: 'Diagnostics failed: ',
+        diagNoAcc: 'Log in with your account above first.',
         lanTitle: 'Local connection (LAN)',
         lanHint: 'The IP address of the DTS-WL-G3 stick on your network. Saved here, it is prefilled when pairing.',
         lanIp: 'Gateway/DTS IP address',
+        lanProto: 'Local protocol',
         lanPort: 'Local port',
-        lanPortHint: 'Default 10081 (Hoymiles local protocol — not Modbus). Only change this if your device uses a different port.',
+        lanUnit: 'Modbus unit ID',
+        lanPortHint: 'For the DTS-G3 use Modbus TCP on port 502. The Modbus unit ID is usually in the 101–254 range. First enable "Remote Control" on the stick (see below).',
+        modbusHelp: '<strong>Enable Modbus on the DTS-G3:</strong> open the S-Miles Installer app → Me → Local Install Assistant / Toolkit → DTU Information → RS485 Port Config → choose <strong>Remote Control</strong> (NOT Export Control — that blocks Modbus). Set the Modbus/RS485 address in the 101–254 range.',
         lanSave: 'Save',
         lanInvalidIp: 'Invalid IP address format.',
         lanInvalidPort: 'Invalid port (1-65535).',
-        lanSaved: 'Saved! Used when pairing and by existing devices after restart.'
+        lanInvalidUnit: 'Invalid unit ID (1-254).',
+        lanSaved: 'Saved! Used when pairing and by existing devices after restart.',
+        scanBtn: 'Test & scan Modbus registers',
+        scanBusy: 'Scanning…',
+        scanNoIp: 'Enter and save an IP address first.',
+        scanUnreach: 'No Modbus answer on port 502. Is "Remote Control" enabled on the stick?',
+        scanReach: 'Modbus responds! Registers below — share these so the battery values can be mapped.',
+        scanErr: 'Scan failed: '
       }
     };
 
@@ -176,6 +241,15 @@
 
     var _homey = null;
     var _savedEmail = null;
+
+    // Homey.set rejects null with "missing parameter: value" — unset instead.
+    function setOrUnset(key, value, cb) {
+      if (value === null || value === undefined || value === '') {
+        _homey.unset(key, cb);
+      } else {
+        _homey.set(key, value, cb);
+      }
+    }
 
     function applyLang(lang) {
       _lang = lang;
@@ -191,13 +265,18 @@
       document.getElementById('t-lanTitle').textContent = t.lanTitle;
       document.getElementById('t-lanHint').textContent = t.lanHint;
       document.getElementById('t-lanIp').textContent = t.lanIp;
+      document.getElementById('t-lanProto').textContent = t.lanProto;
       document.getElementById('t-lanPort').textContent = t.lanPort;
+      document.getElementById('t-lanUnit').textContent = t.lanUnit;
       document.getElementById('t-lanPortHint').textContent = t.lanPortHint;
+      document.getElementById('t-modbusHelp').innerHTML = t.modbusHelp;
       document.getElementById('lan-save').textContent = t.lanSave;
+      document.getElementById('t-scanBtn').textContent = t.scanBtn;
       document.getElementById('t-email').textContent = t.email;
       document.getElementById('t-password').textContent = t.password;
       document.getElementById('login-btn').textContent = t.loginSave;
       document.getElementById('t-forget').textContent = t.forget;
+      document.getElementById('t-diagBtn').textContent = t.diagBtn;
       if (_savedEmail) {
         document.getElementById('t-savedAs').innerHTML = t.savedAs.replace('{email}', _savedEmail);
       }
@@ -258,29 +337,120 @@
 
     function saveLan() {
       var t = i18n[_lang] || i18n.en;
-      var ip   = document.getElementById('lan_ip').value.trim();
-      var port = String(document.getElementById('lan_port').value || '').trim();
+      var ip    = document.getElementById('lan_ip').value.trim();
+      var proto = document.getElementById('lan_protocol').value;
+      var port  = String(document.getElementById('lan_port').value || '').trim();
+      var unit  = String(document.getElementById('lan_unit').value || '').trim();
       document.getElementById('lan_status').style.display = 'none';
 
       if (ip && !isValidIp(ip)) { showLanStatus(t.lanInvalidIp, false); return; }
 
-      // Port is optional — empty or the default 10081 means "use default"
+      // Port optional — empty means "use protocol default" (502 modbus / 10081 native)
+      var defaultPort = proto === 'native' ? 10081 : 502;
       var portValue = null;
-      if (port !== '' && +port !== 10081) {
-        if (!/^\d+$/.test(port) || +port < 1 || +port > 65535) {
-          showLanStatus(t.lanInvalidPort, false);
-          return;
-        }
+      if (port !== '' && +port !== defaultPort) {
+        if (!/^\d+$/.test(port) || +port < 1 || +port > 65535) { showLanStatus(t.lanInvalidPort, false); return; }
         portValue = +port;
       }
 
-      _homey.set('saved_gateway_ip', ip || null, function(err) {
-        if (err) { showLanStatus(err.message || String(err), false); return; }
-        _homey.set('local_port', portValue, function(err2) {
-          if (err2) { showLanStatus(err2.message || String(err2), false); return; }
-          if (!portValue) document.getElementById('lan_port').value = 10081;
-          showLanStatus(t.lanSaved, true);
+      // Unit id optional (Modbus)
+      var unitValue = null;
+      if (unit !== '') {
+        if (!/^\d+$/.test(unit) || +unit < 1 || +unit > 254) { showLanStatus(t.lanInvalidUnit, false); return; }
+        unitValue = +unit;
+      }
+
+      setOrUnset('saved_gateway_ip', ip || null, function(e1) {
+        if (e1) { showLanStatus(e1.message || String(e1), false); return; }
+        _homey.set('local_protocol', proto, function(e2) {
+          if (e2) { showLanStatus(e2.message || String(e2), false); return; }
+          setOrUnset('local_port', portValue, function(e3) {
+            if (e3) { showLanStatus(e3.message || String(e3), false); return; }
+            setOrUnset('modbus_unit_id', unitValue, function(e4) {
+              if (e4) { showLanStatus(e4.message || String(e4), false); return; }
+              if (!portValue) document.getElementById('lan_port').value = defaultPort;
+              showLanStatus(t.lanSaved, true);
+            });
+          });
         });
+      });
+    }
+
+    function scanModbus() {
+      var t = i18n[_lang] || i18n.en;
+      var ip = document.getElementById('lan_ip').value.trim();
+      document.getElementById('scan_status').style.display = 'none';
+      document.getElementById('scan_out').style.display = 'none';
+      if (!ip) { showScanStatus(t.scanNoIp, false); return; }
+
+      var btn = document.getElementById('t-scanBtn');
+      btn.disabled = true; btn.textContent = t.scanBusy;
+
+      var unit = document.getElementById('lan_unit').value.trim();
+      var port = document.getElementById('lan_port').value.trim();
+      // Scan the most likely battery/status register windows
+      var body = { ip: ip, port: port ? +port : 502, unitId: unit ? +unit : undefined, start: 0x1000, count: 96 };
+
+      _homey.api('POST', '/modbus/scan', body, function(err, res) {
+        btn.disabled = false; btn.textContent = t.scanBtn;
+        if (err) { showScanStatus(t.scanErr + (err.message || err), false); return; }
+        if (!res || !res.reachable) { showScanStatus(t.scanUnreach, false); return; }
+        showScanStatus(t.scanReach, true);
+        var out = document.getElementById('scan_out');
+        var lines = Object.keys(res.registers || {}).map(function(k){ return k + ' = ' + res.registers[k]; });
+        out.textContent = lines.length ? lines.join('\n') : '(no registers returned)';
+        out.style.display = 'block';
+      });
+    }
+
+    function showScanStatus(message, ok) {
+      var el = document.getElementById('scan_status');
+      el.textContent = message;
+      el.className = 'status ' + (ok ? 'ok' : 'err');
+      el.style.display = 'block';
+    }
+
+    function runDiagnostics() {
+      var t = i18n[_lang] || i18n.en;
+      var st = document.getElementById('diag_status');
+      var out = document.getElementById('diag_out');
+      st.style.display = 'none'; out.style.display = 'none';
+
+      var btn = document.getElementById('t-diagBtn');
+      btn.disabled = true; btn.textContent = t.diagBusy;
+
+      _homey.api('POST', '/diagnostics', {}, function(err, res) {
+        btn.disabled = false; btn.textContent = t.diagBtn;
+        if (err) {
+          var msg = (err && err.message) || String(err);
+          st.textContent = (/saved S-Miles account/i.test(msg) ? t.diagNoAcc : t.diagErr + msg);
+          st.className = 'status err'; st.style.display = 'block';
+          return;
+        }
+        var lines = [];
+        if (res.stationId) lines.push('Station: ' + res.stationId);
+        if (res.currentModeName) lines.push('Current mode: ' + res.currentMode + ' = ' + res.currentModeName);
+        if (res.reserveSoc !== null && res.reserveSoc !== undefined) lines.push('Reserve SOC: ' + res.reserveSoc + '%');
+        lines.push('');
+        lines.push('SUPPORTED modes on your device:');
+        (res.availableModes || []).forEach(function(m){ lines.push('  [' + m.id + '] ' + m.name); });
+        lines.push('');
+        lines.push('All modes the app currently offers:');
+        (res.allKnownModes || []).forEach(function(m){
+          var supported = (res.availableModes || []).some(function(a){ return a.id === m.id; });
+          lines.push('  [' + m.id + '] ' + m.name + (supported ? '  ✓' : '  — not supported'));
+        });
+        lines.push('');
+        lines.push('Raw mode data:');
+        lines.push(JSON.stringify(res.modeData, null, 2));
+        if (res.settingRules) {
+          lines.push('');
+          lines.push('Setting rules:');
+          lines.push(JSON.stringify(res.settingRules, null, 2));
+        }
+        out.textContent = lines.join('\n');
+        out.style.display = 'block';
+        st.textContent = 'OK'; st.className = 'status ok'; st.style.display = 'block';
       });
     }
 
@@ -318,9 +488,17 @@
         if (!err && value) document.getElementById('lan_ip').value = value;
       });
 
+      Homey.get('local_protocol', function(err, value) {
+        document.getElementById('lan_protocol').value = (!err && value) ? value : 'auto';
+      });
+
       Homey.get('local_port', function(err, value) {
-        // Show the effective port — the default 10081 when nothing is saved
-        document.getElementById('lan_port').value = (!err && value) ? value : 10081;
+        // Show the effective port — default 502 (Modbus) when nothing is saved
+        document.getElementById('lan_port').value = (!err && value) ? value : 502;
+      });
+
+      Homey.get('modbus_unit_id', function(err, value) {
+        if (!err && value) document.getElementById('lan_unit').value = value;
       });
 
       document.getElementById('save').addEventListener('click', function() {
@@ -337,7 +515,7 @@
           return;
         }
 
-        Homey.set('cloud_api_url', url || null, function(err) {
+        setOrUnset('cloud_api_url', url || null, function(err) {
           if (err) {
             statusEl.textContent = t.saveFailed + err.message;
             statusEl.className = 'status err';
