@@ -1,17 +1,17 @@
 {
   "1.0.2": {
-    "en": "Added App Store and Play Store links for account creation. Improved login disclaimer clarity. Added English translations for all pairing views.",
-    "nl": "App Store en Play Store links toegevoegd voor het aanmaken van een account. Disclaimer bij inloggen verduidelijkt. Engelse vertalingen toegevoegd voor alle koppelingsstappen."
+    "en": "Added App Store and Play Store links for account creation. Improved login disclaimer clarity. Added English translations for all pairing views."
   },
   "1.0.0": {
     "en": "Initial release. Monitor and control your Hoymiles HiOne battery system from Homey via S-Miles Cloud or local LAN."
   },
   "1.0.3": {
-    "en": "Rewrite S-Miles Cloud API client (v3 auth with Argon2, multi-client profiles, correct battery mode IDs) and add app settings for saved cloud login and gateway/DTS IP/port. Extend monitoring with reserve SOC, energy totals, CO2 and EPS savings sensors; add Flow actions for reserve SOC, peak shaving, relay, and local power limit/inverter control. Improve pairing with saved credentials and prefilled gateway IP, and migrate new capabilities on existing devices.",
-    "nl": "S-Miles Cloud API-client herschreven (v3-auth met Argon2, meerdere clientprofielen, juiste batterijmodus-IDs) en app-instellingen toegevoegd voor opgeslagen cloud-login en gateway/DTS IP/poort. Monitoring uitgebreid met reserve-SOC, energietotalen, CO2- en EPS-besparingssensoren; Flow-acties voor reserve-SOC, pieksturing, relais en lokale vermogenslimiet/omvormerbesturing. Koppelen verbeterd met opgeslagen gegevens en vooringevuld gateway-IP."
+    "en": "Rewrite S-Miles Cloud API client (v3 auth with Argon2, multi-client profiles, correct battery mode IDs) and add app settings for saved cloud login and gateway/DTS IP/port. Extend monitoring with reserve SOC, energy totals, CO2 and EPS savings sensors; add Flow actions for reserve SOC, peak shaving, relay, and local power limit/inverter control. Improve pairing with saved credentials and prefilled gateway IP, and migrate new capabilities on existing devices."
   },
   "1.0.4": {
-    "en": "Added Modbus TCP support for the DTS-G3 stick with a register-scan diagnostic, and a 'supported battery modes' diagnostic to see which modes your system accepts. Hardened cloud login: backs off after failures (12h on lockout/wrong-account errors) to protect your S-Miles account from repeated login attempts. The device is now a Homey Home Battery: charging/discharging power and charged/discharged energy are tracked in Homey Energy. Fixed percentage sliders showing 100x too high and clarified slider labels. NOTE: existing devices must be removed and re-added to apply the new battery device type.",
-    "nl": "Modbus TCP-ondersteuning toegevoegd voor de DTS-G3 stick met een register-scan diagnose, plus een diagnose 'ondersteunde batterijmodi' om te zien welke modi je systeem accepteert. Cloud-login afgehard: wacht na mislukte pogingen (12 uur bij accountblokkade/verkeerd account) om je S-Miles-account te beschermen tegen herhaalde inlogpogingen. Het apparaat is nu een Homey-thuisbatterij: laad-/ontlaadvermogen en geladen/ontladen energie tellen mee in Homey Energy. Percentage-sliders die 100x te hoog stonden gecorrigeerd en sliderlabels verduidelijkt. LET OP: bestaande apparaten moeten verwijderd en opnieuw toegevoegd worden voor het nieuwe batterij-apparaattype."
+    "en": "Added Modbus TCP support for the DTS-G3 stick with a register-scan diagnostic, and a 'supported battery modes' diagnostic to see which modes your system accepts. Hardened cloud login: backs off after failures (12h on lockout/wrong-account errors) to protect your S-Miles account from repeated login attempts. The device is now a Homey Home Battery: charging/discharging power and charged/discharged energy are tracked in Homey Energy. Fixed percentage sliders showing 100x too high and clarified slider labels. NOTE: existing devices must be removed and re-added to apply the new battery device type."
+  },
+  "1.0.5": {
+    "en": "Gateway info (model, serial number, firmware and hardware version) now fills in on cloud-only and Modbus setups, not just over the local connection, and shows the gateway model. Serial number is now shown in decimal to match the label and the S-Miles portal. Added a LAN auto-detect scan and per-device protocol pinning (native 10081 / Modbus 502). Corrected the labels for battery modes 5 and 6 to Force Charge / Force Discharge, added mode help and a charge/discharge status, fixed the sign of the battery power reading, and split the maximum charge and discharge power into separate sliders."
   }
 }

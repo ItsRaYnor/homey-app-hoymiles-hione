@@ -355,6 +355,7 @@ class HiOneDevice extends Device {
       if (info.dtuSn)       updates.dtu_serial       = info.dtuSn;
       if (info.softwareVer) updates.firmware_version  = info.softwareVer;
       if (info.deviceVer)   updates.hardware_version  = info.deviceVer;
+      if (info.model)       updates.gateway_model     = info.model;
       if (Object.keys(updates).length > 0) {
         await this.setSettings(updates);
         this.log('Gateway info updated: ' + JSON.stringify(updates));
