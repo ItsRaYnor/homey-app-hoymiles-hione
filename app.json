@@ -204,8 +204,8 @@
         {
           "type": "group",
           "label": {
-            "en": "Gateway info",
-            "nl": "Gateway info"
+            "en": "System info",
+            "nl": "Systeeminfo"
           },
           "children": [
             {
@@ -241,6 +241,15 @@
               "label": {
                 "en": "Hardware version",
                 "nl": "Hardwareversie"
+              },
+              "value": "-"
+            },
+            {
+              "id": "system_devices",
+              "type": "textarea",
+              "label": {
+                "en": "Connected devices",
+                "nl": "Gekoppelde apparaten"
               },
               "value": "-"
             }
