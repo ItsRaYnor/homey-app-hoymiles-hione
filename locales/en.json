@@ -8,5 +8,10 @@
     "login_title": "Log in to S-Miles Cloud",
     "login_disclaimer": "This app uses an unofficial API. Your credentials are only sent to hoymiles.com.",
     "no_stations": "Login successful, but no installation (station) was found on your S-Miles Cloud account yet. Install your HiOne system and add it in the S-Miles app first, then try again."
+  },
+  "flow": {
+    "charging": "Charging",
+    "discharging": "Discharging",
+    "idle": "Idle"
   }
 }

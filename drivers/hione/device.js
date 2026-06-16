@@ -13,18 +13,25 @@ const POWER_LIMIT_MAX_WRITES_PER_DAY = 10;
 
 // Capabilities added after v1.0.x — added to existing devices on init
 // Homey % sliders store 0–1; API/Flows use 0–100
-const PCT_CAPABILITIES = new Set([
+// Homey stores capabilities with units "%" internally as a 0–1 fraction
+// (50% = 0.5) and renders them ×100. The API works in 0–100, so these are
+// converted: ÷100 when writing to the capability, ×100 when reading it back.
+const PERCENT_SLIDERS = [
   'hoymiles_reserve_soc',
   'hoymiles_max_soc',
-  'hoymiles_max_power',
-]);
+  'hoymiles_max_charge_power',
+  'hoymiles_max_discharge_power',
+];
+const PCT_CAPABILITIES = new Set(PERCENT_SLIDERS);
 
 const NEW_CAPABILITIES = [
+  'hoymiles_battery_flow',
   'meter_power.charged',
   'meter_power.discharged',
   'hoymiles_reserve_soc',
   'hoymiles_max_soc',
-  'hoymiles_max_power',
+  'hoymiles_max_charge_power',
+  'hoymiles_max_discharge_power',
   'hoymiles_meter_power',
   'hoymiles_monthly_energy',
   'hoymiles_yearly_energy',
@@ -39,6 +46,7 @@ const NEW_CAPABILITIES = [
 const REMOVED_CAPABILITIES = [
   'hoymiles_battery_power',
   'measure_power.battery',
+  'hoymiles_max_power',           // → split into max_charge_power / max_discharge_power
   'meter_power',                  // base PV total — not used for a battery device
   'hoymiles_battery_in_energy',   // → meter_power.charged
   'hoymiles_battery_out_energy',  // → meter_power.discharged
@@ -60,24 +68,29 @@ class HiOneDevice extends Device {
       this._refreshBatterySettings().catch(() => {});
     });
 
+    // NOTE: slider listeners deliberately do NOT call _refreshBatterySettings()
+    // afterwards. The cloud write is async and re-reading immediately returns
+    // the stale (pre-write) value, which setCapabilityValue then writes back to
+    // the slider — resetting it to 0 while the user is still dragging. The
+    // periodic poll reconciles the slider with the cloud a bit later instead.
     this.registerCapabilityListener('hoymiles_reserve_soc', async (value) => {
       await this._hybrid.setReserveSoc(this._capToPercent(value));
-      this._refreshBatterySettings().catch(() => {});
     });
 
-    this.registerCapabilityListener('hoymiles_max_power', async (value) => {
-      await this._hybrid.setMaxPower(this._capToPercent(value));
-      this._refreshBatterySettings().catch(() => {});
+    this.registerCapabilityListener('hoymiles_max_charge_power', async (value) => {
+      await this._hybrid.setMaxChargePower(this._capToPercent(value));
+    });
+
+    this.registerCapabilityListener('hoymiles_max_discharge_power', async (value) => {
+      await this._hybrid.setMaxDischargePower(this._capToPercent(value));
     });
 
     this.registerCapabilityListener('hoymiles_max_soc', async (value) => {
       await this._hybrid.setMaxSoc(this._capToPercent(value));
-      this._refreshBatterySettings().catch(() => {});
     });
 
     this.registerCapabilityListener('hoymiles_meter_power', async (value) => {
       await this._hybrid.setGridLimit(value);
-      this._refreshBatterySettings().catch(() => {});
     });
 
     this._startPolling();
@@ -103,6 +116,19 @@ class HiOneDevice extends Device {
   }
 
   async _migrateCapabilities() {
+    // Remove obsolete capabilities FIRST: a leftover capability that is no
+    // longer defined in the manifest leaves the device in an invalid state and
+    // makes subsequent addCapability calls fail.
+    for (const capability of REMOVED_CAPABILITIES) {
+      if (this.hasCapability(capability)) {
+        try {
+          await this.removeCapability(capability);
+          this.log('Removed capability ' + capability);
+        } catch (err) {
+          this.error('Could not remove capability ' + capability + ': ' + err.message);
+        }
+      }
+    }
     for (const capability of NEW_CAPABILITIES) {
       if (!this.hasCapability(capability)) {
         try {
@@ -113,13 +139,19 @@ class HiOneDevice extends Device {
         }
       }
     }
-    for (const capability of REMOVED_CAPABILITIES) {
+
+    // Force the correct slider options on existing devices. Homey treats
+    // units "%" capabilities as a 0–1 fraction internally, so these must be
+    // min 0 / max 1 (an earlier build wrongly set max 100, which rendered
+    // values ×100 as e.g. 3000%).
+    for (const capability of PERCENT_SLIDERS) {
       if (this.hasCapability(capability)) {
         try {
-          await this.removeCapability(capability);
-          this.log('Removed capability ' + capability);
+          await this.setCapabilityOptions(capability, {
+            min: 0, max: 1, step: 0.01, decimals: 2, units: '%',
+          });
         } catch (err) {
-          this.error('Could not remove capability ' + capability + ': ' + err.message);
+          this.error('Could not update options for ' + capability + ': ' + err.message);
         }
       }
     }
@@ -151,6 +183,17 @@ class HiOneDevice extends Device {
     return Math.round(n) / 100;
   }
 
+  // Human-readable charge/discharge status for the device tile, derived from
+  // battery power (measure_power: + = charging, − = discharging).
+  _batteryFlowText(power) {
+    const w = Number(power);
+    if (isNaN(w)) return null;
+    const IDLE_W = 10; // treat near-zero flow as idle
+    if (Math.abs(w) < IDLE_W) return this.homey.__('flow.idle');
+    const verb = w > 0 ? this.homey.__('flow.charging') : this.homey.__('flow.discharging');
+    return `${verb} ${Math.abs(Math.round(w))} W`;
+  }
+
   // Slider passes 0–1; Flow cards pass 0–100
   _capToPercent(value) {
     const n = Number(value);
@@ -177,6 +220,7 @@ class HiOneDevice extends Device {
       const data = await this._hybrid.getData();
 
       await this._setCapabilitySafe('measure_power',                data.batteryPower);
+      await this._setCapabilitySafe('hoymiles_battery_flow',        this._batteryFlowText(data.batteryPower));
       await this._setCapabilitySafe('hoymiles_pv_power',            data.pvPower);
       await this._setCapabilitySafe('measure_battery',              data.batterySoc);
       await this._setCapabilitySafe('hoymiles_grid_power',          data.gridPower);
@@ -211,9 +255,10 @@ class HiOneDevice extends Device {
     const settings = await this._hybrid.getBatterySettings();
     if (settings) {
       await this._updateBatteryMode(settings.mode);
-      await this._setCapabilitySafe('hoymiles_reserve_soc', settings.reserveSoc);
-      await this._setCapabilitySafe('hoymiles_max_power',   settings.maxPower);
-      await this._setCapabilitySafe('hoymiles_max_soc',     settings.maxSoc);
+      await this._setCapabilitySafe('hoymiles_reserve_soc',          settings.reserveSoc);
+      await this._setCapabilitySafe('hoymiles_max_charge_power',     settings.maxChargePower);
+      await this._setCapabilitySafe('hoymiles_max_discharge_power',  settings.maxDischargePower);
+      await this._setCapabilitySafe('hoymiles_max_soc',             settings.maxSoc);
       await this._setCapabilitySafe('hoymiles_meter_power', settings.meterPower);
     }
 
