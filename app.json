@@ -77,6 +77,7 @@
       "class": "battery",
       "capabilities": [
         "measure_power",
+        "hoymiles_battery_flow",
         "measure_battery",
         "meter_power.charged",
         "meter_power.discharged",
@@ -86,7 +87,8 @@
         "hoymiles_battery_mode",
         "hoymiles_reserve_soc",
         "hoymiles_max_soc",
-        "hoymiles_max_power",
+        "hoymiles_max_charge_power",
+        "hoymiles_max_discharge_power",
         "hoymiles_meter_power",
         "hoymiles_daily_energy",
         "hoymiles_monthly_energy",
@@ -281,6 +283,17 @@
       "uiComponent": "sensor",
       "icon": "/assets/pv.svg"
     },
+    "hoymiles_battery_flow": {
+      "type": "string",
+      "title": {
+        "en": "Battery Flow",
+        "nl": "Accustroom"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/battery.svg"
+    },
     "hoymiles_battery_mode": {
       "type": "enum",
       "title": {
@@ -319,15 +332,15 @@
         {
           "id": "5",
           "title": {
-            "en": "Self-Consumption + Max Power",
-            "nl": "Eigen verbruik + Max vermogen"
+            "en": "Force Charge",
+            "nl": "Force Charge (geforceerd laden)"
           }
         },
         {
           "id": "6",
           "title": {
-            "en": "Backup + Max Power",
-            "nl": "Noodstroom + Max vermogen"
+            "en": "Force Discharge",
+            "nl": "Force Discharge (geforceerd ontladen)"
           }
         },
         {
@@ -361,7 +374,7 @@
       "min": 0,
       "max": 1,
       "step": 0.01,
-      "decimals": 0,
+      "decimals": 2,
       "insights": true,
       "getable": true,
       "setable": true,
@@ -378,24 +391,41 @@
       "min": 0,
       "max": 1,
       "step": 0.01,
-      "decimals": 0,
+      "decimals": 2,
       "insights": true,
       "getable": true,
       "setable": true,
       "uiComponent": "slider",
       "icon": "/assets/battery.svg"
     },
-    "hoymiles_max_power": {
+    "hoymiles_max_charge_power": {
       "type": "number",
       "title": {
-        "en": "Max Power (charge/discharge limit)",
-        "nl": "Max vermogen (laad-/ontlaadlimiet)"
+        "en": "Max Charge Power (Force Charge)",
+        "nl": "Max laadvermogen (Force Charge)"
       },
       "units": "%",
       "min": 0,
       "max": 1,
       "step": 0.01,
-      "decimals": 0,
+      "decimals": 2,
+      "insights": true,
+      "getable": true,
+      "setable": true,
+      "uiComponent": "slider",
+      "icon": "/assets/battery.svg"
+    },
+    "hoymiles_max_discharge_power": {
+      "type": "number",
+      "title": {
+        "en": "Max Discharge Power (Force Discharge)",
+        "nl": "Max ontlaadvermogen (Force Discharge)"
+      },
+      "units": "%",
+      "min": 0,
+      "max": 1,
+      "step": 0.01,
+      "decimals": 2,
       "insights": true,
       "getable": true,
       "setable": true,
@@ -592,6 +622,10 @@
           "en": "Set battery mode to [[mode]]",
           "nl": "Stel batterijmodus in op [[mode]]"
         },
+        "hint": {
+          "en": "Battery working mode. Self-Consumption: solar first, then battery, then grid. Economy: time-of-use schedule to avoid peak tariffs. Backup: only discharge during a grid outage. Off-Grid: no grid connection. Force Charge: forcibly charge to the set SoC — set Max Power to 0% to stop charging entirely, so the battery won't absorb power other sources feed back to the grid (e.g. other batteries discharging on high dynamic tariffs). Force Discharge: forcibly discharge to the set SoC. Peak Shaving: cap grid import at a set power. Time of Use: scheduled charge/discharge windows. Cloud connection required.",
+          "nl": "Batterij-werkmodus. Eigen verbruik: eerst zon, dan batterij, dan net. Economie: tijdschema om piektarieven te vermijden. Noodstroom: ontlaadt alleen bij stroomuitval. Off-Grid: geen netaansluiting. Force Charge: laadt geforceerd tot de ingestelde SoC — zet Max vermogen op 0% om laden volledig te stoppen, zodat de Hoymiles geen stroom opneemt die andere bronnen terugleveren (bv. andere batterijen die ontladen bij hoge dynamische tarieven). Force Discharge: ontlaadt geforceerd tot de ingestelde SoC. Peak Shaving: begrenst netafname op een ingesteld vermogen. Time of Use: geplande laad-/ontlaadvensters. Cloudverbinding vereist."
+        },
         "args": [
           {
             "name": "device",
@@ -637,15 +671,15 @@
               {
                 "id": "5",
                 "label": {
-                  "en": "Self-Consumption + Max Power",
-                  "nl": "Eigen verbruik + Max vermogen"
+                  "en": "Force Charge",
+                  "nl": "Force Charge (geforceerd laden)"
                 }
               },
               {
                 "id": "6",
                 "label": {
-                  "en": "Backup + Max Power",
-                  "nl": "Noodstroom + Max vermogen"
+                  "en": "Force Discharge",
+                  "nl": "Force Discharge (geforceerd ontladen)"
                 }
               },
               {
@@ -811,8 +845,8 @@
           "nl": "Stel max laad/ontlaadvermogen in op [[power]]%"
         },
         "hint": {
-          "en": "Sets the maximum charge/discharge power for the Max-Power modes (applies to the active mode if it is a Max-Power mode, otherwise activates Self-Consumption + Max Power). Cloud connection required.",
-          "nl": "Stelt het maximale laad/ontlaadvermogen in voor de Max-vermogen-modi (past de actieve modus aan als dat een Max-modus is, anders wordt Eigen verbruik + Max vermogen geactiveerd). Cloudverbinding vereist."
+          "en": "Sets the charge/discharge power limit for Force Charge / Force Discharge mode (applies to the active mode if it is one of these, otherwise activates Force Charge). Tip: set to 0% in Force Charge to stop the battery from charging — useful to prevent it absorbing power that other sources feed back to the grid (e.g. other batteries discharging during high dynamic tariffs). Cloud connection required.",
+          "nl": "Stelt de laad-/ontlaadvermogenslimiet in voor Force Charge / Force Discharge (past de actieve modus aan als dat een van deze is, anders wordt Force Charge geactiveerd). Tip: zet op 0% in Force Charge om laden van de batterij te stoppen — handig om te voorkomen dat de Hoymiles stroom opneemt die andere bronnen terugleveren (bv. andere batterijen die ontladen bij hoge dynamische tarieven). Cloudverbinding vereist."
         },
         "args": [
           {
@@ -1077,15 +1111,15 @@
               {
                 "id": "5",
                 "label": {
-                  "en": "Self-Consumption + Max Power",
-                  "nl": "Eigen verbruik + Max vermogen"
+                  "en": "Force Charge",
+                  "nl": "Force Charge (geforceerd laden)"
                 }
               },
               {
                 "id": "6",
                 "label": {
-                  "en": "Backup + Max Power",
-                  "nl": "Noodstroom + Max vermogen"
+                  "en": "Force Discharge",
+                  "nl": "Force Discharge (geforceerd ontladen)"
                 }
               },
               {

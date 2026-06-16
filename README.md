@@ -24,7 +24,8 @@ Monitor and control your **Hoymiles HiOne** all-in-one battery energy storage sy
 - **Real-time monitoring**: PV power, battery state-of-charge, battery charge/discharge power, grid import/export, home load
 - **Energy totals**: daily yield and lifetime total
 - **Battery mode control** via Flows:
-  - Self-Consumption, Economy, Backup, Off-Grid, Peak Shaving, Time of Use
+  - Self-Consumption, Economy, Backup, Off-Grid, Force Charge, Force Discharge, Peak Shaving, Time of Use
+  - **Tip — stop the battery charging**: select **Force Charge** and set max power to **0%**. The battery then won't charge, so it won't absorb power that other sources feed back to the grid (e.g. other home batteries discharging during high dynamic tariffs).
 - **Flow conditions**: battery is/is not charging, grid is/is not importing, battery mode is/is not, connection is/is not local
 - **Three connection modes**:
   - **Local (LAN)** — direct connection to the HiBox gateway via IP (port 10081, protobuf). No cloud account needed. Works offline.
@@ -108,7 +109,8 @@ The HiBox-63T-G3 gateway connects to your local network via Ethernet. To find it
 ## Flow cards
 
 ### Actions
-- **Set battery mode** — change the battery operating mode (Self-Consumption, Economy, Backup, Off-Grid, Peak Shaving, Time of Use)
+- **Set battery mode** — change the battery operating mode (Self-Consumption, Economy, Backup, Off-Grid, Force Charge, Force Discharge, Peak Shaving, Time of Use)
+- **Set max power** — charge/discharge power limit (%) for Force Charge / Force Discharge. Set to 0% in Force Charge to stop the battery charging (prevents it absorbing grid power fed back by other sources).
 
 ### Conditions
 - Battery **is/is not** charging

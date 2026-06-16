@@ -14,35 +14,10 @@ class HoymilesHiOneApp extends App {
       error: (...args) => this.error(...args),
     });
 
-    // Register Flow action: set_battery_mode
-    this.homey.flow
-      .getActionCard('set_battery_mode')
-      .registerRunListener(async ({ device, mode }) => {
-        return device.setBatteryMode(mode);
-      });
-
-    // Register Flow condition: battery_mode_is
-    this.homey.flow
-      .getConditionCard('battery_mode_is')
-      .registerRunListener(async ({ device, mode }) => {
-        return device.getCapabilityValue('hoymiles_battery_mode') === String(mode);
-      });
-
-    // Register Flow condition: battery_charging
-    this.homey.flow
-      .getConditionCard('battery_charging')
-      .registerRunListener(async ({ device }) => {
-        const batteryPower = device.getCapabilityValue('measure_power') ?? 0;
-        return batteryPower > 0; // positive = charging
-      });
-
-    // Register Flow condition: grid_importing
-    this.homey.flow
-      .getConditionCard('grid_importing')
-      .registerRunListener(async ({ device }) => {
-        const gridPower = device.getCapabilityValue('hoymiles_grid_power') ?? 0;
-        return gridPower > 0; // positive = importing from grid
-      });
+    // Flow action/condition run listeners are registered in the driver
+    // (drivers/hione/driver.js) — registering them here too would shadow the
+    // driver's correct handlers (the app's onInit runs first), which caused
+    // "device.setBatteryMode is not a function" on set_battery_mode.
   }
 
 }

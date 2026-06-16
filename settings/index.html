@@ -94,6 +94,9 @@
   <div class='status' id='diag_status'></div>
   <pre id='diag_out' style='display:none; font-size:11px; background:#f5f5f5; border-radius:8px; padding:10px; margin-top:8px; max-height:300px; overflow:auto; white-space:pre-wrap;'></pre>
 
+  <h3 class='section-title' id='t-modesTitle' style='margin-top:28px'>Battery working modes</h3>
+  <div class='hint' id='t-modesHelp' style='margin-bottom:10px'></div>
+
   <h3 class='section-title' id='t-lanTitle' style='margin-top:28px'>Local connection (LAN)</h3>
   <div class='hint' id='t-lanHint' style='margin-bottom:10px'>
     The IP address of the DTS-G3 stick on your network. Saved here, it is prefilled when pairing.
@@ -170,6 +173,17 @@
         diagBusy: 'Bezig met ophalen…',
         diagErr: 'Diagnose mislukt: ',
         diagNoAcc: 'Log eerst in met je account hierboven.',
+        modesTitle: 'Werkmodi batterij',
+        modesHelp: "<ul style='margin:0;padding-left:18px;line-height:1.6'>" +
+          '<li><strong>Eigen verbruik</strong> — eerst zon, dan batterij, dan net.</li>' +
+          '<li><strong>Economie</strong> — tijdschema om piektarieven te vermijden.</li>' +
+          '<li><strong>Noodstroom</strong> — ontlaadt alleen bij stroomuitval.</li>' +
+          '<li><strong>Off-Grid</strong> — geen netaansluiting.</li>' +
+          '<li><strong>Force Charge</strong> — laadt geforceerd tot de ingestelde SoC. <em>Zet Max vermogen op 0% om laden volledig te stoppen</em> — zodat de Hoymiles geen stroom opneemt die andere bronnen terugleveren (bv. andere batterijen die ontladen bij hoge dynamische tarieven).</li>' +
+          '<li><strong>Force Discharge</strong> — ontlaadt geforceerd tot de ingestelde SoC.</li>' +
+          '<li><strong>Peak Shaving</strong> — begrenst netafname op een ingesteld vermogen.</li>' +
+          '<li><strong>Time of Use</strong> — geplande laad-/ontlaadvensters.</li>' +
+          '</ul>',
         lanTitle: 'Lokale verbinding (LAN)',
         lanHint: 'Het IP-adres van de DTS-WL-G3 stick in je netwerk. Hier opgeslagen wordt het automatisch ingevuld bij het koppelen.',
         lanIp: 'Gateway/DTS IP-adres',
@@ -215,6 +229,17 @@
         diagBusy: 'Fetching…',
         diagErr: 'Diagnostics failed: ',
         diagNoAcc: 'Log in with your account above first.',
+        modesTitle: 'Battery working modes',
+        modesHelp: "<ul style='margin:0;padding-left:18px;line-height:1.6'>" +
+          '<li><strong>Self-Consumption</strong> — solar first, then battery, then grid.</li>' +
+          '<li><strong>Economy</strong> — time-of-use schedule to avoid peak tariffs.</li>' +
+          '<li><strong>Backup</strong> — only discharge during a grid outage.</li>' +
+          '<li><strong>Off-Grid</strong> — no grid connection.</li>' +
+          '<li><strong>Force Charge</strong> — forcibly charge to the set SoC. <em>Set Max Power to 0% to stop charging entirely</em> — so the battery won\'t absorb power other sources feed back to the grid (e.g. other batteries discharging on high dynamic tariffs).</li>' +
+          '<li><strong>Force Discharge</strong> — forcibly discharge to the set SoC.</li>' +
+          '<li><strong>Peak Shaving</strong> — cap grid import at a set power.</li>' +
+          '<li><strong>Time of Use</strong> — scheduled charge/discharge windows.</li>' +
+          '</ul>',
         lanTitle: 'Local connection (LAN)',
         lanHint: 'The IP address of the DTS-WL-G3 stick on your network. Saved here, it is prefilled when pairing.',
         lanIp: 'Gateway/DTS IP address',
@@ -277,6 +302,8 @@
       document.getElementById('login-btn').textContent = t.loginSave;
       document.getElementById('t-forget').textContent = t.forget;
       document.getElementById('t-diagBtn').textContent = t.diagBtn;
+      document.getElementById('t-modesTitle').textContent = t.modesTitle;
+      document.getElementById('t-modesHelp').innerHTML = t.modesHelp;
       if (_savedEmail) {
         document.getElementById('t-savedAs').innerHTML = t.savedAs.replace('{email}', _savedEmail);
       }
