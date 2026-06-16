@@ -61,7 +61,9 @@ class HiOneDevice extends Device {
 
     await this._migrateCapabilities();
     this._createHybrid();
-    this._hybrid.probeLocal().then(() => this._fetchGatewayInfo()).catch(() => {});
+    this._hybrid.probeLocal()
+      .catch(() => {})
+      .finally(() => this._fetchGatewayInfo());
 
     this.registerCapabilityListener('hoymiles_battery_mode', async (value) => {
       await this._hybrid.setBatteryMode(value);
@@ -107,7 +109,9 @@ class HiOneDevice extends Device {
     if (changedKeys.includes('gateway_ip') || changedKeys.includes('cloud_api_url')) {
       this.log('Connection settings changed — reinitialising');
       this._createHybrid();
-      this._hybrid.probeLocal().catch(() => {});
+      this._hybrid.probeLocal()
+        .catch(() => {})
+        .finally(() => this._fetchGatewayInfo());
     }
     if (changedKeys.includes('poll_interval')) {
       this.log('Poll interval changed to ' + newSettings.poll_interval + 's');
@@ -356,6 +360,9 @@ class HiOneDevice extends Device {
       if (info.softwareVer) updates.firmware_version  = info.softwareVer;
       if (info.deviceVer)   updates.hardware_version  = info.deviceVer;
       if (info.model)       updates.gateway_model     = info.model;
+      if (info.devices && info.devices.length) {
+        updates.system_devices = this._formatDeviceList(info.devices);
+      }
       if (Object.keys(updates).length > 0) {
         await this.setSettings(updates);
         this.log('Gateway info updated: ' + JSON.stringify(updates));
@@ -363,6 +370,21 @@ class HiOneDevice extends Device {
     } catch (err) {
       this.log('Could not fetch gateway info: ' + err.message);
     }
+  }
+
+  _formatDeviceList(devices) {
+    // One block per device so every field is visible and the SN can be copied.
+    // The textarea setting renders the line breaks and is selectable/copyable.
+    return devices.map((d) => {
+      const header = [d.type || 'Device', d.status, d.gen].filter(Boolean).join(' · ');
+      const lines  = [header];
+      const add = (label, value) => { if (value) lines.push(`  ${label}: ${value}`); };
+      add('SN', d.serial);
+      add('Model', d.model);
+      add('Firmware', d.softwareVer);
+      add('Hardware', d.hardwareVer);
+      return lines.join('\n');
+    }).join('\n\n');
   }
 
   _createHybrid() {
