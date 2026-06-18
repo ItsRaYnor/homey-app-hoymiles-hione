@@ -4,8 +4,12 @@ const { Device } = require('homey');
 const HoymilesHybrid = require('../../lib/HoymilesHybrid');
 const { BATTERY_MODES } = require('../../lib/HoymilesApi');
 
-// Battery settings use a slow async cloud command — refresh every Nth poll
-const SETTINGS_POLL_EVERY = 5;
+// Battery mode / reserve / max-power use a slow async cloud command (a job
+// read that can take ~30s), so they refresh on their own time-based cadence —
+// independent of the live poll interval. Kept near-realtime (60s) so an
+// external mode change (e.g. via the S-Miles app) shows up quickly; an in-app
+// change refreshes immediately (see the battery-mode capability listener).
+const SETTINGS_REFRESH_MS = 60_000; // 1 min
 
 // The local power limit is persisted to the inverter's EEPROM on every write.
 // Cap automated writes per day and skip no-op writes to limit chip wear.
@@ -57,7 +61,8 @@ class HiOneDevice extends Device {
   async onInit() {
     this.log('HiOne device initialising...');
     this._prevBatteryMode = null;
-    this._pollCount = 0;
+    this._lastSettingsRefresh = 0;
+    this._followupTimers = [];
 
     await this._migrateCapabilities();
     this._createHybrid();
@@ -67,7 +72,12 @@ class HiOneDevice extends Device {
 
     this.registerCapabilityListener('hoymiles_battery_mode', async (value) => {
       await this._hybrid.setBatteryMode(value);
-      this._refreshBatterySettings().catch(() => {});
+      // Re-read mode/params (updates the mode tile immediately), then poll the
+      // live data a couple of times after a short delay — an immediate poll is
+      // pointless since the cloud needs a few seconds to report the new
+      // charge/discharge state.
+      await this._refreshBatterySettings().catch(() => {});
+      this._scheduleLivePollBurst();
     });
 
     // NOTE: slider listeners deliberately do NOT call _refreshBatterySettings()
@@ -102,7 +112,23 @@ class HiOneDevice extends Device {
 
   async onDeleted() {
     this._stopPolling();
+    this._clearFollowupPolls();
     this.log('HiOne device removed');
+  }
+
+  _clearFollowupPolls() {
+    for (const t of this._followupTimers) this.homey.clearTimeout(t);
+    this._followupTimers = [];
+  }
+
+  // After a control change (mode / power), the cloud needs a few seconds to
+  // report the new charge/discharge behaviour. Re-read the live data a couple
+  // of times so it shows up without waiting for the next regular poll.
+  _scheduleLivePollBurst() {
+    this._clearFollowupPolls();
+    for (const delay of [10_000, 20_000]) {
+      this._followupTimers.push(this.homey.setTimeout(() => this._poll().catch(() => {}), delay));
+    }
   }
 
   async onSettings({ newSettings, changedKeys }) {
@@ -243,8 +269,11 @@ class HiOneDevice extends Device {
         await this._updateBatteryMode(data.batteryMode);
       }
 
-      this._pollCount++;
-      if (this._pollCount % SETTINGS_POLL_EVERY === 1) {
+      // Refresh mode/reserve/max-power on their own slower cadence (the first
+      // poll runs immediately since _lastSettingsRefresh starts at 0).
+      const now = Date.now();
+      if (now - this._lastSettingsRefresh >= SETTINGS_REFRESH_MS) {
+        this._lastSettingsRefresh = now;
         this._refreshBatterySettings().catch(() => {});
       }
 
@@ -256,6 +285,9 @@ class HiOneDevice extends Device {
   }
 
   async _refreshBatterySettings() {
+    // Any refresh (timed or right after a mode/slider change) resets the clock,
+    // so the next timed refresh won't fire a redundant heavy read back-to-back.
+    this._lastSettingsRefresh = Date.now();
     const settings = await this._hybrid.getBatterySettings();
     if (settings) {
       await this._updateBatteryMode(settings.mode);
@@ -277,6 +309,7 @@ class HiOneDevice extends Device {
   async setPeakShaving(settings) {
     await this._hybrid.setPeakShaving(settings);
     this._refreshBatterySettings().catch(() => {});
+    this._scheduleLivePollBurst();
   }
 
   async setRelayEnabled(enabled) {
@@ -286,31 +319,37 @@ class HiOneDevice extends Device {
   async setMaxPower(percent) {
     await this._hybrid.setMaxPower(percent);
     this._refreshBatterySettings().catch(() => {});
+    this._scheduleLivePollBurst();
   }
 
   async setMaxChargePower(percent) {
     await this._hybrid.setMaxChargePower(percent);
     this._refreshBatterySettings().catch(() => {});
+    this._scheduleLivePollBurst();
   }
 
   async setMaxDischargePower(percent) {
     await this._hybrid.setMaxDischargePower(percent);
     this._refreshBatterySettings().catch(() => {});
+    this._scheduleLivePollBurst();
   }
 
   async setMaxSoc(percent) {
     await this._hybrid.setMaxSoc(percent);
     this._refreshBatterySettings().catch(() => {});
+    this._scheduleLivePollBurst();
   }
 
   async setGridLimit(watts) {
     await this._hybrid.setGridLimit(watts);
     this._refreshBatterySettings().catch(() => {});
+    this._scheduleLivePollBurst();
   }
 
   async setTouPeriod(period) {
     await this._hybrid.setTouPeriod(period);
     this._refreshBatterySettings().catch(() => {});
+    this._scheduleLivePollBurst();
   }
 
   async setPowerLimit(limitPercent) {
