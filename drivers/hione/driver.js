@@ -43,6 +43,16 @@ class HiOneDriver extends Driver {
     );
 
     registerListener(
+      this.homey.flow.getActionCard('set_max_charge_power'),
+      async ({ device, power }) => device.setMaxChargePower(power)
+    );
+
+    registerListener(
+      this.homey.flow.getActionCard('set_max_discharge_power'),
+      async ({ device, power }) => device.setMaxDischargePower(power)
+    );
+
+    registerListener(
       this.homey.flow.getActionCard('set_max_soc'),
       async ({ device, soc }) => device.setMaxSoc(soc)
     );
@@ -80,6 +90,25 @@ class HiOneDriver extends Driver {
     registerListener(
       this.homey.flow.getConditionCard('battery_charging'),
       async ({ device }) => (device.getCapabilityValue('measure_power') || 0) > 0
+    );
+
+    // measure_power: positive = charging, negative = discharging
+    registerListener(
+      this.homey.flow.getConditionCard('battery_idle'),
+      async ({ device, threshold }) => {
+        const power = device.getCapabilityValue('measure_power') || 0;
+        const limit = Number.isFinite(threshold) ? threshold : 50;
+        return Math.abs(power) <= limit;
+      }
+    );
+
+    registerListener(
+      this.homey.flow.getConditionCard('battery_discharging'),
+      async ({ device, threshold }) => {
+        const power = device.getCapabilityValue('measure_power') || 0;
+        const limit = Number.isFinite(threshold) ? threshold : 50;
+        return power < -limit;
+      }
     );
 
     registerListener(
