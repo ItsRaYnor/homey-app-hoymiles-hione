@@ -1,6 +1,6 @@
 {
   "id": "com.hoymiles.hione",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "compatibility": ">=12.4.5",
   "sdk": 3,
   "brandColor": "#00A94F",
@@ -729,8 +729,8 @@
           "nl": "Stel reserve laadniveau in op [[soc]]%"
         },
         "hint": {
-          "en": "Sets the minimum battery state of charge for the active battery mode (cloud connection required).",
-          "nl": "Stelt het minimale laadniveau van de batterij in voor de actieve batterijmodus (cloudverbinding vereist)."
+          "en": "Relevant for: all modes except Off-Grid (mode 4). Sets the minimum battery state of charge for the active battery mode. Cloud connection required.",
+          "nl": "Relevant voor: alle modi behalve Off-Grid (modus 4). Stelt het minimale laadniveau van de batterij in voor de actieve batterijmodus. Cloudverbinding vereist."
         },
         "args": [
           {
@@ -762,8 +762,8 @@
           "nl": "Stel Pieksturing in: reserve [[reserve_soc]]%, max [[max_soc]]%, netgrens [[meter_power]]W"
         },
         "hint": {
-          "en": "Configures and activates Peak Shaving mode (cloud connection required).",
-          "nl": "Configureert en activeert de Pieksturing-modus (cloudverbinding vereist)."
+          "en": "Relevant for: Peak Shaving (mode 7). Configures and activates Peak Shaving mode. Cloud connection required.",
+          "nl": "Relevant voor: Pieksturing (modus 7). Configureert en activeert de Pieksturing-modus. Cloudverbinding vereist."
         },
         "args": [
           {
@@ -863,8 +863,8 @@
           "nl": "Stel max laad/ontlaadvermogen in op [[power]]%"
         },
         "hint": {
-          "en": "Sets the charge/discharge power limit for Force Charge / Force Discharge mode (applies to the active mode if it is one of these, otherwise activates Force Charge). Tip: set to 0% in Force Charge to stop the battery from charging — useful to prevent it absorbing power that other sources feed back to the grid (e.g. other batteries discharging during high dynamic tariffs). Cloud connection required.",
-          "nl": "Stelt de laad-/ontlaadvermogenslimiet in voor Force Charge / Force Discharge (past de actieve modus aan als dat een van deze is, anders wordt Force Charge geactiveerd). Tip: zet op 0% in Force Charge om laden van de batterij te stoppen — handig om te voorkomen dat de Hoymiles stroom opneemt die andere bronnen terugleveren (bv. andere batterijen die ontladen bij hoge dynamische tarieven). Cloudverbinding vereist."
+          "en": "Relevant for: Force Charge (mode 5) and Force Discharge (mode 6). Applies to the active mode if it is one of these, otherwise activates Force Charge. For an explicit direction use 'Set max charge power' or 'Set max discharge power' instead. Tip: 0% in Force Charge stops the battery charging — useful to prevent it absorbing power that other sources feed back to the grid (e.g. other batteries discharging during high dynamic tariffs). Cloud connection required.",
+          "nl": "Relevant voor: Force Charge (modus 5) en Force Discharge (modus 6). Past de actieve modus aan als dat een van deze is, anders wordt Force Charge geactiveerd. Voor een expliciete richting gebruik je 'Stel max laadvermogen in' of 'Stel max ontlaadvermogen in'. Tip: 0% in Force Charge stopt het laden — handig om te voorkomen dat de Hoymiles stroom opneemt die andere bronnen terugleveren (bv. andere batterijen die ontladen bij hoge dynamische tarieven). Cloudverbinding vereist."
         },
         "args": [
           {
@@ -886,6 +886,72 @@
         ]
       },
       {
+        "id": "set_max_charge_power",
+        "title": {
+          "en": "Set max charge power",
+          "nl": "Stel max laadvermogen in"
+        },
+        "titleFormatted": {
+          "en": "Set max charge power (Force Charge) to [[power]]%",
+          "nl": "Stel max laadvermogen (Force Charge) in op [[power]]%"
+        },
+        "hint": {
+          "en": "Relevant for: Force Charge (mode 5). Sets the charge power limit and switches to that mode. Tip: 0% stops the battery charging — useful to prevent it absorbing power other sources feed back to the grid. Cloud connection required.",
+          "nl": "Relevant voor: Force Charge (modus 5). Stelt de laadvermogenslimiet in en schakelt naar die modus. Tip: 0% stopt het laden — handig om te voorkomen dat de Hoymiles stroom opneemt die andere bronnen terugleveren. Cloudverbinding vereist."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "power",
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "title": {
+              "en": "Max charge power (%)",
+              "nl": "Max laadvermogen (%)"
+            }
+          }
+        ]
+      },
+      {
+        "id": "set_max_discharge_power",
+        "title": {
+          "en": "Set max discharge power",
+          "nl": "Stel max ontlaadvermogen in"
+        },
+        "titleFormatted": {
+          "en": "Set max discharge power (Force Discharge) to [[power]]%",
+          "nl": "Stel max ontlaadvermogen (Force Discharge) in op [[power]]%"
+        },
+        "hint": {
+          "en": "Relevant for: Force Discharge (mode 6). Sets the discharge power limit and switches to that mode. Cloud connection required.",
+          "nl": "Relevant voor: Force Discharge (modus 6). Stelt de ontlaadvermogenslimiet in en schakelt naar die modus. Cloudverbinding vereist."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "power",
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "title": {
+              "en": "Max discharge power (%)",
+              "nl": "Max ontlaadvermogen (%)"
+            }
+          }
+        ]
+      },
+      {
         "id": "set_max_soc",
         "title": {
           "en": "Set max SOC",
@@ -896,8 +962,8 @@
           "nl": "Stel max laadniveau in op [[soc]]%"
         },
         "hint": {
-          "en": "Sets the maximum battery state of charge (applies to the active mode if it supports it, otherwise activates Peak Shaving). Cloud connection required.",
-          "nl": "Stelt het maximale laadniveau van de batterij in (past de actieve modus aan als die het ondersteunt, anders wordt Pieksturing geactiveerd). Cloudverbinding vereist."
+          "en": "Relevant for: Peak Shaving (mode 7) — the only mode with a max SOC. Activates Peak Shaving if it is not already active. Cloud connection required.",
+          "nl": "Relevant voor: Pieksturing (modus 7) — de enige modus met een max laadniveau. Activeert Pieksturing als die nog niet actief is. Cloudverbinding vereist."
         },
         "args": [
           {
@@ -929,8 +995,8 @@
           "nl": "Stel netvermogensgrens in op [[watts]]W"
         },
         "hint": {
-          "en": "Sets the grid power limit for Peak Shaving mode and activates it. Cloud connection required.",
-          "nl": "Stelt de netvermogensgrens in voor de Pieksturing-modus en activeert die. Cloudverbinding vereist."
+          "en": "Relevant for: Peak Shaving (mode 7). Sets the grid power limit for Peak Shaving mode and activates it. Cloud connection required.",
+          "nl": "Relevant voor: Pieksturing (modus 7). Stelt de netvermogensgrens in voor de Pieksturing-modus en activeert die. Cloudverbinding vereist."
         },
         "args": [
           {
@@ -962,8 +1028,8 @@
           "nl": "Time of Use: laden [[charge_from]]–[[charge_to]] op [[charge_power]]% tot [[charge_soc]]%, ontladen [[discharge_from]]–[[discharge_to]] op [[discharge_power]]% tot [[discharge_soc]]%"
         },
         "hint": {
-          "en": "Sets a single Time of Use charge/discharge period and activates Time of Use mode. Times in HH:MM. For multi-period schedules use the S-Miles app. Cloud connection required.",
-          "nl": "Stelt één Time of Use laad/ontlaadperiode in en activeert de Time of Use-modus. Tijden in UU:MM. Voor schema's met meerdere periodes gebruik je de S-Miles app. Cloudverbinding vereist."
+          "en": "Relevant for: Time of Use (mode 8). Sets a single Time of Use charge/discharge period and activates Time of Use mode. Times in HH:MM. For multi-period schedules use the S-Miles app. Cloud connection required.",
+          "nl": "Relevant voor: Time of Use (modus 8). Stelt één Time of Use laad/ontlaadperiode in en activeert de Time of Use-modus. Tijden in UU:MM. Voor schema's met meerdere periodes gebruik je de S-Miles app. Cloudverbinding vereist."
         },
         "args": [
           {
@@ -1169,6 +1235,80 @@
             "name": "device",
             "type": "device",
             "filter": "driver_id=hione"
+          }
+        ]
+      },
+      {
+        "id": "battery_idle",
+        "title": {
+          "en": "Battery !{{is|is not}} idle",
+          "nl": "Batterij is !{{inactief|niet inactief}}"
+        },
+        "titleFormatted": {
+          "en": "Battery !{{is|is not}} idle (within ±[[threshold]] W)",
+          "nl": "Batterij is !{{inactief|niet inactief}} (binnen ±[[threshold]] W)"
+        },
+        "hint": {
+          "en": "True when the battery power is near zero (neither charging nor discharging), within the given threshold in watts.",
+          "nl": "Waar als het accuvermogen vrijwel nul is (niet aan het laden of ontladen), binnen de opgegeven drempel in watt."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "threshold",
+            "type": "number",
+            "min": 0,
+            "max": 20000,
+            "step": 10,
+            "placeholder": {
+              "en": "50",
+              "nl": "50"
+            },
+            "title": {
+              "en": "Threshold (W)",
+              "nl": "Drempel (W)"
+            }
+          }
+        ]
+      },
+      {
+        "id": "battery_discharging",
+        "title": {
+          "en": "Battery !{{is|is not}} discharging",
+          "nl": "Batterij is !{{aan het ontladen|niet aan het ontladen}}"
+        },
+        "titleFormatted": {
+          "en": "Battery !{{is|is not}} discharging (more than [[threshold]] W)",
+          "nl": "Batterij is !{{aan het ontladen|niet aan het ontladen}} (meer dan [[threshold]] W)"
+        },
+        "hint": {
+          "en": "True when the battery is discharging faster than the given threshold in watts.",
+          "nl": "Waar als de batterij sneller ontlaadt dan de opgegeven drempel in watt."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "threshold",
+            "type": "number",
+            "min": 0,
+            "max": 20000,
+            "step": 10,
+            "placeholder": {
+              "en": "50",
+              "nl": "50"
+            },
+            "title": {
+              "en": "Threshold (W)",
+              "nl": "Drempel (W)"
+            }
           }
         ]
       },

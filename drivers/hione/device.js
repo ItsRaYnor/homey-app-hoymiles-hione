@@ -288,6 +288,16 @@ class HiOneDevice extends Device {
     this._refreshBatterySettings().catch(() => {});
   }
 
+  async setMaxChargePower(percent) {
+    await this._hybrid.setMaxChargePower(percent);
+    this._refreshBatterySettings().catch(() => {});
+  }
+
+  async setMaxDischargePower(percent) {
+    await this._hybrid.setMaxDischargePower(percent);
+    this._refreshBatterySettings().catch(() => {});
+  }
+
   async setMaxSoc(percent) {
     await this._hybrid.setMaxSoc(percent);
     this._refreshBatterySettings().catch(() => {});
