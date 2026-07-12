@@ -19,5 +19,8 @@
   },
   "1.0.7": {
     "en": "Redesigned the app icon: a bold battery badge with the Hoymiles H as a cutout, readable both large and at the small size shown in the app card. Fixed the icon not rendering at all in a previous test build (gradients broke Homey's icon renderer; switched to flat colors) and regenerated the driver icon files that had gone stale."
+  },
+  "1.0.8": {
+    "en": "Fixed the app icon not showing on the App Store listing (it rendered as a plain green circle): reverted to the original simple lettermark design for the app-level icon, which the Store's icon renderer handles reliably. The device icon keeps the new battery badge design, since that one renders correctly."
   }
 }
