@@ -11,22 +11,30 @@ const { BATTERY_MODES } = require('../../lib/HoymilesApi');
 // change refreshes immediately (see the battery-mode capability listener).
 const SETTINGS_REFRESH_MS = 60_000; // 1 min
 
+// Selecting the battery mode in the app fires for every value scrolled past.
+// Wait until the choice settles before writing it to the cloud, so scrolling
+// through the picker doesn't apply each intermediate mode.
+const MODE_APPLY_DELAY_MS = 2_500;
+
+// The cloud rejects a new mode write until the previous one has settled
+// (~10s), so enforce a minimum gap between mode writes to avoid API errors.
+const MODE_MIN_INTERVAL_MS = 10_000;
+
 // The local power limit is persisted to the inverter's EEPROM on every write.
 // Cap automated writes per day and skip no-op writes to limit chip wear.
 const POWER_LIMIT_MAX_WRITES_PER_DAY = 10;
 
 // Capabilities added after v1.0.x — added to existing devices on init
-// Homey % sliders store 0–1; API/Flows use 0–100
-// Homey stores capabilities with units "%" internally as a 0–1 fraction
-// (50% = 0.5) and renders them ×100. The API works in 0–100, so these are
-// converted: ÷100 when writing to the capability, ×100 when reading it back.
+// Percent sliders are stored as plain 0–100 (matching the API and the Insights
+// graphs). They deliberately have no units "%" in the manifest, because Homey
+// renders a units-"%" capability as a 0–1 fraction ×100 — which made the
+// Insights graph read 100× too small. The "%" is shown in the title instead.
 const PERCENT_SLIDERS = [
   'hoymiles_reserve_soc',
   'hoymiles_max_soc',
   'hoymiles_max_charge_power',
   'hoymiles_max_discharge_power',
 ];
-const PCT_CAPABILITIES = new Set(PERCENT_SLIDERS);
 
 const NEW_CAPABILITIES = [
   'hoymiles_battery_flow',
@@ -63,6 +71,8 @@ class HiOneDevice extends Device {
     this._prevBatteryMode = null;
     this._lastSettingsRefresh = 0;
     this._followupTimers = [];
+    this._modeChangeTimer = null;
+    this._lastModeApplyAt = 0;
 
     await this._migrateCapabilities();
     this._createHybrid();
@@ -71,13 +81,19 @@ class HiOneDevice extends Device {
       .finally(() => this._fetchGatewayInfo());
 
     this.registerCapabilityListener('hoymiles_battery_mode', async (value) => {
-      await this._hybrid.setBatteryMode(value);
-      // Re-read mode/params (updates the mode tile immediately), then poll the
-      // live data a couple of times after a short delay — an immediate poll is
-      // pointless since the cloud needs a few seconds to report the new
-      // charge/discharge state.
-      await this._refreshBatterySettings().catch(() => {});
-      this._scheduleLivePollBurst();
+      // Debounce: the picker fires for every mode scrolled past. Only apply the
+      // value the user settles on. Also enforce a ~10s gap between writes — the
+      // cloud rejects a new mode while the previous one is still settling — so a
+      // quick second choice waits out the cooldown instead of erroring.
+      this._pendingMode = value;
+      if (this._modeChangeTimer) this.homey.clearTimeout(this._modeChangeTimer);
+      const cooldownLeft = this._lastModeApplyAt + MODE_MIN_INTERVAL_MS - Date.now();
+      const delay = Math.max(MODE_APPLY_DELAY_MS, cooldownLeft);
+      this._modeChangeTimer = this.homey.setTimeout(() => {
+        this._modeChangeTimer = null;
+        this._applyBatteryMode(this._pendingMode)
+          .catch(err => this.error('Mode change failed: ' + err.message));
+      }, delay);
     });
 
     // NOTE: slider listeners deliberately do NOT call _refreshBatterySettings()
@@ -86,19 +102,19 @@ class HiOneDevice extends Device {
     // the slider — resetting it to 0 while the user is still dragging. The
     // periodic poll reconciles the slider with the cloud a bit later instead.
     this.registerCapabilityListener('hoymiles_reserve_soc', async (value) => {
-      await this._hybrid.setReserveSoc(this._capToPercent(value));
+      await this._hybrid.setReserveSoc(value);
     });
 
     this.registerCapabilityListener('hoymiles_max_charge_power', async (value) => {
-      await this._hybrid.setMaxChargePower(this._capToPercent(value));
+      await this._hybrid.setMaxChargePower(value);
     });
 
     this.registerCapabilityListener('hoymiles_max_discharge_power', async (value) => {
-      await this._hybrid.setMaxDischargePower(this._capToPercent(value));
+      await this._hybrid.setMaxDischargePower(value);
     });
 
     this.registerCapabilityListener('hoymiles_max_soc', async (value) => {
-      await this._hybrid.setMaxSoc(this._capToPercent(value));
+      await this._hybrid.setMaxSoc(value);
     });
 
     this.registerCapabilityListener('hoymiles_meter_power', async (value) => {
@@ -113,12 +129,30 @@ class HiOneDevice extends Device {
   async onDeleted() {
     this._stopPolling();
     this._clearFollowupPolls();
+    if (this._modeChangeTimer) this.homey.clearTimeout(this._modeChangeTimer);
     this.log('HiOne device removed');
   }
 
   _clearFollowupPolls() {
     for (const t of this._followupTimers) this.homey.clearTimeout(t);
     this._followupTimers = [];
+  }
+
+  // Actually apply the chosen battery mode (after the debounce settles): write
+  // it, re-read the settings, and re-poll the live data shortly after.
+  async _applyBatteryMode(value) {
+    this._lastModeApplyAt = Date.now();
+    try {
+      await this._hybrid.setBatteryMode(value);
+    } catch (err) {
+      this.error('Mode change rejected by cloud: ' + err.message);
+      // Reconcile the tile with the actual cloud mode so it doesn't show a
+      // value that was never applied.
+      this._refreshBatterySettings().catch(() => {});
+      return;
+    }
+    await this._refreshBatterySettings().catch(() => {});
+    this._scheduleLivePollBurst();
   }
 
   // After a control change (mode / power), the cloud needs a few seconds to
@@ -170,15 +204,15 @@ class HiOneDevice extends Device {
       }
     }
 
-    // Force the correct slider options on existing devices. Homey treats
-    // units "%" capabilities as a 0–1 fraction internally, so these must be
-    // min 0 / max 1 (an earlier build wrongly set max 100, which rendered
-    // values ×100 as e.g. 3000%).
+    // Force the new 0–100 slider options on existing devices, and clear the
+    // cached units "%" — Homey rendered a units-"%" capability as a 0–1 fraction
+    // ×100, which made the Insights graph read 100× too small. Now stored as a
+    // plain 0–100 percent (the "%" lives in the title).
     for (const capability of PERCENT_SLIDERS) {
       if (this.hasCapability(capability)) {
         try {
           await this.setCapabilityOptions(capability, {
-            min: 0, max: 1, step: 0.01, decimals: 2, units: '%',
+            min: 0, max: 100, step: 1, decimals: 0, units: '',
           });
         } catch (err) {
           this.error('Could not update options for ' + capability + ': ' + err.message);
@@ -206,13 +240,6 @@ class HiOneDevice extends Device {
     }
   }
 
-  _percentToCap(percent) {
-    if (percent === null || percent === undefined) return null;
-    const n = Number(percent);
-    if (isNaN(n)) return null;
-    return Math.round(n) / 100;
-  }
-
   // Human-readable charge/discharge status for the device tile, derived from
   // battery power (measure_power: + = charging, − = discharging).
   _batteryFlowText(power) {
@@ -224,22 +251,11 @@ class HiOneDevice extends Device {
     return `${verb} ${Math.abs(Math.round(w))} W`;
   }
 
-  // Slider passes 0–1; Flow cards pass 0–100
-  _capToPercent(value) {
-    const n = Number(value);
-    if (isNaN(n)) throw new Error('Invalid percentage value: ' + value);
-    return n <= 1 ? Math.round(n * 100) : Math.round(n);
-  }
-
   async _setCapabilitySafe(capability, value) {
     if (value === null || value === undefined) return;
     if (!this.hasCapability(capability)) return;
-    const capValue = PCT_CAPABILITIES.has(capability) ? this._percentToCap(value) : value;
     try {
-      await this.setCapabilityValue(capability, capValue);
-      if (PCT_CAPABILITIES.has(capability)) {
-        this.log(`[cap] set ${capability} = ${capValue} (${this._capToPercent(capValue)}%) → readback ${this.getCapabilityValue(capability)}`);
-      }
+      await this.setCapabilityValue(capability, value);
     } catch (err) {
       this.error('setCapabilityValue(' + capability + ') failed: ' + err.message);
     }

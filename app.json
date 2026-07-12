@@ -385,14 +385,13 @@
     "hoymiles_reserve_soc": {
       "type": "number",
       "title": {
-        "en": "Reserve SOC (battery minimum)",
-        "nl": "Reserve laadniveau (ondergrens accu)"
+        "en": "Reserve SOC % (battery minimum)",
+        "nl": "Reserve laadniveau % (ondergrens accu)"
       },
-      "units": "%",
       "min": 0,
-      "max": 1,
-      "step": 0.01,
-      "decimals": 2,
+      "max": 100,
+      "step": 1,
+      "decimals": 0,
       "insights": true,
       "getable": true,
       "setable": true,
@@ -402,14 +401,13 @@
     "hoymiles_max_soc": {
       "type": "number",
       "title": {
-        "en": "Max SOC (battery maximum)",
-        "nl": "Max laadniveau (bovengrens accu)"
+        "en": "Max SOC % (battery maximum)",
+        "nl": "Max laadniveau % (bovengrens accu)"
       },
-      "units": "%",
       "min": 0,
-      "max": 1,
-      "step": 0.01,
-      "decimals": 2,
+      "max": 100,
+      "step": 1,
+      "decimals": 0,
       "insights": true,
       "getable": true,
       "setable": true,
@@ -419,14 +417,13 @@
     "hoymiles_max_charge_power": {
       "type": "number",
       "title": {
-        "en": "Max Charge Power (Force Charge)",
-        "nl": "Max laadvermogen (Force Charge)"
+        "en": "Max Charge Power % (Force Charge)",
+        "nl": "Max laadvermogen % (Force Charge)"
       },
-      "units": "%",
       "min": 0,
-      "max": 1,
-      "step": 0.01,
-      "decimals": 2,
+      "max": 100,
+      "step": 1,
+      "decimals": 0,
       "insights": true,
       "getable": true,
       "setable": true,
@@ -436,14 +433,13 @@
     "hoymiles_max_discharge_power": {
       "type": "number",
       "title": {
-        "en": "Max Discharge Power (Force Discharge)",
-        "nl": "Max ontlaadvermogen (Force Discharge)"
+        "en": "Max Discharge Power % (Force Discharge)",
+        "nl": "Max ontlaadvermogen % (Force Discharge)"
       },
-      "units": "%",
       "min": 0,
-      "max": 1,
-      "step": 0.01,
-      "decimals": 2,
+      "max": 100,
+      "step": 1,
+      "decimals": 0,
       "insights": true,
       "getable": true,
       "setable": true,
