@@ -5,11 +5,12 @@ const HoymilesHybrid = require('../../lib/HoymilesHybrid');
 const { BATTERY_MODES } = require('../../lib/HoymilesApi');
 
 // Battery mode / reserve / max-power use a slow async cloud command (a job
-// read that can take ~30s), so they refresh on their own time-based cadence —
-// independent of the live poll interval. Kept near-realtime (60s) so an
-// external mode change (e.g. via the S-Miles app) shows up quickly; an in-app
-// change refreshes immediately (see the battery-mode capability listener).
-const SETTINGS_REFRESH_MS = 60_000; // 1 min
+// read that can take ~30s), so they refresh on their own slower cadence —
+// independent of the live poll interval (~60s). An in-app change still
+// refreshes immediately (see the battery-mode capability listener).
+// Heavy cloud settings (mode / reserve / max-power / EPS) — keep light live
+// data on the normal poll interval (~60s) and refresh this slower.
+const SETTINGS_REFRESH_MS = 5 * 60_000; // 5 min
 
 // Selecting the battery mode in the app fires for every value scrolled past.
 // Wait until the choice settles before writing it to the cloud, so scrolling
@@ -38,6 +39,8 @@ const PERCENT_SLIDERS = [
 
 const NEW_CAPABILITIES = [
   'hoymiles_battery_flow',
+  'measure_voltage',
+  'measure_current',
   'meter_power.charged',
   'meter_power.discharged',
   'hoymiles_reserve_soc',
@@ -73,6 +76,8 @@ class HiOneDevice extends Device {
     this._followupTimers = [];
     this._modeChangeTimer = null;
     this._lastModeApplyAt = 0;
+    this._pollInFlight = false;
+    this._settingsRefreshInFlight = null;
 
     await this._migrateCapabilities();
     this._createHybrid();
@@ -102,23 +107,43 @@ class HiOneDevice extends Device {
     // the slider — resetting it to 0 while the user is still dragging. The
     // periodic poll reconciles the slider with the cloud a bit later instead.
     this.registerCapabilityListener('hoymiles_reserve_soc', async (value) => {
-      await this._hybrid.setReserveSoc(value);
+      try {
+        await this._hybrid.setReserveSoc(value);
+      } catch (err) {
+        this.error('Reserve SOC change failed: ' + err.message);
+      }
     });
 
     this.registerCapabilityListener('hoymiles_max_charge_power', async (value) => {
-      await this._hybrid.setMaxChargePower(value);
+      try {
+        await this._hybrid.setMaxChargePower(value);
+      } catch (err) {
+        this.error('Max charge power change failed: ' + err.message);
+      }
     });
 
     this.registerCapabilityListener('hoymiles_max_discharge_power', async (value) => {
-      await this._hybrid.setMaxDischargePower(value);
+      try {
+        await this._hybrid.setMaxDischargePower(value);
+      } catch (err) {
+        this.error('Max discharge power change failed: ' + err.message);
+      }
     });
 
     this.registerCapabilityListener('hoymiles_max_soc', async (value) => {
-      await this._hybrid.setMaxSoc(value);
+      try {
+        await this._hybrid.setMaxSoc(value);
+      } catch (err) {
+        this.error('Max SOC change failed: ' + err.message);
+      }
     });
 
     this.registerCapabilityListener('hoymiles_meter_power', async (value) => {
-      await this._hybrid.setGridLimit(value);
+      try {
+        await this._hybrid.setGridLimit(value);
+      } catch (err) {
+        this.error('Grid limit change failed: ' + err.message);
+      }
     });
 
     this._startPolling();
@@ -166,7 +191,8 @@ class HiOneDevice extends Device {
   }
 
   async onSettings({ newSettings, changedKeys }) {
-    if (changedKeys.includes('gateway_ip') || changedKeys.includes('cloud_api_url')) {
+    if (changedKeys.includes('gateway_ip') || changedKeys.includes('cloud_api_url')
+      || changedKeys.includes('station_id')) {
       this.log('Connection settings changed — reinitialising');
       this._createHybrid();
       this._hybrid.probeLocal()
@@ -229,7 +255,10 @@ class HiOneDevice extends Device {
   _startPolling() {
     this._stopPolling();
     const ms = this._getPollMs();
-    this._pollInterval = this.homey.setInterval(() => this._poll(), ms);
+    this._pollInterval = this.homey.setInterval(
+      () => this._poll().catch(err => this.error('Poll interval failed: ' + err.message)),
+      ms,
+    );
     this.log('Polling every ' + (ms / 1000) + 's');
   }
 
@@ -262,11 +291,15 @@ class HiOneDevice extends Device {
   }
 
   async _poll() {
+    if (this._pollInFlight) return;
+    this._pollInFlight = true;
     try {
       const data = await this._hybrid.getData();
 
       await this._setCapabilitySafe('measure_power',                data.batteryPower);
       await this._setCapabilitySafe('hoymiles_battery_flow',        this._batteryFlowText(data.batteryPower));
+      await this._setCapabilitySafe('measure_voltage',              data.batteryVoltage);
+      await this._setCapabilitySafe('measure_current',              data.batteryCurrent);
       await this._setCapabilitySafe('hoymiles_pv_power',            data.pvPower);
       await this._setCapabilitySafe('measure_battery',              data.batterySoc);
       await this._setCapabilitySafe('hoymiles_grid_power',          data.gridPower);
@@ -296,29 +329,43 @@ class HiOneDevice extends Device {
       if (!this.getAvailable()) await this.setAvailable();
     } catch (err) {
       this.error('Poll failed: ' + err.message);
-      await this.setUnavailable(this.homey.__('errors.poll_failed'));
+      try {
+        await this.setUnavailable(this.homey.__('errors.poll_failed'));
+      } catch (unavailableErr) {
+        this.error('setUnavailable failed: ' + unavailableErr.message);
+      }
+    } finally {
+      this._pollInFlight = false;
     }
   }
 
-  async _refreshBatterySettings() {
-    // Any refresh (timed or right after a mode/slider change) resets the clock,
-    // so the next timed refresh won't fire a redundant heavy read back-to-back.
-    this._lastSettingsRefresh = Date.now();
-    const settings = await this._hybrid.getBatterySettings();
-    if (settings) {
-      await this._updateBatteryMode(settings.mode);
-      await this._setCapabilitySafe('hoymiles_reserve_soc',          settings.reserveSoc);
-      await this._setCapabilitySafe('hoymiles_max_charge_power',     settings.maxChargePower);
-      await this._setCapabilitySafe('hoymiles_max_discharge_power',  settings.maxDischargePower);
-      await this._setCapabilitySafe('hoymiles_max_soc',             settings.maxSoc);
-      await this._setCapabilitySafe('hoymiles_meter_power', settings.meterPower);
-    }
+  _refreshBatterySettings() {
+    if (this._settingsRefreshInFlight) return this._settingsRefreshInFlight;
 
-    const profit = await this._hybrid.getEpsProfit();
-    if (profit) {
-      await this._setCapabilitySafe('hoymiles_profit_today', profit.todayProfit);
-      await this._setCapabilitySafe('hoymiles_profit_total', profit.totalProfit);
-    }
+    this._settingsRefreshInFlight = (async () => {
+      // Any refresh (timed or right after a mode/slider change) resets the clock,
+      // so the next timed refresh won't fire a redundant heavy read back-to-back.
+      this._lastSettingsRefresh = Date.now();
+      const settings = await this._hybrid.getBatterySettings();
+      if (settings) {
+        await this._updateBatteryMode(settings.mode);
+        await this._setCapabilitySafe('hoymiles_reserve_soc',          settings.reserveSoc);
+        await this._setCapabilitySafe('hoymiles_max_charge_power',     settings.maxChargePower);
+        await this._setCapabilitySafe('hoymiles_max_discharge_power',  settings.maxDischargePower);
+        await this._setCapabilitySafe('hoymiles_max_soc',              settings.maxSoc);
+        await this._setCapabilitySafe('hoymiles_meter_power',          settings.meterPower);
+      }
+
+      const profit = await this._hybrid.getEpsProfit();
+      if (profit) {
+        await this._setCapabilitySafe('hoymiles_profit_today', profit.todayProfit);
+        await this._setCapabilitySafe('hoymiles_profit_total', profit.totalProfit);
+      }
+    })().finally(() => {
+      this._settingsRefreshInFlight = null;
+    });
+
+    return this._settingsRefreshInFlight;
   }
 
   // Called by the driver's flow action cards
@@ -465,15 +512,36 @@ class HiOneDevice extends Device {
       || this.homey.settings.get('cloud_api_url')
       || undefined;
 
+    let localProtocol = store.localProtocol
+      || this.homey.settings.get('local_protocol')
+      || 'modbus';
+    if (localProtocol !== 'native' && localProtocol !== 'auto') localProtocol = 'modbus';
+
+    // Device-specific credentials win; fall back to the app-wide saved login
+    // (set on the app settings page or during pairing) — same pattern as the
+    // gateway IP above. Without this a device paired local-only can never do
+    // the cloud top-up, leaving grid/load/PV and the energy counters empty.
+    const email    = store.email    || this.homey.settings.get('saved_email')    || undefined;
+    const password = store.password || this.homey.settings.get('saved_password') || undefined;
+
+    // Devices paired local-only get data.stationId = null, and device data is
+    // immutable — so without an override the cloud is unreachable for them
+    // forever. Let the optional station_id setting supply it instead of
+    // forcing a re-pair (which would break existing Flows and Insights).
+    const stationId = this.getData().stationId
+      || (settings && settings.station_id ? Number(settings.station_id) : null)
+      || undefined;
+
     this._hybrid = new HoymilesHybrid({
       gatewayIp,
       localPort:     this.homey.settings.get('local_port') || undefined,
-      localProtocol: store.localProtocol || this.homey.settings.get('local_protocol') || 'auto',
-      modbusUnitId:  this.homey.settings.get('modbus_unit_id') || undefined,
-      email:     store.email,
-      password:  store.password,
-      stationId: this.getData().stationId,
+      localProtocol,
+      modbusUnitId:  this.homey.settings.get('modbus_unit_id') || 1,
+      email,
+      password,
+      stationId,
       baseUrl,
+      cloudApi:  this.homey.app.api,
       log:       this.log.bind(this),
       error:     this.error.bind(this),
     });

@@ -118,7 +118,7 @@
         title: 'IP-adres gateway/DTS',
         tip: 'Vind het IP in je router onder \'verbonden apparaten\'.<br>Zoek op <strong>DTS-\u2026</strong>, <strong>DTUBI-\u2026</strong> of <strong>HiBox</strong>.<br>Tip: geef de gateway een <strong>vast IP-adres</strong> (DHCP-reservering) in je router, dan blijft de lokale verbinding altijd werken.',
         label: 'IP-adres',
-        hint: 'De poort (10081 native of 502 Modbus) wordt automatisch bepaald.',
+        hint: 'Standaard: Modbus TCP poort 502. Native 10081 alleen als de scan dat vindt.',
         hintNative: 'Poort 10081 (native) wordt gebruikt.',
         hintModbus: 'Poort 502 (Modbus) wordt gebruikt.',
         next: 'Volgende',
@@ -147,7 +147,7 @@
         title: 'Gateway/DTS IP address',
         tip: 'Find the IP in your router under \'connected devices\'.<br>Look for <strong>DTS-\u2026</strong>, <strong>DTUBI-\u2026</strong> or <strong>HiBox</strong>.<br>Tip: give the gateway a <strong>fixed IP address</strong> (DHCP reservation) in your router so the local connection keeps working.',
         label: 'IP address',
-        hint: 'The port (10081 native or 502 Modbus) is detected automatically.',
+        hint: 'Default: Modbus TCP port 502. Native 10081 only if the scan finds it.',
         hintNative: 'Port 10081 (native) is used.',
         hintModbus: 'Port 502 (Modbus) is used.',
         next: 'Next',
@@ -175,18 +175,17 @@
     };
 
     var _lang = 'en';
-    var _scanProtocol = null;  // protocol of the IP picked from a scan result
+    var _scanProtocol = 'modbus';  // default Modbus TCP; scan may pin native
 
-    // Manual edits invalidate a scan selection → back to 'auto' transport
-    function clearScanProtocol() { _scanProtocol = null; refreshHint(); }
+    // Manual edits reset to Modbus TCP (DTS-WL-G3 default)
+    function clearScanProtocol() { _scanProtocol = 'modbus'; refreshHint(); }
 
     // Show the port that will actually be used, based on the detected protocol
     function refreshHint() {
       var t = i18n[_lang] || i18n.en;
       document.getElementById('t-hint').textContent =
-          _scanProtocol === 'modbus' ? t.hintModbus
-        : _scanProtocol === 'native' ? t.hintNative
-        : t.hint;
+          _scanProtocol === 'native' ? t.hintNative
+        : t.hintModbus;
     }
 
     function applyLang(lang) {

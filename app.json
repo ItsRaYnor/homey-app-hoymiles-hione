@@ -1,6 +1,6 @@
 {
   "id": "com.hoymiles.hione",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "compatibility": ">=12.4.5",
   "sdk": 3,
   "brandColor": "#00A94F",
@@ -79,6 +79,8 @@
         "measure_power",
         "hoymiles_battery_flow",
         "measure_battery",
+        "measure_voltage",
+        "measure_current",
         "meter_power.charged",
         "meter_power.discharged",
         "hoymiles_grid_power",
@@ -109,6 +111,18 @@
           "title": {
             "en": "Battery State of Charge (%)",
             "nl": "Batterij laadniveau (%)"
+          }
+        },
+        "measure_voltage": {
+          "title": {
+            "en": "Battery Voltage",
+            "nl": "Accuspanning"
+          }
+        },
+        "measure_current": {
+          "title": {
+            "en": "Battery Current (+ charge / − discharge)",
+            "nl": "Accustroom (+ laden / − ontladen)"
           }
         },
         "meter_power.charged": {
@@ -185,6 +199,19 @@
             "nl": "Basis-URL van de S-Miles Cloud API (standaard: https://neapi.hoymiles.com). Wijzig dit alleen als Hoymiles naar een ander endpoint migreert."
           },
           "value": "https://neapi.hoymiles.com"
+        },
+        {
+          "id": "station_id",
+          "type": "text",
+          "label": {
+            "en": "Station ID (optional)",
+            "nl": "Station-ID (optioneel)"
+          },
+          "hint": {
+            "en": "Only needed for devices added with the local-only option: those have no station linked, so cloud data (grid, load, PV, energy totals, battery mode) stays empty. Enter the station ID from the S-Miles portal URL to enable it, together with the cloud login on the app settings page.",
+            "nl": "Alleen nodig voor apparaten die lokaal-only zijn toegevoegd: die hebben geen station gekoppeld, waardoor cloudgegevens (net, verbruik, PV, energietotalen, batterijmodus) leeg blijven. Vul hier het station-ID uit de S-Miles portal-URL in, samen met de cloud-login op de app-instellingenpagina."
+          },
+          "value": ""
         },
         {
           "id": "poll_interval",
@@ -373,6 +400,13 @@
           "title": {
             "en": "Time of Use",
             "nl": "Tijdafhankelijk"
+          }
+        },
+        {
+          "id": "9",
+          "title": {
+            "en": "AI Mode",
+            "nl": "AI-modus"
           }
         }
       ],
@@ -567,6 +601,27 @@
       },
       "values": [
         {
+          "id": "modbus_cloud",
+          "title": {
+            "en": "Battery via Modbus, rest via cloud",
+            "nl": "Accu via Modbus, rest via cloud"
+          }
+        },
+        {
+          "id": "modbus",
+          "title": {
+            "en": "Modbus (LAN)",
+            "nl": "Modbus (LAN)"
+          }
+        },
+        {
+          "id": "native",
+          "title": {
+            "en": "Local protocol (LAN)",
+            "nl": "Lokaal protocol (LAN)"
+          }
+        },
+        {
           "id": "local",
           "title": {
             "en": "Local (LAN)",
@@ -637,8 +692,8 @@
           "nl": "Stel batterijmodus in op [[mode]]"
         },
         "hint": {
-          "en": "Battery working mode. Self-Consumption: solar first, then battery, then grid. Economy: time-of-use schedule to avoid peak tariffs. Backup: only discharge during a grid outage. Off-Grid: no grid connection. Force Charge: forcibly charge to the set SoC — set Max Power to 0% to stop charging entirely, so the battery won't absorb power other sources feed back to the grid (e.g. other batteries discharging on high dynamic tariffs). Force Discharge: forcibly discharge to the set SoC. Peak Shaving: cap grid import at a set power. Time of Use: scheduled charge/discharge windows. Cloud connection required.",
-          "nl": "Batterij-werkmodus. Eigen verbruik: eerst zon, dan batterij, dan net. Economie: tijdschema om piektarieven te vermijden. Noodstroom: ontlaadt alleen bij stroomuitval. Off-Grid: geen netaansluiting. Force Charge: laadt geforceerd tot de ingestelde SoC — zet Max vermogen op 0% om laden volledig te stoppen, zodat de Hoymiles geen stroom opneemt die andere bronnen terugleveren (bv. andere batterijen die ontladen bij hoge dynamische tarieven). Force Discharge: ontlaadt geforceerd tot de ingestelde SoC. Peak Shaving: begrenst netafname op een ingesteld vermogen. Time of Use: geplande laad-/ontlaadvensters. Cloudverbinding vereist."
+          "en": "Battery working mode. Self-Consumption: solar first, then battery, then grid. Economy: time-of-use schedule to avoid peak tariffs. Backup: only discharge during a grid outage. Off-Grid: no grid connection. Force Charge: forcibly charge to the set SoC — set Max Power to 0% to stop charging entirely, so the battery won't absorb power other sources feed back to the grid (e.g. other batteries discharging on high dynamic tariffs). Force Discharge: forcibly discharge to the set SoC. Peak Shaving: cap grid import at a set power. Time of Use: scheduled charge/discharge windows. AI Mode: cloud-managed optimization using prices, forecasts and consumption. Cloud connection required.",
+          "nl": "Batterij-werkmodus. Eigen verbruik: eerst zon, dan batterij, dan net. Economie: tijdschema om piektarieven te vermijden. Noodstroom: ontlaadt alleen bij stroomuitval. Off-Grid: geen netaansluiting. Force Charge: laadt geforceerd tot de ingestelde SoC — zet Max vermogen op 0% om laden volledig te stoppen, zodat de Hoymiles geen stroom opneemt die andere bronnen terugleveren (bv. andere batterijen die ontladen bij hoge dynamische tarieven). Force Discharge: ontlaadt geforceerd tot de ingestelde SoC. Peak Shaving: begrenst netafname op een ingesteld vermogen. Time of Use: geplande laad-/ontlaadvensters. AI-modus: cloudgestuurde optimalisatie op basis van prijzen, prognoses en verbruik. Cloudverbinding vereist."
         },
         "args": [
           {
@@ -708,6 +763,13 @@
                 "label": {
                   "en": "Time of Use",
                   "nl": "Tijdafhankelijk"
+                }
+              },
+              {
+                "id": "9",
+                "label": {
+                  "en": "AI Mode",
+                  "nl": "AI-modus"
                 }
               }
             ]
@@ -1214,6 +1276,13 @@
                 "label": {
                   "en": "Time of Use",
                   "nl": "Tijdafhankelijk"
+                }
+              },
+              {
+                "id": "9",
+                "label": {
+                  "en": "AI Mode",
+                  "nl": "AI-modus"
                 }
               }
             ]

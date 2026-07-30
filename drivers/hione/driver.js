@@ -118,7 +118,11 @@ class HiOneDriver extends Driver {
 
     registerListener(
       this.homey.flow.getConditionCard('connection_is_local'),
-      async ({ device }) => device.getCapabilityValue('hoymiles_connection_source') === 'local'
+      // Any transport that reads the battery over the LAN counts as local:
+      // 'modbus' / 'modbus_cloud' (Modbus TCP), 'native' (TCP 10081) and the
+      // legacy 'local' value still stored on devices from older versions.
+      async ({ device }) => ['modbus', 'modbus_cloud', 'native', 'local']
+        .includes(device.getCapabilityValue('hoymiles_connection_source'))
     );
   }
 
@@ -127,7 +131,7 @@ class HiOneDriver extends Driver {
     let _email         = null;
     let _password      = null;
     let _gatewayIp     = null;
-    let _localProtocol = null;      // 'native' | 'modbus' — set when picked from a scan
+    let _localProtocol = 'modbus'; // 'native' | 'modbus' — default Modbus TCP for DTS-WL-G3
 
     const _api = new HoymilesApi({
       log:     this.log.bind(this),
@@ -150,11 +154,10 @@ class HiOneDriver extends Driver {
     });
 
     // Optional: protocol detected by the network scan for the chosen IP.
-    // Pins the new device to that transport so it doesn't probe the wrong port.
-    // Null (manual IP entry) keeps the default 'auto' behaviour.
+    // Pins the new device to that transport. Manual IP entry keeps Modbus TCP.
     session.setHandler('set_local_protocol', async ({ protocol }) => {
-      _localProtocol = (protocol === 'native' || protocol === 'modbus') ? protocol : null;
-      this.log('Local protocol: ' + (_localProtocol || 'auto'));
+      _localProtocol = (protocol === 'native') ? 'native' : 'modbus';
+      this.log('Local protocol: ' + _localProtocol);
       return true;
     });
 

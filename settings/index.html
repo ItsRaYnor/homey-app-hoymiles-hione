@@ -106,8 +106,8 @@
   </label>
   <label style='margin-top:10px'><span id='t-lanProto'>Local protocol</span>
     <select id='lan_protocol'>
-      <option value='auto'>Auto</option>
-      <option value='modbus'>Modbus TCP (DTS-G3, port 502)</option>
+      <option value='modbus' selected>Modbus TCP (DTS-G3, port 502)</option>
+      <option value='auto'>Auto (Modbus, then native 10081)</option>
       <option value='native'>Hoymiles native (port 10081)</option>
     </select>
   </label>
@@ -117,15 +117,16 @@
   <label style='margin-top:10px'><span id='t-lanUnit'>Modbus unit ID</span>
     <input type='text' inputmode='numeric' pattern='[0-9]*' id='lan_unit' placeholder='1'>
   </label>
-  <div class='hint' id='t-lanPortHint'>For the DTS-G3 use Modbus TCP on port 502. The Modbus unit ID is usually in the 101–254 range. First enable "Remote Control" on the stick (see below).</div>
+  <div class='hint' id='t-lanPortHint'>For the DTS-G3 use Modbus TCP on port 502. Try unit ID 1 first — that works on a DTS-WL-G3 out of the box. Only if there is no answer, see the note below.</div>
   <button class='btn-primary' id='lan-save' onclick='saveLan()'>Save</button>
   <div class='status' id='lan_status'></div>
 
   <div class='disclaimer' id='t-modbusHelp' style='margin-top:14px'>
-    <strong>Enable Modbus on the DTS-G3:</strong> open the S-Miles Installer app →
-    Me → Local Install Assistant / Toolkit → DTU Information → RS485 Port Config →
-    choose <strong>Remote Control</strong> (NOT Export Control — that blocks Modbus).
-    Set the Modbus/RS485 address in the 101–254 range.
+    <strong>No Modbus answer?</strong> A DTS-WL-G3 normally answers on unit ID 1 without
+    any configuration. If yours stays silent, it may be in Export Management mode: open the
+    S-Miles Installer app → Me → Local Install Assistant / Toolkit → DTU Information →
+    RS485 Port Config → choose <strong>Remote Control</strong> (NOT Export Control — that
+    blocks Modbus), and use the Modbus/RS485 address set there (101–254).
   </div>
 
   <button class='btn-secondary' id='t-scanBtn' onclick='scanModbus()' style='margin-top:10px'>Test &amp; scan Modbus registers</button>
@@ -183,6 +184,7 @@
           '<li><strong>Force Discharge</strong> — ontlaadt geforceerd tot de ingestelde SoC.</li>' +
           '<li><strong>Peak Shaving</strong> — begrenst netafname op een ingesteld vermogen.</li>' +
           '<li><strong>Time of Use</strong> — geplande laad-/ontlaadvensters.</li>' +
+          '<li><strong>AI-modus</strong> — cloudgestuurde optimalisatie op basis van energieprijzen, prognoses en verbruik.</li>' +
           '</ul>',
         lanTitle: 'Lokale verbinding (LAN)',
         lanHint: 'Het IP-adres van de DTS-WL-G3 stick in je netwerk. Hier opgeslagen wordt het automatisch ingevuld bij het koppelen.',
@@ -190,8 +192,8 @@
         lanProto: 'Lokaal protocol',
         lanPort: 'Lokale poort',
         lanUnit: 'Modbus unit-ID',
-        lanPortHint: 'Gebruik voor de DTS-G3 Modbus TCP op poort 502. De Modbus unit-ID ligt meestal in het bereik 101–254. Zet eerst "Remote Control" aan op de stick (zie hieronder).',
-        modbusHelp: '<strong>Modbus inschakelen op de DTS-G3:</strong> open de S-Miles Installateur-app → Ik → Local Install Assistant / Toolkit → DTU-informatie → RS485 Port Config → kies <strong>Remote Control</strong> (NIET Export Control — dat blokkeert Modbus). Stel het Modbus/RS485-adres in tussen 101–254.',
+        lanPortHint: 'Gebruik voor de DTS-G3 Modbus TCP op poort 502. Probeer eerst unit-ID 1 — dat werkt op een DTS-WL-G3 zonder instellingen vooraf. Alleen als er geen antwoord komt, zie de opmerking hieronder.',
+        modbusHelp: '<strong>Geen Modbus-antwoord?</strong> Een DTS-WL-G3 antwoordt normaal op unit-ID 1 zonder configuratie. Blijft de jouwe stil, dan staat hij mogelijk in Export Management-modus: open de S-Miles Installateur-app → Ik → Local Install Assistant / Toolkit → DTU-informatie → RS485 Port Config → kies <strong>Remote Control</strong> (NIET Export Control — dat blokkeert Modbus), en gebruik het Modbus/RS485-adres dat daar is ingesteld (101–254).',
         lanSave: 'Opslaan',
         lanInvalidIp: 'Ongeldig IP-adres formaat.',
         lanInvalidPort: 'Ongeldige poort (1-65535).',
@@ -200,7 +202,7 @@
         scanBtn: 'Modbus testen & registers scannen',
         scanBusy: 'Bezig met scannen…',
         scanNoIp: 'Vul eerst een IP-adres in en sla op.',
-        scanUnreach: 'Geen Modbus-antwoord op poort 502. Staat "Remote Control" aan op de stick?',
+        scanUnreach: 'Geen Modbus-antwoord op poort 502. Probeer unit-ID 1, en controleer anders "Remote Control" op de stick.',
         scanReach: 'Modbus reageert! Registers hieronder — stuur deze door zodat de accuwaarden gekoppeld kunnen worden.',
         scanErr: 'Scan mislukt: '
       },
@@ -239,6 +241,7 @@
           '<li><strong>Force Discharge</strong> — forcibly discharge to the set SoC.</li>' +
           '<li><strong>Peak Shaving</strong> — cap grid import at a set power.</li>' +
           '<li><strong>Time of Use</strong> — scheduled charge/discharge windows.</li>' +
+          '<li><strong>AI Mode</strong> — cloud-managed optimization using energy prices, forecasts and consumption.</li>' +
           '</ul>',
         lanTitle: 'Local connection (LAN)',
         lanHint: 'The IP address of the DTS-WL-G3 stick on your network. Saved here, it is prefilled when pairing.',
@@ -246,8 +249,8 @@
         lanProto: 'Local protocol',
         lanPort: 'Local port',
         lanUnit: 'Modbus unit ID',
-        lanPortHint: 'For the DTS-G3 use Modbus TCP on port 502. The Modbus unit ID is usually in the 101–254 range. First enable "Remote Control" on the stick (see below).',
-        modbusHelp: '<strong>Enable Modbus on the DTS-G3:</strong> open the S-Miles Installer app → Me → Local Install Assistant / Toolkit → DTU Information → RS485 Port Config → choose <strong>Remote Control</strong> (NOT Export Control — that blocks Modbus). Set the Modbus/RS485 address in the 101–254 range.',
+        lanPortHint: 'For the DTS-G3 use Modbus TCP on port 502. Try unit ID 1 first — that works on a DTS-WL-G3 out of the box. Only if there is no answer, see the note below.',
+        modbusHelp: '<strong>No Modbus answer?</strong> A DTS-WL-G3 normally answers on unit ID 1 without any configuration. If yours stays silent, it may be in Export Management mode: open the S-Miles Installer app → Me → Local Install Assistant / Toolkit → DTU Information → RS485 Port Config → choose <strong>Remote Control</strong> (NOT Export Control — that blocks Modbus), and use the Modbus/RS485 address set there (101–254).',
         lanSave: 'Save',
         lanInvalidIp: 'Invalid IP address format.',
         lanInvalidPort: 'Invalid port (1-65535).',
@@ -256,7 +259,7 @@
         scanBtn: 'Test & scan Modbus registers',
         scanBusy: 'Scanning…',
         scanNoIp: 'Enter and save an IP address first.',
-        scanUnreach: 'No Modbus answer on port 502. Is "Remote Control" enabled on the stick?',
+        scanUnreach: 'No Modbus answer on port 502. Try unit ID 1, and otherwise check "Remote Control" on the stick.',
         scanReach: 'Modbus responds! Registers below — share these so the battery values can be mapped.',
         scanErr: 'Scan failed: '
       }
@@ -416,7 +419,7 @@
       var unit = document.getElementById('lan_unit').value.trim();
       var port = document.getElementById('lan_port').value.trim();
       // Scan the most likely battery/status register windows
-      var body = { ip: ip, port: port ? +port : 502, unitId: unit ? +unit : undefined, start: 0x1000, count: 96 };
+      var body = { ip: ip, port: port ? +port : 502, unitId: unit ? +unit : 1, start: 0x1000, count: 96 };
 
       _homey.api('POST', '/modbus/scan', body, function(err, res) {
         btn.disabled = false; btn.textContent = t.scanBtn;
@@ -516,7 +519,7 @@
       });
 
       Homey.get('local_protocol', function(err, value) {
-        document.getElementById('lan_protocol').value = (!err && value) ? value : 'auto';
+        document.getElementById('lan_protocol').value = (!err && value) ? value : 'modbus';
       });
 
       Homey.get('local_port', function(err, value) {
@@ -525,7 +528,7 @@
       });
 
       Homey.get('modbus_unit_id', function(err, value) {
-        if (!err && value) document.getElementById('lan_unit').value = value;
+        document.getElementById('lan_unit').value = (!err && value) ? value : '1';
       });
 
       document.getElementById('save').addEventListener('click', function() {

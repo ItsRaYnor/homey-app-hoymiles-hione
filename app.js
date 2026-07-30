@@ -12,6 +12,7 @@ class HoymilesHiOneApp extends App {
     this.api = new HoymilesApi({
       log:   (...args) => this.log(...args),
       error: (...args) => this.error(...args),
+      baseUrl: this.homey.settings.get('cloud_api_url') || undefined,
     });
 
     // Flow action/condition run listeners are registered in the driver

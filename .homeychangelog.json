@@ -22,5 +22,8 @@
   },
   "1.0.8": {
     "en": "Fixed the app icon not showing on the App Store listing (it rendered as a plain green circle): reverted to the original simple lettermark design for the app-level icon, which the Store's icon renderer handles reliably. The device icon keeps the new battery badge design, since that one renders correctly."
+  },
+  "1.0.9": {
+    "en": "Hardened the app against internet outages: overlapping polls and settings reads are single-flight, slider/control errors are caught, cloud login is shared and coalesced across devices, and network auth failures retry after 1 minute instead of waiting 30. Added AI Mode (battery mode 9). Live data still polls about every 60s; heavy mode/settings reads now run every 5 minutes. Local protocol defaults to Modbus TCP (Auto still available: Modbus then native 10081). Default Modbus unit ID is 1 (verified answering on DTS-WL-G3); after enabling Remote Control the installer may set 101–254. Native 10081 pauses for an hour after connection refused. Battery SoC, power and voltage now prefer verified local Modbus registers; battery current is derived from local power and voltage, while missing values still fall back to cloud."
   }
 }
