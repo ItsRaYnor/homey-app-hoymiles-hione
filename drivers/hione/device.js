@@ -37,6 +37,30 @@ const PERCENT_SLIDERS = [
   'hoymiles_max_discharge_power',
 ];
 
+// Values that always come from the cloud, even when the live data is read
+// locally over Modbus — so they lag by minutes. Their titles get a small cloud
+// marker appended while a local connection is active, making it obvious per
+// tile which readings are instant and which are not. Everything else (battery
+// power/SoC/voltage/current, grid, PV, house load) comes straight off the stick.
+const CLOUD_SOURCED_CAPABILITIES = [
+  'hoymiles_battery_mode',
+  'meter_power.charged',
+  'meter_power.discharged',
+  'hoymiles_daily_energy',
+  'hoymiles_monthly_energy',
+  'hoymiles_yearly_energy',
+  'hoymiles_total_energy',
+  'hoymiles_co2_reduction',
+  'hoymiles_profit_today',
+  'hoymiles_profit_total',
+  'hoymiles_reserve_soc',
+  'hoymiles_max_soc',
+  'hoymiles_max_charge_power',
+  'hoymiles_max_discharge_power',
+  'hoymiles_meter_power',
+];
+const CLOUD_MARKER = ' ☁';
+
 const NEW_CAPABILITIES = [
   'hoymiles_battery_flow',
   'measure_voltage',
@@ -53,6 +77,7 @@ const NEW_CAPABILITIES = [
   'hoymiles_co2_reduction',
   'hoymiles_profit_today',
   'hoymiles_profit_total',
+  'hoymiles_connection_source',
 ];
 
 // Capabilities replaced by a better equivalent — removed from existing devices.
@@ -155,7 +180,46 @@ class HiOneDevice extends Device {
     this._stopPolling();
     this._clearFollowupPolls();
     if (this._modeChangeTimer) this.homey.clearTimeout(this._modeChangeTimer);
+    if (this._pausePollingTimer) this.homey.clearTimeout(this._pausePollingTimer);
     this.log('HiOne device removed');
+  }
+
+  /**
+   * Mark cloud-sourced values with a small ☁ in their title while part of the
+   * data is read locally, so it is visible per tile which readings are live and
+   * which lag behind. Removed again when everything comes from the cloud (then
+   * the distinction is meaningless). Only runs when the source actually changes.
+   */
+  async _applyCloudMarkers(source) {
+    const mixed = source === 'modbus_cloud' || source === 'modbus' || source === 'native';
+    if (this._cloudMarkersApplied === mixed) return;
+    this._cloudMarkersApplied = mixed;
+
+    const lang = this.homey.i18n.getLanguage();
+    const pick = (title) => (title && (title[lang] || title.en)) || null;
+    const driverOpts = (this.driver.manifest && this.driver.manifest.capabilitiesOptions) || {};
+    const appCaps    = (this.homey.manifest && this.homey.manifest.capabilities) || {};
+
+    for (const capability of CLOUD_SOURCED_CAPABILITIES) {
+      if (!this.hasCapability(capability)) continue;
+      try {
+        // Keep whatever options are already set (slider ranges, enum values);
+        // only the title changes.
+        let options = {};
+        try { options = this.getCapabilityOptions(capability) || {}; } catch (_) { /* none set yet */ }
+
+        const base = pick(driverOpts[capability] && driverOpts[capability].title)
+          || pick(appCaps[capability.split('.')[0]] && appCaps[capability.split('.')[0]].title)
+          || (options.title || '').replace(CLOUD_MARKER, '');
+        if (!base) continue;
+
+        const title = mixed ? base + CLOUD_MARKER : base;
+        if (options.title === title) continue;
+        await this.setCapabilityOptions(capability, { ...options, title });
+      } catch (err) {
+        this.log(`Could not label ${capability}: ${err.message}`);
+      }
+    }
   }
 
   _clearFollowupPolls() {
@@ -269,6 +333,32 @@ class HiOneDevice extends Device {
     }
   }
 
+  /**
+   * Temporarily halt polling while something else needs exclusive access to
+   * the stick (the register scan on the settings page). The stick handles only
+   * one conversation at a time, so a scan racing the poll produces timeouts
+   * and misdelivered responses. Resumes automatically after `ms` as a safety
+   * net in case the caller never resumes.
+   */
+  pausePolling(ms = 120_000) {
+    this._stopPolling();
+    this._clearFollowupPolls();
+    if (this._pausePollingTimer) this.homey.clearTimeout(this._pausePollingTimer);
+    this._pausePollingTimer = this.homey.setTimeout(() => this.resumePolling(), ms);
+    this.log('Polling paused (register scan)');
+  }
+
+  resumePolling() {
+    if (this._pausePollingTimer) {
+      this.homey.clearTimeout(this._pausePollingTimer);
+      this._pausePollingTimer = null;
+    }
+    if (!this._pollInterval) {
+      this._startPolling();
+      this.log('Polling resumed');
+    }
+  }
+
   // Human-readable charge/discharge status for the device tile, derived from
   // battery power (measure_power: + = charging, − = discharging).
   _batteryFlowText(power) {
@@ -312,6 +402,7 @@ class HiOneDevice extends Device {
       await this._setCapabilitySafe('meter_power.discharged',       data.batteryOutEnergy);
       await this._setCapabilitySafe('hoymiles_co2_reduction',       data.co2Reduction);
       await this._setCapabilitySafe('hoymiles_connection_source',   data.source);
+      await this._applyCloudMarkers(data.source);
 
       // Local data carries the active mode; cloud mode comes from settings
       if (data.batteryMode !== null && data.batteryMode !== undefined) {

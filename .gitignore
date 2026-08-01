@@ -8,6 +8,8 @@ node_modules/
 # Claude / AI tooling
 .claude/
 CLAUDE.local.md
+# Cursor automations & auto-patch config — local tooling, not part of the app
+.cursor/
 
 # Environment & secrets
 # env.json is Homey's standard file for app secrets (API keys etc.)

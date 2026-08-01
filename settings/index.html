@@ -39,6 +39,12 @@
     }
     .lang-toggle:hover { background: #e8e8e8; color: #333; }
     .section-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .tabs { display: flex; gap: 4px; margin: 4px 0 16px; border-bottom: 1px solid #ddd; }
+    .tabs button { flex: 1; background: none; border: none; border-bottom: 2px solid transparent;
+      padding: 8px 4px; font-size: 13px; color: #666; cursor: pointer; }
+    .tabs button.active { color: #111; font-weight: 600; border-bottom-color: #2a7; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
     .saved-box {
       background: #f0fff4; border: 1px solid #c6efd5; border-radius: 10px;
       padding: 12px 14px; margin-bottom: 12px; font-size: 13px; display: none;
@@ -69,6 +75,13 @@
     <button class='lang-toggle' id='lang-toggle' onclick='toggleLang()'>NL</button>
   </div>
 
+  <div class='tabs'>
+    <button id='t-tabAccount' class='active' onclick="showTab('account')">Account</button>
+    <button id='t-tabLan' onclick="showTab('lan')">Verbinding</button>
+    <button id='t-tabData' onclick="showTab('data')">Waarden</button>
+  </div>
+
+  <div class='tab-panel active' id='panel-account'>
   <h3 class='section-title' id='t-accTitle'>S-Miles Cloud account</h3>
   <div class='hint' id='t-accHint' style='margin-bottom:10px'>
     Log in once here — adding a device via Cloud then works with a single tap.
@@ -90,14 +103,19 @@
   </div>
   <div class='status' id='acc_status'></div>
 
+  <label id='diag_station_row' style='margin-top:10px; display:none'><span id='t-diagStation'>Station</span>
+    <select id='diag_station' onchange='runDiagnostics(this.value)'></select>
+  </label>
   <button class='btn-secondary' id='t-diagBtn' onclick='runDiagnostics()' style='margin-top:10px'>Show supported battery modes</button>
   <div class='status' id='diag_status'></div>
   <pre id='diag_out' style='display:none; font-size:11px; background:#f5f5f5; border-radius:8px; padding:10px; margin-top:8px; max-height:300px; overflow:auto; white-space:pre-wrap;'></pre>
 
   <h3 class='section-title' id='t-modesTitle' style='margin-top:28px'>Battery working modes</h3>
   <div class='hint' id='t-modesHelp' style='margin-bottom:10px'></div>
+  </div>
 
-  <h3 class='section-title' id='t-lanTitle' style='margin-top:28px'>Local connection (LAN)</h3>
+  <div class='tab-panel' id='panel-lan'>
+  <h3 class='section-title' id='t-lanTitle'>Local connection (LAN)</h3>
   <div class='hint' id='t-lanHint' style='margin-bottom:10px'>
     The IP address of the DTS-G3 stick on your network. Saved here, it is prefilled when pairing.
   </div>
@@ -129,10 +147,6 @@
     blocks Modbus), and use the Modbus/RS485 address set there (101–254).
   </div>
 
-  <button class='btn-secondary' id='t-scanBtn' onclick='scanModbus()' style='margin-top:10px'>Test &amp; scan Modbus registers</button>
-  <div class='status' id='scan_status'></div>
-  <pre id='scan_out' style='display:none; font-size:11px; background:#f5f5f5; border-radius:8px; padding:10px; margin-top:8px; max-height:240px; overflow:auto; white-space:pre-wrap;'></pre>
-
   <h3 class='section-title' id='t-advTitle' style='margin-top:28px'>Advanced</h3>
   <div class='disclaimer' id='t-disclaimer'>
     Only change the API URL if Hoymiles migrates to a different endpoint.
@@ -146,6 +160,19 @@
 
   <button class='btn-primary' id='save'>Save</button>
   <div class='status' id='status'></div>
+  </div>
+
+  <div class='tab-panel' id='panel-data'>
+  <h3 class='section-title' id='t-srcTitle'>Where each value comes from</h3>
+  <div class='hint' id='t-srcHelp' style='margin-bottom:10px'></div>
+  <div id='src_out'></div>
+
+  <h3 class='section-title' id='t-scanTitle' style='margin-top:28px'>Register scan</h3>
+  <div class='hint' id='t-scanHint' style='margin-bottom:10px'></div>
+  <button class='btn-secondary' id='t-scanBtn' onclick='scanModbus()'>Test &amp; scan Modbus registers</button>
+  <div class='status' id='scan_status'></div>
+  <pre id='scan_out' style='display:none; font-size:11px; background:#f5f5f5; border-radius:8px; padding:10px; margin-top:8px; max-height:240px; overflow:auto; white-space:pre-wrap;'></pre>
+  </div>
 
   <script>
     var i18n = {
@@ -171,6 +198,17 @@
         forget: 'Account vergeten',
         forgotten: 'Account verwijderd.',
         diagBtn: 'Toon ondersteunde batterijmodi',
+        diagStation: 'Station (bij meerdere batterijen op je account)',
+        srcTitle: 'Waar komt welke waarde vandaan?',
+        srcHelp: 'Met een lokale Modbus-verbinding worden deze waarden rechtstreeks van de DTS-stick gelezen — direct, zonder cloudvertraging. De rest komt van de S-Miles Cloud en loopt daardoor enkele minuten achter.',
+        tabAccount: 'Account',
+        tabLan: 'Verbinding',
+        tabData: 'Waarden',
+        scanTitle: 'Registerscan',
+        scanHint: 'Leest de drie FC04-vensters waar de live gegevens staan (0x0000, 0x0400 en 0x0800). Registers die de app gebruikt worden gemarkeerd, en negatieve waarden staan tussen haakjes.',
+        srcLocal: 'Lokaal via Modbus (unit-ID {unit})',
+        srcCloud: 'Alleen via de cloud',
+        srcReg: 'register',
         diagBusy: 'Bezig met ophalen…',
         diagErr: 'Diagnose mislukt: ',
         diagNoAcc: 'Log eerst in met je account hierboven.',
@@ -228,6 +266,17 @@
         forget: 'Forget account',
         forgotten: 'Account removed.',
         diagBtn: 'Show supported battery modes',
+        diagStation: 'Station (when your account has multiple batteries)',
+        srcTitle: 'Where each value comes from',
+        srcHelp: 'With a local Modbus connection these values are read straight from the DTS stick — live, without cloud delay. The rest comes from the S-Miles Cloud and therefore lags by a few minutes.',
+        tabAccount: 'Account',
+        tabLan: 'Connection',
+        tabData: 'Values',
+        scanTitle: 'Register scan',
+        scanHint: 'Reads the three FC04 windows that hold the live data (0x0000, 0x0400 and 0x0800). Registers the app uses are marked, and negative values are shown in brackets.',
+        srcLocal: 'Local via Modbus (unit ID {unit})',
+        srcCloud: 'Cloud only',
+        srcReg: 'register',
         diagBusy: 'Fetching…',
         diagErr: 'Diagnostics failed: ',
         diagNoAcc: 'Log in with your account above first.',
@@ -305,6 +354,14 @@
       document.getElementById('login-btn').textContent = t.loginSave;
       document.getElementById('t-forget').textContent = t.forget;
       document.getElementById('t-diagBtn').textContent = t.diagBtn;
+      document.getElementById('t-diagStation').textContent = t.diagStation;
+      document.getElementById('t-srcTitle').textContent = t.srcTitle;
+      document.getElementById('t-srcHelp').textContent = t.srcHelp;
+      document.getElementById('t-tabAccount').textContent = t.tabAccount;
+      document.getElementById('t-tabLan').textContent = t.tabLan;
+      document.getElementById('t-tabData').textContent = t.tabData;
+      document.getElementById('t-scanTitle').textContent = t.scanTitle;
+      document.getElementById('t-scanHint').textContent = t.scanHint;
       document.getElementById('t-modesTitle').textContent = t.modesTitle;
       document.getElementById('t-modesHelp').innerHTML = t.modesHelp;
       if (_savedEmail) {
@@ -419,7 +476,8 @@
       var unit = document.getElementById('lan_unit').value.trim();
       var port = document.getElementById('lan_port').value.trim();
       // Scan the most likely battery/status register windows
-      var body = { ip: ip, port: port ? +port : 502, unitId: unit ? +unit : 1, start: 0x1000, count: 96 };
+      // No start/count → the API scans the FC04 windows that hold live data.
+      var body = { ip: ip, port: port ? +port : 502, unitId: unit ? +unit : 1 };
 
       _homey.api('POST', '/modbus/scan', body, function(err, res) {
         btn.disabled = false; btn.textContent = t.scanBtn;
@@ -427,7 +485,15 @@
         if (!res || !res.reachable) { showScanStatus(t.scanUnreach, false); return; }
         showScanStatus(t.scanReach, true);
         var out = document.getElementById('scan_out');
-        var lines = Object.keys(res.registers || {}).map(function(k){ return k + ' = ' + res.registers[k]; });
+        var known = res.known || {};
+        var regs = res.registers || {};
+        var lines = Object.keys(regs).map(function (k) {
+          var v = regs[k];
+          var signed = v >= 32768 ? v - 65536 : v;
+          return k + ' = ' + String(v).padStart(6)
+            + (signed !== v ? '  (' + signed + ')' : '')
+            + (known[k] ? '   ← ' + known[k] : '');
+        });
         out.textContent = lines.length ? lines.join('\n') : '(no registers returned)';
         out.style.display = 'block';
       });
@@ -440,7 +506,52 @@
       el.style.display = 'block';
     }
 
-    function runDiagnostics() {
+    function showTab(name) {
+      ['account', 'lan', 'data'].forEach(function (n) {
+        var panel = document.getElementById('panel-' + n);
+        var tab   = document.getElementById('t-tab' + n.charAt(0).toUpperCase() + n.slice(1));
+        if (panel) panel.className = 'tab-panel' + (n === name ? ' active' : '');
+        if (tab)   tab.className   = (n === name ? 'active' : '');
+      });
+      // Values are read live, so refresh them whenever the tab is opened.
+      if (name === 'data') loadDataSources();
+    }
+
+    function loadDataSources() {
+      var t = i18n[_lang] || i18n.en;
+      var box = document.getElementById('src_out');
+      _homey.api('POST', '/datasources', {}, function (err, res) {
+        if (err || !res) {
+          box.innerHTML = "<div style='color:#c00;font-size:12px'>"
+            + ((err && err.message) || 'geen gegevens') + "</div>";
+          return;
+        }
+        var html = '';
+        var row = function (name, detail, value) {
+          return "<div style='display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid #eee'>"
+            + "<span style='flex:1'>" + name + "</span>"
+            + (value !== null && value !== undefined
+              ? "<span style='font-variant-numeric:tabular-nums'>" + value + "</span>" : "")
+            + "<span style='color:#888;font-size:11px;white-space:nowrap;min-width:96px;text-align:right'>"
+            + detail + "</span></div>";
+        };
+        html += "<div style='font-weight:600;margin:6px 0 4px'>"
+          + t.srcLocal.replace('{unit}', res.unitId) + "</div>";
+        if (res.error) {
+          html += "<div style='color:#c00;font-size:12px;margin-bottom:6px'>" + res.error + "</div>";
+        }
+        (res.local || []).forEach(function (r) {
+          var d = r.register === '—' ? r.scale
+            : (r.register + ' · ' + r.fc + (r.scale ? ' ' + r.scale : ''));
+          html += row(r.label, d, r.value);
+        });
+        html += "<div style='font-weight:600;margin:12px 0 4px'>" + t.srcCloud + "</div>";
+        (res.cloudOnly || []).forEach(function (r) { html += row(r.label, '☁'); });
+        box.innerHTML = html;
+      });
+    }
+
+    function runDiagnostics(stationId) {
       var t = i18n[_lang] || i18n.en;
       var st = document.getElementById('diag_status');
       var out = document.getElementById('diag_out');
@@ -449,7 +560,7 @@
       var btn = document.getElementById('t-diagBtn');
       btn.disabled = true; btn.textContent = t.diagBusy;
 
-      _homey.api('POST', '/diagnostics', {}, function(err, res) {
+      _homey.api('POST', '/diagnostics', stationId ? { stationId: stationId } : {}, function(err, res) {
         btn.disabled = false; btn.textContent = t.diagBtn;
         if (err) {
           var msg = (err && err.message) || String(err);
@@ -457,6 +568,23 @@
           st.className = 'status err'; st.style.display = 'block';
           return;
         }
+        // Multiple batteries on one account: let the user pick which station to
+        // inspect instead of silently defaulting to the first one.
+        var stations = res.stations || [];
+        if (stations.length > 1) {
+          var row = document.getElementById('diag_station_row');
+          var sel = document.getElementById('diag_station');
+          sel.innerHTML = '';
+          stations.forEach(function (s) {
+            var o = document.createElement('option');
+            o.value = s.id;
+            o.textContent = (s.name || 'Station') + ' (' + s.id + ')';
+            if (String(s.id) === String(res.stationId)) o.selected = true;
+            sel.appendChild(o);
+          });
+          row.style.display = 'block';
+        }
+
         var lines = [];
         if (res.stationId) lines.push('Station: ' + res.stationId);
         if (res.currentModeName) lines.push('Current mode: ' + res.currentMode + ' = ' + res.currentModeName);
@@ -557,6 +685,7 @@
         });
       });
 
+      // Loaded on demand when the Values tab is opened — it reads the stick live.
       Homey.ready();
     }
   </script>

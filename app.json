@@ -1,6 +1,6 @@
 {
   "id": "com.hoymiles.hione",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "compatibility": ">=12.4.5",
   "sdk": 3,
   "brandColor": "#00A94F",
@@ -50,6 +50,10 @@
     "getDiagnostics": {
       "method": "POST",
       "path": "/diagnostics"
+    },
+    "dataSources": {
+      "method": "POST",
+      "path": "/datasources"
     }
   },
   "images": {
@@ -98,7 +102,8 @@
         "hoymiles_total_energy",
         "hoymiles_co2_reduction",
         "hoymiles_profit_today",
-        "hoymiles_profit_total"
+        "hoymiles_profit_total",
+        "hoymiles_connection_source"
       ],
       "capabilitiesOptions": {
         "measure_power": {
@@ -551,7 +556,7 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/pv.svg"
+      "icon": "/assets/co2.svg"
     },
     "hoymiles_total_energy": {
       "type": "number",
@@ -578,7 +583,7 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/grid.svg"
+      "icon": "/assets/savings.svg"
     },
     "hoymiles_profit_total": {
       "type": "number",
@@ -591,7 +596,7 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/grid.svg"
+      "icon": "/assets/savings.svg"
     },
     "hoymiles_connection_source": {
       "type": "enum",
@@ -603,22 +608,22 @@
         {
           "id": "modbus_cloud",
           "title": {
-            "en": "Battery via Modbus, rest via cloud",
-            "nl": "Accu via Modbus, rest via cloud"
+            "en": "Modbus + cloud",
+            "nl": "Modbus + cloud"
           }
         },
         {
           "id": "modbus",
           "title": {
-            "en": "Modbus (LAN)",
-            "nl": "Modbus (LAN)"
+            "en": "Modbus",
+            "nl": "Modbus"
           }
         },
         {
           "id": "native",
           "title": {
-            "en": "Local protocol (LAN)",
-            "nl": "Lokaal protocol (LAN)"
+            "en": "Local (10081)",
+            "nl": "Lokaal (10081)"
           }
         },
         {
@@ -647,7 +652,7 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/grid.svg"
+      "icon": "/assets/connection.svg"
     }
   },
   "flow": {
