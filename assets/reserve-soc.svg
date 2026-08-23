@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Battery body, upright -->
+  <rect x="30" y="24" width="40" height="60" rx="6" fill="none" stroke="#FFFFFF" stroke-width="7"/>
+  <!-- Terminal -->
+  <path d="M42 18 L58 18" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/>
+  <!-- Reserve: only the bottom is kept filled -->
+  <rect x="38" y="62" width="24" height="14" rx="3" fill="#00A94F"/>
+</svg>

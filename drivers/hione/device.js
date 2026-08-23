@@ -78,7 +78,36 @@ const NEW_CAPABILITIES = [
   'hoymiles_profit_today',
   'hoymiles_profit_total',
   'hoymiles_connection_source',
+  'hoymiles_reserve_soc_value',
+  'hoymiles_max_charge_power_value',
+  'hoymiles_max_discharge_power_value',
+  'hoymiles_cell_spread',
+  'hoymiles_cell_temp_max',
 ];
+
+// Per-module BMS detail is local-only and slow-moving, so it gets its own slow
+// cadence rather than riding the 60s live poll. Reading four modules takes
+// about eight seconds; a quarter of an hour is plenty for a metric whose whole
+// point is a trend over months.
+const BMS_REFRESH_MS = 15 * 60_000;
+
+// The three settings that can be read straight off the stick. The sliders stay
+// the place to change them; these read-only twins put the current value in the
+// device card's tile grid next to the live measurements.
+const SETTING_VALUE_CAPABILITY = {
+  hoymiles_reserve_soc:         'hoymiles_reserve_soc_value',
+  hoymiles_max_charge_power:    'hoymiles_max_charge_power_value',
+  hoymiles_max_discharge_power: 'hoymiles_max_discharge_power_value',
+};
+
+// getBatterySettings() reports which fields it managed to read locally; map
+// those back to capabilities so the cloud marker only labels what is really
+// lagging. Reserve SOC is mode-dependent, so it moves in and out of this set.
+const LOCAL_SETTING_CAPABILITY = {
+  reserveSoc:        'hoymiles_reserve_soc',
+  maxChargePower:    'hoymiles_max_charge_power',
+  maxDischargePower: 'hoymiles_max_discharge_power',
+};
 
 // Capabilities replaced by a better equivalent — removed from existing devices.
 // The device is now a Homey "home battery": measure_power = battery power and
@@ -134,6 +163,7 @@ class HiOneDevice extends Device {
     this.registerCapabilityListener('hoymiles_reserve_soc', async (value) => {
       try {
         await this._hybrid.setReserveSoc(value);
+        await this._setCapabilitySafe(SETTING_VALUE_CAPABILITY.hoymiles_reserve_soc, value);
       } catch (err) {
         this.error('Reserve SOC change failed: ' + err.message);
       }
@@ -142,6 +172,7 @@ class HiOneDevice extends Device {
     this.registerCapabilityListener('hoymiles_max_charge_power', async (value) => {
       try {
         await this._hybrid.setMaxChargePower(value);
+        await this._setCapabilitySafe(SETTING_VALUE_CAPABILITY.hoymiles_max_charge_power, value);
       } catch (err) {
         this.error('Max charge power change failed: ' + err.message);
       }
@@ -150,6 +181,7 @@ class HiOneDevice extends Device {
     this.registerCapabilityListener('hoymiles_max_discharge_power', async (value) => {
       try {
         await this._hybrid.setMaxDischargePower(value);
+        await this._setCapabilitySafe(SETTING_VALUE_CAPABILITY.hoymiles_max_discharge_power, value);
       } catch (err) {
         this.error('Max discharge power change failed: ' + err.message);
       }
@@ -192,16 +224,28 @@ class HiOneDevice extends Device {
    */
   async _applyCloudMarkers(source) {
     const mixed = source === 'modbus_cloud' || source === 'modbus' || source === 'native';
-    if (this._cloudMarkersApplied === mixed) return;
-    this._cloudMarkersApplied = mixed;
+
+    // Settings we managed to read locally this cycle are not lagging, so they
+    // must not carry the marker. Reserve SOC moves in and out of that set as
+    // the battery mode changes, hence recomputing instead of a fixed list.
+    const local = this._localSettingCaps || new Set();
+    const lagging = CLOUD_SOURCED_CAPABILITIES.filter(c => !local.has(c));
+
+    // Cheap guard against redoing identical work on every poll.
+    const signature = `${mixed}|${lagging.join(',')}`;
+    if (this._cloudMarkerSignature === signature) return;
+    this._cloudMarkerSignature = signature;
 
     const lang = this.homey.i18n.getLanguage();
     const pick = (title) => (title && (title[lang] || title.en)) || null;
     const driverOpts = (this.driver.manifest && this.driver.manifest.capabilitiesOptions) || {};
     const appCaps    = (this.homey.manifest && this.homey.manifest.capabilities) || {};
 
+    // Walk the full list, not just the marked ones: a capability that just
+    // became locally readable has to get its marker taken off again.
     for (const capability of CLOUD_SOURCED_CAPABILITIES) {
       if (!this.hasCapability(capability)) continue;
+      const marked = mixed && !local.has(capability);
       try {
         // Keep whatever options are already set (slider ranges, enum values);
         // only the title changes.
@@ -213,13 +257,70 @@ class HiOneDevice extends Device {
           || (options.title || '').replace(CLOUD_MARKER, '');
         if (!base) continue;
 
-        const title = mixed ? base + CLOUD_MARKER : base;
+        const title = marked ? base + CLOUD_MARKER : base;
         if (options.title === title) continue;
         await this.setCapabilityOptions(capability, { ...options, title });
       } catch (err) {
         this.log(`Could not label ${capability}: ${err.message}`);
       }
     }
+  }
+
+  /**
+   * Refresh the per-module cell data, at most every BMS_REFRESH_MS.
+   *
+   * Only two numbers reach the device card: the cell spread and the highest
+   * cell temperature. Those are the ones worth a graph — a spread creeping up
+   * over months is the earliest sign of a weakening cell. The 32 individual
+   * cell readings would be unreadable as tiles; they are available on demand
+   * from the app settings instead.
+   */
+  async _refreshBmsData() {
+    if (this._bmsRefreshAt && Date.now() - this._bmsRefreshAt < BMS_REFRESH_MS) return;
+    this._bmsRefreshAt = Date.now();
+
+    // Reuse the address found last time so a restart does not pay for
+    // rediscovery; the hybrid verifies it before trusting it.
+    const hint = this.getStoreValue('bms_base');
+    const bms = await this._hybrid.getBmsData(typeof hint === 'number' ? hint : undefined);
+    if (!bms) return;
+
+    if (bms.base !== hint) {
+      await this.setStoreValue('bms_base', bms.base).catch(() => {});
+    }
+    await this._setCapabilitySafe('hoymiles_cell_spread',   bms.spreadMv);
+    await this._setCapabilitySafe('hoymiles_cell_temp_max', bms.tempMaxC);
+  }
+
+  /**
+   * Refresh the three settings that live in the stick, on the normal live poll.
+   *
+   * Without this they would only move on the five-minute cloud settings
+   * refresh, so a change made in S-Miles (or the sliders' own tiles after a
+   * write) could sit stale for minutes even though the register next to it was
+   * already current. Three register reads, so cheap enough to run every time.
+   */
+  async _refreshLocalSettings() {
+    const local = await this._hybrid.getLocalSettings();
+    if (!local) return;
+
+    const fields = {
+      reserveSoc:        'hoymiles_reserve_soc',
+      maxChargePower:    'hoymiles_max_charge_power',
+      maxDischargePower: 'hoymiles_max_discharge_power',
+    };
+    const read = [];
+    for (const [field, slider] of Object.entries(fields)) {
+      if (typeof local[field] !== 'number') continue;
+      // Do not refill a setting the active mode does not have — the settings
+      // refresh blanked it on purpose.
+      if (this._modeSupports && this._modeSupports[field] === false) continue;
+      read.push(slider);
+      await this._setCapabilitySafe(slider, local[field]);
+      await this._setCapabilitySafe(SETTING_VALUE_CAPABILITY[slider], local[field]);
+    }
+    // Keeps the cloud marker honest between the heavier settings refreshes.
+    if (read.length) this._localSettingCaps = new Set(read);
   }
 
   _clearFollowupPolls() {
@@ -370,6 +471,32 @@ class HiOneDevice extends Device {
     return `${verb} ${Math.abs(Math.round(w))} W`;
   }
 
+  /**
+   * Set a setting that belongs to the active battery mode, or blank it when
+   * that mode does not have it. Blanking is deliberate: leaving the previous
+   * mode's number there is worse than showing nothing, because it reads as a
+   * setting that applies when it does not.
+   */
+  async _setPerModeSetting(capability, field, value) {
+    const supported = !this._modeSupports || this._modeSupports[field] !== false;
+    if (!supported) return this._blankCapability(capability);
+    await this._setCapabilitySafe(capability, value);
+    const tile = SETTING_VALUE_CAPABILITY[capability];
+    if (tile) await this._setCapabilitySafe(tile, value);
+  }
+
+  async _blankCapability(capability) {
+    for (const cap of [capability, SETTING_VALUE_CAPABILITY[capability]]) {
+      if (!cap || !this.hasCapability(cap)) continue;
+      if (this.getCapabilityValue(cap) === null) continue;
+      try {
+        await this.setCapabilityValue(cap, null);
+      } catch (err) {
+        this.error(`Could not blank ${cap}: ${err.message}`);
+      }
+    }
+  }
+
   async _setCapabilitySafe(capability, value) {
     if (value === null || value === undefined) return;
     if (!this.hasCapability(capability)) return;
@@ -402,6 +529,8 @@ class HiOneDevice extends Device {
       await this._setCapabilitySafe('meter_power.discharged',       data.batteryOutEnergy);
       await this._setCapabilitySafe('hoymiles_co2_reduction',       data.co2Reduction);
       await this._setCapabilitySafe('hoymiles_connection_source',   data.source);
+      await this._refreshLocalSettings();
+      await this._refreshBmsData();
       await this._applyCloudMarkers(data.source);
 
       // Local data carries the active mode; cloud mode comes from settings
@@ -439,12 +568,35 @@ class HiOneDevice extends Device {
       this._lastSettingsRefresh = Date.now();
       const settings = await this._hybrid.getBatterySettings();
       if (settings) {
-        await this._updateBatteryMode(settings.mode);
-        await this._setCapabilitySafe('hoymiles_reserve_soc',          settings.reserveSoc);
+        if (settings.mode !== undefined) await this._updateBatteryMode(settings.mode);
+
+        // Reserve SOC and max SOC belong to whichever mode is active. When that
+        // mode has no such setting, blank the tile instead of showing a value
+        // borrowed from another mode's block — that borrowed number is what
+        // made a "max charge level" of 85% appear while the active mode had
+        // none. The charge/discharge power limits are NOT blanked: their titles
+        // name their own mode, and pre-configuring them without switching is a
+        // genuine local-Modbus capability.
+        this._modeSupports = settings.supports || null;
+        await this._setPerModeSetting('hoymiles_reserve_soc', 'reserveSoc', settings.reserveSoc);
+        await this._setPerModeSetting('hoymiles_max_soc',     'maxSoc',     settings.maxSoc);
+
         await this._setCapabilitySafe('hoymiles_max_charge_power',     settings.maxChargePower);
         await this._setCapabilitySafe('hoymiles_max_discharge_power',  settings.maxDischargePower);
-        await this._setCapabilitySafe('hoymiles_max_soc',              settings.maxSoc);
         await this._setCapabilitySafe('hoymiles_meter_power',          settings.meterPower);
+
+        // Mirror the three onto their read-only tiles on the device card.
+        for (const [slider, tile] of Object.entries(SETTING_VALUE_CAPABILITY)) {
+          await this._setCapabilitySafe(tile, this.getCapabilityValue(slider));
+        }
+
+        // Remember which of them came off the stick, so the cloud marker below
+        // labels only the ones that really lag.
+        this._localSettingCaps = new Set(
+          (settings.localFields || [])
+            .map(field => LOCAL_SETTING_CAPABILITY[field])
+            .filter(Boolean)
+        );
       }
 
       const profit = await this._hybrid.getEpsProfit();
@@ -545,6 +697,14 @@ class HiOneDevice extends Device {
   async _updateBatteryMode(mode) {
     await this._setCapabilitySafe('hoymiles_battery_mode', mode);
 
+    // Persist it so a restart while the internet is down still knows which
+    // mode is active — that is what decides where a local reserve-SOC write
+    // goes. The mode cannot change without the cloud, so a stored value stays
+    // valid for the whole outage.
+    if (mode !== undefined && mode !== null && mode !== this.getStoreValue('last_mode')) {
+      await this.setStoreValue('last_mode', mode).catch(() => {});
+    }
+
     if (this._prevBatteryMode !== null && mode !== this._prevBatteryMode) {
       const modeName = BATTERY_MODES[Number(mode)] || mode;
       this.homey.flow.getDeviceTriggerCard('battery_mode_changed')
@@ -636,6 +796,14 @@ class HiOneDevice extends Device {
       log:       this.log.bind(this),
       error:     this.error.bind(this),
     });
+
+    // Hand back the mode we knew when we last ran. Without this a restart
+    // during an internet outage would leave local writes unable to pick the
+    // right per-mode register, precisely when the cloud cannot help.
+    const storedMode = this.getStoreValue('last_mode');
+    if (storedMode !== undefined && storedMode !== null) {
+      this._hybrid.setKnownMode(storedMode);
+    }
   }
 }
 

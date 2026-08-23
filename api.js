@@ -1,14 +1,35 @@
 'use strict';
 
+const net            = require('net');
 const HoymilesApi    = require('./lib/HoymilesApi');
 const HoymilesModbus = require('./lib/HoymilesModbus');
+
+// Ports the two local protocols need. A DTS-WL-G3 only opens 502: a full probe
+// of 35 common ports found nothing else, 10081 included. Offering the native
+// protocol there sends people hunting for a fault that is really a missing
+// service, so the settings page checks and says so.
+const PROTOCOL_PORTS = { modbus: 502, native: 10081 };
+const PORT_PROBE_MS  = 1500;
 
 // Which measurements the app can read straight off the stick, and which only
 // ever come from the cloud. Shown on the settings page so it is clear where
 // each value originates. Register details come from the live map, so this
 // stays in sync when the map is extended.
+// Windows the register scan covers: [start, length, isInputRegister].
+// The FC03 entry is the settings block — without it the scan cannot show the
+// registers the app writes to.
+const SCAN_WINDOWS = [
+  [0x0000, 0x0100, true],
+  [0x0400, 0x0060, true],
+  [0x0860, 0x0060, true],
+  [0x10C0, 0x0040, false],
+];
+// FC03 and FC04 addresses can collide, so holding registers carry a marker.
+const FC03_PREFIX = 'FC03 ';
+
 const CLOUD_ONLY_FIELDS = [
   { field: 'batteryMode',   label: 'Battery mode' },
+  { field: 'maxSoc',        label: 'Max charge level' },
   { field: 'dailyEnergy',   label: 'Energy today / month / year / total' },
   { field: 'batteryInEnergy',  label: 'Battery charged / discharged energy' },
   { field: 'co2Reduction',  label: 'CO2 reduction' },
@@ -26,6 +47,10 @@ const FIELD_CAPABILITIES = {
   gridPower:      'hoymiles_grid_power',
   pvPower:        'hoymiles_pv_power',
   loadPower:      'hoymiles_load_power',
+  // Settings that are read (and written) locally as well
+  reserveSoc:        'hoymiles_reserve_soc',
+  maxChargePower:    'hoymiles_max_charge_power',
+  maxDischargePower: 'hoymiles_max_discharge_power',
 };
 
 const FIELD_LABELS = {
@@ -36,6 +61,9 @@ const FIELD_LABELS = {
   gridPower:      'Grid power',
   pvPower:        'Solar power',
   loadPower:      'Home load power',
+  reserveSoc:        'Reserved SOC (of the active mode)',
+  maxChargePower:    'Max charge power',
+  maxDischargePower: 'Max discharge power',
 };
 
 module.exports = {
@@ -60,16 +88,48 @@ module.exports = {
       register: '—', fc: 'berekend', scale: 'P / U', value: null,
     });
 
+    // Settings that are read locally too — and written locally where that is
+    // exactly equivalent to the cloud call.
+    const hex = (a) => '0x' + a.toString(16).toUpperCase().padStart(4, '0');
+    for (const [field, def] of Object.entries(HoymilesModbus.SETTING_REGISTERS || {})) {
+      local.push({
+        field,
+        label:    FIELD_LABELS[field] || field,
+        register: hex(def.addr),
+        fc:       'FC03',
+        scale:    def.factor && def.factor !== 1 ? '÷' + def.factor : '',
+        value:    null,
+      });
+    }
+
     // Show the values the device already polled rather than querying the stick
     // again — this stick only handles one conversation at a time, so an extra
     // read here would compete with the running poll.
     const ip = (homey.settings.get('saved_gateway_ip') || '').trim();
     const unitId = Number(homey.settings.get('modbus_unit_id')) || 1;
     let error = null;
+    const cloudOnly = CLOUD_ONLY_FIELDS.slice();
     try {
       const devices = homey.drivers.getDriver('hione').getDevices();
       const device = devices[0];
       if (device) {
+        // The reserved SOC sits in a different register per battery mode, so
+        // show the one actually in use. Modes without a mapped register fall
+        // back to the cloud, and the table should say so rather than imply a
+        // local read that is not happening.
+        const mode = device.hasCapability('hoymiles_battery_mode')
+          ? Number(device.getCapabilityValue('hoymiles_battery_mode'))
+          : NaN;
+        const reserveAddr = (HoymilesModbus.RESERVE_SOC_BY_MODE || {})[mode];
+        if (reserveAddr !== undefined) {
+          local.push({
+            field: 'reserveSoc', label: FIELD_LABELS.reserveSoc,
+            register: hex(reserveAddr), fc: 'FC03', scale: '', value: null,
+          });
+        } else {
+          cloudOnly.push({ field: 'reserveSoc', label: FIELD_LABELS.reserveSoc });
+        }
+
         for (const row of local) {
           const capability = FIELD_CAPABILITIES[row.field];
           if (capability && device.hasCapability(capability)) {
@@ -82,7 +142,59 @@ module.exports = {
     } catch (err) {
       error = err.message;
     }
-    return { local, cloudOnly: CLOUD_ONLY_FIELDS, unitId, ip: ip || null, error };
+    return { local, cloudOnly, unitId, ip: ip || null, error };
+  },
+
+  /**
+   * Which local protocols this gateway can actually serve.
+   *
+   * A plain TCP connect, not a protocol handshake: a closed port is the honest
+   * answer to "can this ever work", and it separates "wrong protocol chosen"
+   * from "right protocol, something else is broken".
+   */
+  async checkPorts({ homey, body }) {
+    const ip = (body && body.ip || homey.settings.get('saved_gateway_ip') || '').trim();
+    if (!ip) throw new Error('No gateway IP set');
+
+    const probe = (port) => new Promise((resolve) => {
+      const socket = new net.Socket();
+      let settled = false;
+      const done = (open) => { if (settled) return; settled = true; socket.destroy(); resolve(open); };
+      socket.setTimeout(PORT_PROBE_MS);
+      socket.once('connect', () => done(true));
+      socket.once('timeout', () => done(false));
+      socket.once('error',   () => done(false));
+      socket.connect(port, ip);
+    });
+
+    const out = { ip };
+    for (const [name, port] of Object.entries(PROTOCOL_PORTS)) {
+      out[name] = { port, open: await probe(port) };
+    }
+    return out;
+  },
+
+  /**
+   * Per-module cell voltages and temperatures, read on request.
+   *
+   * Deliberately not polled: 32 readings are for looking at when you want them,
+   * not for the device card. Goes through the device so it shares the stick's
+   * request queue instead of opening a competing conversation.
+   */
+  async bmsDetail({ homey }) {
+    let device;
+    try {
+      device = homey.drivers.getDriver('hione').getDevices()[0];
+    } catch (err) {
+      throw new Error('Could not reach the HiOne device: ' + err.message);
+    }
+    if (!device) throw new Error('No HiOne device added yet');
+    if (!device._hybrid) throw new Error('Device is still starting up — try again in a moment');
+
+    const hint = device.getStoreValue('bms_base');
+    const bms = await device._hybrid.getBmsData(typeof hint === 'number' ? hint : undefined);
+    if (!bms) throw new Error('No cell data — this needs a working local Modbus connection');
+    return bms;
   },
 
   /**
@@ -202,6 +314,7 @@ module.exports = {
 
     let registers = {};
     let reachable = false;
+    let expected  = 0;
     try {
       reachable = await modbus.isReachable();
       const start = Number(body && body.start);
@@ -209,19 +322,32 @@ module.exports = {
       const input = Boolean(body && body.input);
 
       if (!isNaN(start)) {
-        // Explicit range requested
-        registers = await modbus.scan(start, count, { input });
+        // Explicit range requested — tag holding registers the same way the
+        // default windows do, so the labels below still line up.
+        expected = count;
+        const part = await modbus.scan(start, count, { input });
+        for (const [addr, value] of Object.entries(part)) {
+          registers[input ? addr : FC03_PREFIX + addr] = value;
+        }
       } else if (reachable) {
-        // Default: the three FC04 windows that actually carry live data on a
-        // DTS-WL-G3 (battery, BMS + grid detail, grid/PV/load totals). Scanning
-        // FC03 0x1000 instead — as this did before — only returns static config.
+        // Three FC04 windows carry the live data on a DTS-WL-G3 (battery,
+        // BMS + grid detail, grid/PV/load totals), and one FC03 window holds
+        // the settings the app reads and writes. Both are needed: scanning
+        // only FC03 0x1000 — as this did originally — returns static config,
+        // while scanning only FC04 leaves out every register the app writes to.
         //
         // Sized to stay well inside Homey's 10s API timeout. Measured on real
         // hardware: 64-register chunks read all 448 registers in ~4s, while
         // 32-register chunks took 6s AND lost more than half the responses —
         // fewer, larger requests collide with the poll far less.
-        for (const [from, length] of [[0x0000, 0x0100], [0x0400, 0x60], [0x0860, 0x60]]) {
-          Object.assign(registers, await modbus.scan(from, length, { input: true, chunk: 64 }));
+        for (const [from, length, isInput] of SCAN_WINDOWS) {
+          expected += length;
+          const part = await modbus.scan(from, length, { input: isInput, chunk: 64 });
+          // FC03 and FC04 are separate address spaces, so an address alone is
+          // ambiguous. Tag the holding registers to keep the dump honest.
+          for (const [addr, value] of Object.entries(part)) {
+            registers[isInput ? addr : FC03_PREFIX + addr] = value;
+          }
         }
       }
     } finally {
@@ -229,14 +355,25 @@ module.exports = {
         try { d.resumePolling(); } catch (_) { /* device meanwhile removed */ }
       }
     }
-    // Annotate the registers the app actually uses, so the dump is readable.
+    // Annotate every register the app actually uses, so the dump is readable:
+    // the live measurements, the two power limits, and the reserved SOC of
+    // each battery mode that has one.
+    const toHex = (a) => '0x' + a.toString(16).toUpperCase().padStart(4, '0');
     const known = {};
     for (const [field, def] of Object.entries(HoymilesModbus.BATTERY_REGISTERS || {})) {
-      for (let i = 0; i < (def.words || 1); i++) {
-        known['0x' + (def.addr + i).toString(16).toUpperCase().padStart(4, '0')] = field;
-      }
+      for (let i = 0; i < (def.words || 1); i++) known[toHex(def.addr + i)] = field;
     }
-    return { reachable, registers, known };
+    for (const [field, def] of Object.entries(HoymilesModbus.SETTING_REGISTERS || {})) {
+      known[FC03_PREFIX + toHex(def.addr)] = field;
+    }
+    for (const [mode, addr] of Object.entries(HoymilesModbus.RESERVE_SOC_BY_MODE || {})) {
+      known[FC03_PREFIX + toHex(addr)] = `reserveSoc (mode ${mode})`;
+    }
+    // Report gaps rather than letting a dropped chunk pass as "this range is
+    // empty". Addresses themselves are trustworthy now — responses are matched
+    // on transaction id, so a chunk either arrives correctly or not at all.
+    const missing = Math.max(0, expected - Object.keys(registers).length);
+    return { reachable, registers, known, missing };
   },
 
 };

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Downward arrow: discharging -->
+  <path d="M50 34 L50 84" stroke="#00A94F" stroke-width="8" stroke-linecap="round"/>
+  <path d="M30 64 L50 84 L70 64" fill="none" stroke="#00A94F" stroke-width="8"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Ceiling -->
+  <path d="M24 16 L76 16" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/>
+</svg>

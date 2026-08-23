@@ -123,12 +123,13 @@
     <input type='text' id='lan_ip' placeholder='192.168.1.100'>
   </label>
   <label style='margin-top:10px'><span id='t-lanProto'>Local protocol</span>
-    <select id='lan_protocol'>
+    <select id='lan_protocol' onchange='checkProtocolPorts()'>
       <option value='modbus' selected>Modbus TCP (DTS-G3, port 502)</option>
       <option value='auto'>Auto (Modbus, then native 10081)</option>
       <option value='native'>Hoymiles native (port 10081)</option>
     </select>
   </label>
+  <div class='status' id='proto_status'></div>
   <label style='margin-top:10px'><span id='t-lanPort'>Local port</span>
     <input type='text' inputmode='numeric' pattern='[0-9]*' id='lan_port' placeholder='502'>
   </label>
@@ -172,6 +173,12 @@
   <button class='btn-secondary' id='t-scanBtn' onclick='scanModbus()'>Test &amp; scan Modbus registers</button>
   <div class='status' id='scan_status'></div>
   <pre id='scan_out' style='display:none; font-size:11px; background:#f5f5f5; border-radius:8px; padding:10px; margin-top:8px; max-height:240px; overflow:auto; white-space:pre-wrap;'></pre>
+
+  <h3 class='section-title' id='t-bmsTitle' style='margin-top:28px'>Cellen per accumodule</h3>
+  <div class='hint' id='t-bmsHint' style='margin-bottom:10px'></div>
+  <button class='btn-secondary' id='t-bmsBtn' onclick='loadBms()'>Read cell data</button>
+  <div class='status' id='bms_status'></div>
+  <pre id='bms_out' style='display:none; font-size:11px; background:#f5f5f5; border-radius:8px; padding:10px; margin-top:8px; max-height:300px; overflow:auto; white-space:pre-wrap;'></pre>
   </div>
 
   <script>
@@ -200,12 +207,12 @@
         diagBtn: 'Toon ondersteunde batterijmodi',
         diagStation: 'Station (bij meerdere batterijen op je account)',
         srcTitle: 'Waar komt welke waarde vandaan?',
-        srcHelp: 'Met een lokale Modbus-verbinding worden deze waarden rechtstreeks van de DTS-stick gelezen — direct, zonder cloudvertraging. De rest komt van de S-Miles Cloud en loopt daardoor enkele minuten achter.',
+        srcHelp: 'Met een lokale Modbus-verbinding worden deze waarden rechtstreeks van de DTS-stick gelezen — direct, zonder cloudvertraging. De drie instellingen onderaan worden ook lokaal geschreven wanneer dat precies hetzelfde doet als via de cloud. De rest komt van de S-Miles Cloud en loopt daardoor enkele minuten achter.',
         tabAccount: 'Account',
         tabLan: 'Verbinding',
         tabData: 'Waarden',
         scanTitle: 'Registerscan',
-        scanHint: 'Leest de drie FC04-vensters waar de live gegevens staan (0x0000, 0x0400 en 0x0800). Registers die de app gebruikt worden gemarkeerd, en negatieve waarden staan tussen haakjes.',
+        scanHint: 'Leest de drie FC04-vensters met live gegevens (0x0000, 0x0400, 0x0800) plus het FC03-instellingenblok (0x10C0). Holding-registers krijgen het voorvoegsel FC03, omdat die adressen los staan van FC04. Registers die de app gebruikt worden gemarkeerd, en negatieve waarden staan tussen haakjes.',
         srcLocal: 'Lokaal via Modbus (unit-ID {unit})',
         srcCloud: 'Alleen via de cloud',
         srcReg: 'register',
@@ -240,6 +247,14 @@
         scanBtn: 'Modbus testen & registers scannen',
         scanBusy: 'Bezig met scannen…',
         scanNoIp: 'Vul eerst een IP-adres in en sla op.',
+        protoNativeClosed: 'Deze gateway heeft poort 10081 niet open, dus het native protocol kan hier niet werken. Kies Modbus TCP.',
+        protoAutoNoNative: 'Poort 10081 is dicht op deze gateway; Auto gebruikt dus altijd Modbus. Dat is prima — Modbus TCP kiezen scheelt een mislukte poging per keer.',
+        bmsTitle: 'Cellen per accumodule',
+        bmsHint: 'Leest de celspanningen en -temperaturen rechtstreeks uit de accu. Alleen op aanvraag, want het zijn veel waarden. De celspreiding staat wel als tegel op de kaart, met historie.',
+        bmsBtn: 'Celgegevens ophalen',
+        bmsBusy: 'Bezig met lezen…',
+        bmsErr: 'Lezen mislukt: ',
+        scanGaps: '{n} registers konden niet gelezen worden (opnieuw proberen kan helpen)',
         scanUnreach: 'Geen Modbus-antwoord op poort 502. Probeer unit-ID 1, en controleer anders "Remote Control" op de stick.',
         scanReach: 'Modbus reageert! Registers hieronder — stuur deze door zodat de accuwaarden gekoppeld kunnen worden.',
         scanErr: 'Scan mislukt: '
@@ -268,12 +283,12 @@
         diagBtn: 'Show supported battery modes',
         diagStation: 'Station (when your account has multiple batteries)',
         srcTitle: 'Where each value comes from',
-        srcHelp: 'With a local Modbus connection these values are read straight from the DTS stick — live, without cloud delay. The rest comes from the S-Miles Cloud and therefore lags by a few minutes.',
+        srcHelp: 'With a local Modbus connection these values are read straight from the DTS stick — live, without cloud delay. The three settings at the bottom are written locally too, where that does exactly what the cloud call does. The rest comes from the S-Miles Cloud and therefore lags by a few minutes.',
         tabAccount: 'Account',
         tabLan: 'Connection',
         tabData: 'Values',
         scanTitle: 'Register scan',
-        scanHint: 'Reads the three FC04 windows that hold the live data (0x0000, 0x0400 and 0x0800). Registers the app uses are marked, and negative values are shown in brackets.',
+        scanHint: 'Reads the three FC04 windows holding live data (0x0000, 0x0400, 0x0800) plus the FC03 settings block (0x10C0). Holding registers are prefixed FC03, because those addresses are separate from FC04. Registers the app uses are marked, and negative values are shown in brackets.',
         srcLocal: 'Local via Modbus (unit ID {unit})',
         srcCloud: 'Cloud only',
         srcReg: 'register',
@@ -308,6 +323,14 @@
         scanBtn: 'Test & scan Modbus registers',
         scanBusy: 'Scanning…',
         scanNoIp: 'Enter and save an IP address first.',
+        protoNativeClosed: 'This gateway does not have port 10081 open, so the native protocol cannot work here. Choose Modbus TCP.',
+        protoAutoNoNative: 'Port 10081 is closed on this gateway, so Auto will always end up on Modbus. That is fine — choosing Modbus TCP just saves a failed attempt each time.',
+        bmsTitle: 'Cells per battery module',
+        bmsHint: 'Reads cell voltages and temperatures straight from the battery. On request only, because it is a lot of values. The cell spread is on the device card as a tile, with history.',
+        bmsBtn: 'Read cell data',
+        bmsBusy: 'Reading…',
+        bmsErr: 'Read failed: ',
+        scanGaps: '{n} registers could not be read (retrying may help)',
         scanUnreach: 'No Modbus answer on port 502. Try unit ID 1, and otherwise check "Remote Control" on the stick.',
         scanReach: 'Modbus responds! Registers below — share these so the battery values can be mapped.',
         scanErr: 'Scan failed: '
@@ -362,6 +385,9 @@
       document.getElementById('t-tabData').textContent = t.tabData;
       document.getElementById('t-scanTitle').textContent = t.scanTitle;
       document.getElementById('t-scanHint').textContent = t.scanHint;
+      document.getElementById('t-bmsTitle').textContent = t.bmsTitle;
+      document.getElementById('t-bmsHint').textContent = t.bmsHint;
+      document.getElementById('t-bmsBtn').textContent = t.bmsBtn;
       document.getElementById('t-modesTitle').textContent = t.modesTitle;
       document.getElementById('t-modesHelp').innerHTML = t.modesHelp;
       if (_savedEmail) {
@@ -483,7 +509,9 @@
         btn.disabled = false; btn.textContent = t.scanBtn;
         if (err) { showScanStatus(t.scanErr + (err.message || err), false); return; }
         if (!res || !res.reachable) { showScanStatus(t.scanUnreach, false); return; }
-        showScanStatus(t.scanReach, true);
+        // A dropped chunk must not read as "this range is empty" — say so.
+        showScanStatus(res.missing ? t.scanReach + ' — ' + t.scanGaps.replace('{n}', res.missing)
+                                   : t.scanReach, true);
         var out = document.getElementById('scan_out');
         var known = res.known || {};
         var regs = res.registers || {};
@@ -515,6 +543,58 @@
       });
       // Values are read live, so refresh them whenever the tab is opened.
       if (name === 'data') loadDataSources();
+    }
+
+    // Say plainly when the chosen protocol needs a port this gateway does not
+    // open. A DTS-WL-G3 only serves 502, so picking the native protocol there
+    // can only ever fail — and it fails in ways that look like a broken setup.
+    function checkProtocolPorts() {
+      var t = i18n[_lang] || i18n.en;
+      var proto = document.getElementById('lan_protocol').value;
+      var ip = document.getElementById('lan_ip').value.trim();
+      var box = document.getElementById('proto_status');
+      box.style.display = 'none';
+      if (!ip || proto === 'modbus') return;
+
+      _homey.api('POST', '/ports', { ip: ip }, function (err, res) {
+        if (err || !res) return;
+        if (res.native && res.native.open) return;   // nothing to warn about
+        box.className = 'status err';
+        box.style.display = 'block';
+        box.textContent = proto === 'native' ? t.protoNativeClosed : t.protoAutoNoNative;
+      });
+    }
+
+    function loadBms() {
+      var t = i18n[_lang] || i18n.en;
+      var btn = document.getElementById('t-bmsBtn');
+      var out = document.getElementById('bms_out');
+      var st  = document.getElementById('bms_status');
+      btn.disabled = true; btn.textContent = t.bmsBusy;
+      st.style.display = 'none'; out.style.display = 'none';
+
+      _homey.api('POST', '/bms', {}, function (err, res) {
+        btn.disabled = false; btn.textContent = t.bmsBtn;
+        if (err || !res) {
+          st.className = 'status err'; st.style.display = 'block';
+          st.textContent = t.bmsErr + ((err && err.message) || '?');
+          return;
+        }
+        var lines = [];
+        lines.push('spreiding ' + res.spreadMv + ' mV   (' + res.cellMinMv + ' - ' + res.cellMaxMv + ' mV)');
+        lines.push('temperatuur ' + res.tempMinC + ' - ' + res.tempMaxC + ' °C');
+        lines.push('');
+        (res.modules || []).forEach(function (m, i) {
+          var lo = Math.min.apply(null, m.cells), hi = Math.max.apply(null, m.cells);
+          var sum = m.cells.reduce(function (a, b) { return a + b; }, 0) / 1000;
+          lines.push('module ' + (i + 1) + '  @' + m.address
+            + '   ' + sum.toFixed(3) + ' V   spreiding ' + (hi - lo) + ' mV');
+          lines.push('  cellen  ' + m.cells.join(' ') + ' mV');
+          lines.push('  temps   ' + m.temps.join(' ') + ' °C');
+        });
+        out.textContent = lines.join('\n');
+        out.style.display = 'block';
+      });
     }
 
     function loadDataSources() {

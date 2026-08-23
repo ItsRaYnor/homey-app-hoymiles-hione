@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Thermometer -->
+  <path d="M50 20 L50 60" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="50" cy="72" r="14" fill="#00A94F"/>
+  <path d="M50 52 L50 66" stroke="#00A94F" stroke-width="10" stroke-linecap="round"/>
+  <!-- Scale marks -->
+  <path d="M64 30 L74 30" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+  <path d="M64 42 L74 42" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+</svg>

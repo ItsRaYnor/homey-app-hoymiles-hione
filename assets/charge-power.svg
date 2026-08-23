@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Upward arrow: charging -->
+  <path d="M50 16 L50 66" stroke="#00A94F" stroke-width="8" stroke-linecap="round"/>
+  <path d="M30 36 L50 16 L70 36" fill="none" stroke="#00A94F" stroke-width="8"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Baseline -->
+  <path d="M24 84 L76 84" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/>
+</svg>

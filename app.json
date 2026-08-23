@@ -1,6 +1,6 @@
 {
   "id": "com.hoymiles.hione",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "compatibility": ">=12.4.5",
   "sdk": 3,
   "brandColor": "#00A94F",
@@ -54,6 +54,14 @@
     "dataSources": {
       "method": "POST",
       "path": "/datasources"
+    },
+    "bmsDetail": {
+      "method": "POST",
+      "path": "/bms"
+    },
+    "checkPorts": {
+      "method": "POST",
+      "path": "/ports"
     }
   },
   "images": {
@@ -90,6 +98,11 @@
         "hoymiles_grid_power",
         "hoymiles_load_power",
         "hoymiles_pv_power",
+        "hoymiles_reserve_soc_value",
+        "hoymiles_max_charge_power_value",
+        "hoymiles_max_discharge_power_value",
+        "hoymiles_cell_spread",
+        "hoymiles_cell_temp_max",
         "hoymiles_battery_mode",
         "hoymiles_reserve_soc",
         "hoymiles_max_soc",
@@ -424,8 +437,8 @@
     "hoymiles_reserve_soc": {
       "type": "number",
       "title": {
-        "en": "Reserve SOC % (battery minimum)",
-        "nl": "Reserve laadniveau % (ondergrens accu)"
+        "en": "Reserved SOC % (floor when discharging, ceiling when charging)",
+        "nl": "Gereserveerde SOC % (ondergrens bij ontladen, bovengrens bij laden)"
       },
       "min": 0,
       "max": 100,
@@ -484,6 +497,76 @@
       "setable": true,
       "uiComponent": "slider",
       "icon": "/assets/battery.svg"
+    },
+    "hoymiles_cell_spread": {
+      "type": "number",
+      "title": {
+        "en": "Cell spread",
+        "nl": "Celspreiding"
+      },
+      "units": "mV",
+      "insights": true,
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/cell-spread.svg"
+    },
+    "hoymiles_cell_temp_max": {
+      "type": "number",
+      "title": {
+        "en": "Highest cell temperature",
+        "nl": "Hoogste celtemperatuur"
+      },
+      "units": "°C",
+      "insights": true,
+      "decimals": 1,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/cell-temp.svg"
+    },
+    "hoymiles_reserve_soc_value": {
+      "type": "number",
+      "title": {
+        "en": "Reserved SOC",
+        "nl": "Gereserveerde SOC"
+      },
+      "units": "%",
+      "insights": false,
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/reserve-soc.svg"
+    },
+    "hoymiles_max_charge_power_value": {
+      "type": "number",
+      "title": {
+        "en": "Max charge power",
+        "nl": "Max laadvermogen"
+      },
+      "units": "%",
+      "insights": false,
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/charge-power.svg"
+    },
+    "hoymiles_max_discharge_power_value": {
+      "type": "number",
+      "title": {
+        "en": "Max discharge power",
+        "nl": "Max ontlaadvermogen"
+      },
+      "units": "%",
+      "insights": false,
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/discharge-power.svg"
     },
     "hoymiles_meter_power": {
       "type": "number",
