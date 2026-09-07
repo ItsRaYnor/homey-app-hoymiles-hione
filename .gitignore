@@ -5,20 +5,26 @@ node_modules/
 .homeybuild/
 *.homeycompose
 
-# Claude / AI tooling
-.claude/
-CLAUDE.local.md
-# Cursor automations & auto-patch config — local tooling, not part of the app
-.cursor/
-
-# Environment & secrets
-# env.json is Homey's standard file for app secrets (API keys etc.)
+# Secrets and credentials.
+# env.json is Homey's standard file for app secrets (API keys etc.) — it is read
+# at runtime and must never be committed. The app stores the user's S-Miles
+# login and station id in Homey's own settings store, not in this repo.
 env.json
 .env
 .env.*
 *.pem
 *.key
+*.p12
+*.pfx
 credentials*.json
+secrets*.json
+*.local.json
+
+# Claude / AI tooling
+.claude/
+CLAUDE.local.md
+# Cursor automations & auto-patch config — local tooling, not part of the app
+.cursor/
 
 # OS files
 .DS_Store
@@ -30,11 +36,18 @@ desktop.ini
 .idea/
 *.swp
 *.swo
+*~
+*.bak
 
-# Logs
+# Logs, coverage, scratch
 *.log
 npm-debug.log*
+coverage/
+.nyc_output/
+tmp/
+temp/
 
 # Archives / local exports
 *.tar.gz
+*.tgz
 *.zip

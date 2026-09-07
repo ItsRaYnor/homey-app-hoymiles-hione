@@ -13,13 +13,27 @@ const { BATTERY_MODES } = require('../../lib/HoymilesApi');
 const SETTINGS_REFRESH_MS = 5 * 60_000; // 5 min
 
 // Selecting the battery mode in the app fires for every value scrolled past.
-// Wait until the choice settles before writing it to the cloud, so scrolling
-// through the picker doesn't apply each intermediate mode.
-const MODE_APPLY_DELAY_MS = 2_500;
+// Wait until the choice settles before writing it, so scrolling through the
+// picker does not apply each intermediate mode.
+//
+// This matters MORE now that the write goes over Modbus. A cloud switch took
+// about four minutes and an intermediate mode was superseded long before it
+// landed; a local write takes seconds and actually happens. Scrolling past
+// Off-Grid with a pause would really put the inverter off-grid. The delay is
+// not the bottleneck either — the inverter itself needs roughly six seconds to
+// act — so shortening it buys nothing and costs safety.
+const MODE_APPLY_DELAY_MS = 3_000;
 
 // The cloud rejects a new mode write until the previous one has settled
 // (~10s), so enforce a minimum gap between mode writes to avoid API errors.
 const MODE_MIN_INTERVAL_MS = 10_000;
+
+// Homey fails a capability listener with "Timeout after 10000ms" if it has not
+// resolved in ten seconds. Our cloud calls carry a fifteen-second HTTP timeout
+// and setMaxSoc makes two of them back to back, so simply awaiting the write
+// cannot meet that budget — the user gets a timeout even when the write goes on
+// to succeed. Reported live on 2026-09-06, moving the max charge level slider.
+const SETTING_LISTENER_BUDGET_MS = 8_000;
 
 // The local power limit is persisted to the inverter's EEPROM on every write.
 // Cap automated writes per day and skip no-op writes to limit chip wear.
@@ -31,8 +45,9 @@ const POWER_LIMIT_MAX_WRITES_PER_DAY = 10;
 // renders a units-"%" capability as a 0–1 fraction ×100 — which made the
 // Insights graph read 100× too small. The "%" is shown in the title instead.
 const PERCENT_SLIDERS = [
-  'hoymiles_reserve_soc',
-  'hoymiles_max_soc',
+  'hoymiles_max_soc_local',
+  'hoymiles_reserve_soc_selfuse',
+  'hoymiles_reserve_soc_forcecharge',
   'hoymiles_max_charge_power',
   'hoymiles_max_discharge_power',
 ];
@@ -43,7 +58,8 @@ const PERCENT_SLIDERS = [
 // tile which readings are instant and which are not. Everything else (battery
 // power/SoC/voltage/current, grid, PV, house load) comes straight off the stick.
 const CLOUD_SOURCED_CAPABILITIES = [
-  'hoymiles_battery_mode',
+  // The battery mode is NOT here any more: since v1.1.2 it is read straight off
+  // the stick on every poll, so marking it as cloud-sourced would be a lie.
   'meter_power.charged',
   'meter_power.discharged',
   'hoymiles_daily_energy',
@@ -53,8 +69,8 @@ const CLOUD_SOURCED_CAPABILITIES = [
   'hoymiles_co2_reduction',
   'hoymiles_profit_today',
   'hoymiles_profit_total',
-  'hoymiles_reserve_soc',
-  'hoymiles_max_soc',
+  'hoymiles_reserve_soc_selfuse',
+  'hoymiles_reserve_soc_forcecharge',
   'hoymiles_max_charge_power',
   'hoymiles_max_discharge_power',
   'hoymiles_meter_power',
@@ -67,8 +83,8 @@ const NEW_CAPABILITIES = [
   'measure_current',
   'meter_power.charged',
   'meter_power.discharged',
-  'hoymiles_reserve_soc',
-  'hoymiles_max_soc',
+  'hoymiles_reserve_soc_selfuse',
+  'hoymiles_reserve_soc_forcecharge',
   'hoymiles_max_charge_power',
   'hoymiles_max_discharge_power',
   'hoymiles_meter_power',
@@ -78,7 +94,11 @@ const NEW_CAPABILITIES = [
   'hoymiles_profit_today',
   'hoymiles_profit_total',
   'hoymiles_connection_source',
-  'hoymiles_reserve_soc_value',
+  'hoymiles_battery_mode_value',
+  'hoymiles_max_soc_local',
+  'hoymiles_max_soc_local_value',
+  'hoymiles_reserve_soc_selfuse_value',
+  'hoymiles_reserve_soc_forcecharge_value',
   'hoymiles_max_charge_power_value',
   'hoymiles_max_discharge_power_value',
   'hoymiles_cell_spread',
@@ -91,20 +111,44 @@ const NEW_CAPABILITIES = [
 // point is a trend over months.
 const BMS_REFRESH_MS = 15 * 60_000;
 
+// The reserve SOC is stored per battery mode, in its own register each. Showing
+// them as one tile meant the tile silently changed meaning with the mode — a
+// discharge floor in Self-Consumption, a charge target in Force Charge — and
+// flipped between the two values whenever the app's idea of the active mode was
+// a step behind. One tile per mode, keyed by mode number.
+// Short labels for the mode tile. The full names ("Force Discharge") already fill
+// the tile on their own, and with the power beside them they get cut off — which
+// is worse than an abbreviation, because a truncated label hides which mode it is.
+const SHORT_MODE_NAMES = {
+  1: 'Self-use', 2: 'Eco', 3: 'Backup', 4: 'Off-Grid', 5: 'F-Charge',
+  6: 'F-Disch', 7: 'Peak', 8: 'ToU', 9: 'AI',
+};
+
+const RESERVE_SOC_SLIDERS = {
+  1: 'hoymiles_reserve_soc_selfuse',
+  5: 'hoymiles_reserve_soc_forcecharge',
+};
+const RESERVE_SOC_LABELS = {
+  1: 'Self-Consumption',
+  5: 'Force Charge',
+};
+
 // The three settings that can be read straight off the stick. The sliders stay
 // the place to change them; these read-only twins put the current value in the
 // device card's tile grid next to the live measurements.
 const SETTING_VALUE_CAPABILITY = {
-  hoymiles_reserve_soc:         'hoymiles_reserve_soc_value',
+  hoymiles_max_soc_local:           'hoymiles_max_soc_local_value',
+  hoymiles_reserve_soc_selfuse:     'hoymiles_reserve_soc_selfuse_value',
+  hoymiles_reserve_soc_forcecharge: 'hoymiles_reserve_soc_forcecharge_value',
   hoymiles_max_charge_power:    'hoymiles_max_charge_power_value',
   hoymiles_max_discharge_power: 'hoymiles_max_discharge_power_value',
 };
 
 // getBatterySettings() reports which fields it managed to read locally; map
 // those back to capabilities so the cloud marker only labels what is really
-// lagging. Reserve SOC is mode-dependent, so it moves in and out of this set.
+// lagging. The per-mode reserves are not in here: they are read from named
+// registers on every poll and so are never cloud-sourced.
 const LOCAL_SETTING_CAPABILITY = {
-  reserveSoc:        'hoymiles_reserve_soc',
   maxChargePower:    'hoymiles_max_charge_power',
   maxDischargePower: 'hoymiles_max_discharge_power',
 };
@@ -119,6 +163,18 @@ const REMOVED_CAPABILITIES = [
   'meter_power',                  // base PV total — not used for a battery device
   'hoymiles_battery_in_energy',   // → meter_power.charged
   'hoymiles_battery_out_energy',  // → meter_power.discharged
+  // A single reserve tile could not say WHICH mode's reserve it was showing:
+  // the value lives in a different register per mode, so it alternated between
+  // two modes' numbers as the app's idea of the active mode moved. Split into
+  // one tile per mode, each bound to its own register.
+  'hoymiles_reserve_soc',
+  'hoymiles_reserve_soc_value',
+  // Replaced by hoymiles_max_soc_local, which binds in every battery mode and is
+  // written straight to the stick. The old one was the cloud's per-mode field:
+  // it does not exist in Self-Consumption or Force Charge at all, so the tile sat
+  // blank most of the time and the slider refused. Its definition stays in the
+  // manifest until every device has migrated past it.
+  'hoymiles_max_soc',
 ];
 
 class HiOneDevice extends Device {
@@ -146,7 +202,8 @@ class HiOneDevice extends Device {
       // quick second choice waits out the cooldown instead of erroring.
       this._pendingMode = value;
       if (this._modeChangeTimer) this.homey.clearTimeout(this._modeChangeTimer);
-      const cooldownLeft = this._lastModeApplyAt + MODE_MIN_INTERVAL_MS - Date.now();
+      const cooldown = this._hybrid && this._hybrid.isModbusActive() ? 0 : MODE_MIN_INTERVAL_MS;
+      const cooldownLeft = this._lastModeApplyAt + cooldown - Date.now();
       const delay = Math.max(MODE_APPLY_DELAY_MS, cooldownLeft);
       this._modeChangeTimer = this.homey.setTimeout(() => {
         this._modeChangeTimer = null;
@@ -160,48 +217,39 @@ class HiOneDevice extends Device {
     // the stale (pre-write) value, which setCapabilityValue then writes back to
     // the slider — resetting it to 0 while the user is still dragging. The
     // periodic poll reconciles the slider with the cloud a bit later instead.
-    this.registerCapabilityListener('hoymiles_reserve_soc', async (value) => {
-      try {
-        await this._hybrid.setReserveSoc(value);
-        await this._setCapabilitySafe(SETTING_VALUE_CAPABILITY.hoymiles_reserve_soc, value);
-      } catch (err) {
-        this.error('Reserve SOC change failed: ' + err.message);
-      }
-    });
+    // One slider per mode, each writing its own register. The mode is part of
+    // the slider's identity rather than something looked up at write time, so
+    // there is nothing left to get stale: setting the Force Charge reserve while
+    // the station runs Self-Consumption is now an ordinary thing to do, not a
+    // mistake waiting to happen.
+    for (const [mode, slider] of Object.entries(RESERVE_SOC_SLIDERS)) {
+      this.registerCapabilityListener(slider,
+        this._settingListener(RESERVE_SOC_LABELS[mode] + ' reserve', async (value) => {
+          await this._hybrid.setReserveSocForMode(Number(mode), value);
+          await this._setCapabilitySafe(SETTING_VALUE_CAPABILITY[slider], value);
+        }));
+    }
 
-    this.registerCapabilityListener('hoymiles_max_charge_power', async (value) => {
-      try {
+    this.registerCapabilityListener('hoymiles_max_charge_power',
+      this._settingListener('Max charge power', async (value) => {
         await this._hybrid.setMaxChargePower(value);
         await this._setCapabilitySafe(SETTING_VALUE_CAPABILITY.hoymiles_max_charge_power, value);
-      } catch (err) {
-        this.error('Max charge power change failed: ' + err.message);
-      }
-    });
+      }));
 
-    this.registerCapabilityListener('hoymiles_max_discharge_power', async (value) => {
-      try {
+    this.registerCapabilityListener('hoymiles_max_discharge_power',
+      this._settingListener('Max discharge power', async (value) => {
         await this._hybrid.setMaxDischargePower(value);
         await this._setCapabilitySafe(SETTING_VALUE_CAPABILITY.hoymiles_max_discharge_power, value);
-      } catch (err) {
-        this.error('Max discharge power change failed: ' + err.message);
-      }
-    });
+      }));
 
-    this.registerCapabilityListener('hoymiles_max_soc', async (value) => {
-      try {
-        await this._hybrid.setMaxSoc(value);
-      } catch (err) {
-        this.error('Max SOC change failed: ' + err.message);
-      }
-    });
+    this.registerCapabilityListener('hoymiles_max_soc_local',
+      this._settingListener('Local charge ceiling', async (value) => {
+        await this._hybrid.setMaxSocLocal(value);
+        await this._setCapabilitySafe(SETTING_VALUE_CAPABILITY.hoymiles_max_soc_local, value);
+      }));
 
-    this.registerCapabilityListener('hoymiles_meter_power', async (value) => {
-      try {
-        await this._hybrid.setGridLimit(value);
-      } catch (err) {
-        this.error('Grid limit change failed: ' + err.message);
-      }
-    });
+    this.registerCapabilityListener('hoymiles_meter_power',
+      this._settingListener('Grid limit', (value) => this._hybrid.setGridLimit(value)));
 
     this._startPolling();
     await this._poll();
@@ -240,6 +288,21 @@ class HiOneDevice extends Device {
     const pick = (title) => (title && (title[lang] || title.en)) || null;
     const driverOpts = (this.driver.manifest && this.driver.manifest.capabilitiesOptions) || {};
     const appCaps    = (this.homey.manifest && this.homey.manifest.capabilities) || {};
+
+    // Strip the marker from anything that is no longer cloud-sourced at all.
+    // Walking only the list below would leave a stale marker behind forever on a
+    // capability that was removed from it — which is exactly what happened to the
+    // battery mode when it became a local read.
+    for (const capability of this.getCapabilities()) {
+      if (CLOUD_SOURCED_CAPABILITIES.includes(capability)) continue;
+      try {
+        const opts = this.getCapabilityOptions(capability) || {};
+        if (typeof opts.title === 'string' && opts.title.includes(CLOUD_MARKER)) {
+          await this.setCapabilityOptions(capability,
+            { ...opts, title: opts.title.replace(CLOUD_MARKER, '') });
+        }
+      } catch (_) { /* no options set for this one */ }
+    }
 
     // Walk the full list, not just the marked ones: a capability that just
     // became locally readable has to get its marker taken off again.
@@ -300,12 +363,83 @@ class HiOneDevice extends Device {
    * write) could sit stale for minutes even though the register next to it was
    * already current. Three register reads, so cheap enough to run every time.
    */
+  /**
+   * Wrap a slider's write so it fits inside Homey's ten-second listener budget.
+   *
+   * Finishing in time is the normal case and behaves normally — including
+   * rejecting, which is the only way a genuine refusal reaches the user. The
+   * old code caught every error and logged it, so a refusal like "Force Charge
+   * has no max charge level" was invisible: no message, and the slider kept
+   * showing a number that had never been written.
+   *
+   * Running long, we let go of the request instead of holding the UI hostage
+   * until it fails with a timeout that says nothing about what went wrong. The
+   * tile is accepted, the write continues, and if it ultimately fails we put
+   * the tile back to what the station actually reports and say why — by then
+   * there is no request left to reject.
+   */
+  _settingListener(what, write) {
+    return async (value) => {
+      const settled = write(value).then(
+        () => ({ ok: true }),
+        (err) => ({ ok: false, err })
+      );
+      const overBudget = new Promise((resolve) => {
+        this.homey.setTimeout(() => resolve(null), SETTING_LISTENER_BUDGET_MS);
+      });
+
+      const result = await Promise.race([settled, overBudget]);
+      if (result) {
+        if (result.ok) return;
+        this.error(what + ' change failed: ' + result.err.message);
+        throw result.err;
+      }
+
+      this.log(what + ' is still being written after '
+        + SETTING_LISTENER_BUDGET_MS + ' ms; releasing the slider so Homey does '
+        + 'not report a timeout, and reporting the outcome separately.');
+      settled.then((late) => {
+        if (late.ok) return;
+        this.error(what + ' change failed after the listener returned: ' + late.err.message);
+        return this._reportLateFailure(what, late.err);
+      }).catch(() => {});
+    };
+  }
+
+  // A write that failed after we already told Homey the slider was accepted.
+  // Reconcile the tile with the station first, so it stops showing a value that
+  // was never applied, then tell the user why — silently reverting a slider
+  // under someone's finger is its own kind of bug.
+  async _reportLateFailure(what, err) {
+    await this._refreshBatterySettings().catch(() => {});
+    try {
+      if (this.homey.notifications) {
+        await this.homey.notifications.createNotification({
+          excerpt: 'HiOne: ' + what + ' could not be set — ' + err.message,
+        });
+      }
+    } catch (notifyErr) {
+      this.error('Could not raise a notification: ' + notifyErr.message);
+    }
+  }
+
   async _refreshLocalSettings() {
+    // Before anything else, and before the early return below: the mode is the
+    // one value where being a poll late actually changes behaviour, because the
+    // reserve SOC register is chosen by it.
+    const localMode = await this._hybrid.getBatteryMode();
+    if (localMode !== null && localMode !== undefined) {
+      await this._updateBatteryMode(String(localMode), 'lokaal');
+    } else {
+      // No trustworthy local read: hand the mode back to the cloud rather than
+      // let a stale 'lokaal' label keep the cloud value out.
+      this._modeSource = null;
+    }
+
     const local = await this._hybrid.getLocalSettings();
     if (!local) return;
 
     const fields = {
-      reserveSoc:        'hoymiles_reserve_soc',
       maxChargePower:    'hoymiles_max_charge_power',
       maxDischargePower: 'hoymiles_max_discharge_power',
     };
@@ -319,6 +453,35 @@ class HiOneDevice extends Device {
       await this._setCapabilitySafe(slider, local[field]);
       await this._setCapabilitySafe(SETTING_VALUE_CAPABILITY[slider], local[field]);
     }
+    // The battery mode, read straight off the stick on every poll. The cloud
+    // only reports it with the five-minute settings refresh, and a stale mode is
+    // not merely late: it decides which register a per-mode write lands in, so
+    // being wrong changes what that write MEANS. Reading it locally removes the
+    // guess entirely, and picks up a mode change within the poll interval
+    // instead of up to five minutes later.
+    // The device-wide charge ceiling. Worth showing on every poll: a ceiling
+    // left below the current SOC silently blocks all charging, and without a
+    // tile there is nothing to explain why the battery stopped taking power.
+    const limits = await this._hybrid.getDeviceLimits();
+    if (limits && typeof limits.maxSoc === 'number') {
+      read.push('hoymiles_max_soc_local');
+      await this._setCapabilitySafe('hoymiles_max_soc_local', limits.maxSoc);
+      await this._setCapabilitySafe(SETTING_VALUE_CAPABILITY.hoymiles_max_soc_local, limits.maxSoc);
+    }
+
+    // Both reserves, read from their own registers in one block request, so
+    // neither tile depends on knowing which mode is active.
+    const reserves = await this._hybrid.getReserveSocByMode();
+    if (reserves) {
+      for (const [mode, slider] of Object.entries(RESERVE_SOC_SLIDERS)) {
+        const value = reserves[mode];
+        if (typeof value !== 'number') continue;
+        read.push(slider);
+        await this._setCapabilitySafe(slider, value);
+        await this._setCapabilitySafe(SETTING_VALUE_CAPABILITY[slider], value);
+      }
+    }
+
     // Keeps the cloud marker honest between the heavier settings refreshes.
     if (read.length) this._localSettingCaps = new Set(read);
   }
@@ -335,13 +498,20 @@ class HiOneDevice extends Device {
     try {
       await this._hybrid.setBatteryMode(value);
     } catch (err) {
-      this.error('Mode change rejected by cloud: ' + err.message);
-      // Reconcile the tile with the actual cloud mode so it doesn't show a
-      // value that was never applied.
+      this.error('Mode change rejected: ' + err.message);
+      // Reconcile the tile with the mode that is really active, so it does not
+      // keep showing a value that was never applied.
+      this._refreshLocalSettings().catch(() => {});
       this._refreshBatterySettings().catch(() => {});
       return;
     }
-    await this._refreshBatterySettings().catch(() => {});
+
+    // Confirm from the stick, NOT from the cloud. The cloud still reports the
+    // previous mode for minutes after a local write, and reading it here wrote
+    // that stale value straight back into the picker — which is why a switch
+    // that had already taken effect appeared to fall back to the old mode.
+    await this._refreshLocalSettings().catch(() => {});
+    this._refreshBatterySettings().catch(() => {});
     this._scheduleLivePollBurst();
   }
 
@@ -402,8 +572,14 @@ class HiOneDevice extends Device {
     for (const capability of PERCENT_SLIDERS) {
       if (this.hasCapability(capability)) {
         try {
+          // Step 5, not 1. Every value this app's automation writes is a
+          // multiple of five — ceiling 5/100, reserve 30/100, discharge 15/30,
+          // charge power 0/20 — so the slider snaps onto exactly the settings
+          // that are actually used, instead of demanding millimetre work on a
+          // phone. The paired read-only tile still shows the true value, so a
+          // number set elsewhere (S-Miles) is never hidden by the snapping.
           await this.setCapabilityOptions(capability, {
-            min: 0, max: 100, step: 1, decimals: 0, units: '',
+            min: 0, max: 100, step: 5, decimals: 0, units: '',
           });
         } catch (err) {
           this.error('Could not update options for ' + capability + ': ' + err.message);
@@ -568,7 +744,14 @@ class HiOneDevice extends Device {
       this._lastSettingsRefresh = Date.now();
       const settings = await this._hybrid.getBatterySettings();
       if (settings) {
-        if (settings.mode !== undefined) await this._updateBatteryMode(settings.mode);
+        // Only label this as the cloud when the mode did NOT come off the stick
+        // this cycle; otherwise the tile would flip between the two labels.
+        // Only when the stick is not supplying it. The cloud lags a mode change
+        // by minutes, so applying it here would undo a switch that already
+        // happened.
+        if (settings.mode !== undefined && this._modeSource !== 'lokaal') {
+          await this._updateBatteryMode(settings.mode, 'cloud');
+        }
 
         // Reserve SOC and max SOC belong to whichever mode is active. When that
         // mode has no such setting, blank the tile instead of showing a value
@@ -578,8 +761,15 @@ class HiOneDevice extends Device {
         // name their own mode, and pre-configuring them without switching is a
         // genuine local-Modbus capability.
         this._modeSupports = settings.supports || null;
-        await this._setPerModeSetting('hoymiles_reserve_soc', 'reserveSoc', settings.reserveSoc);
-        await this._setPerModeSetting('hoymiles_max_soc',     'maxSoc',     settings.maxSoc);
+        // The cloud reports one reserve SOC: the active mode's. That is not
+        // ambiguous here — the same payload says which mode that is — so file it
+        // under that mode's tile and leave the other one to the Modbus read.
+        // This is what keeps both tiles populated on a cloud-only install.
+        const activeSlider = RESERVE_SOC_SLIDERS[Number(settings.mode)];
+        if (activeSlider && typeof settings.reserveSoc === 'number') {
+          await this._setCapabilitySafe(activeSlider, settings.reserveSoc);
+          await this._setCapabilitySafe(SETTING_VALUE_CAPABILITY[activeSlider], settings.reserveSoc);
+        }
 
         await this._setCapabilitySafe('hoymiles_max_charge_power',     settings.maxChargePower);
         await this._setCapabilitySafe('hoymiles_max_discharge_power',  settings.maxDischargePower);
@@ -640,6 +830,48 @@ class HiOneDevice extends Device {
     this._scheduleLivePollBurst();
   }
 
+  // Clamp the battery without switching modes — see HoymilesHybrid for why the
+  // mode is deliberately left alone.
+  async setChargeLimitLocal(percent) {
+    await this._hybrid.setChargeLimitLocal(percent);
+    this._refreshLocalSettings().catch(() => {});
+    this._scheduleLivePollBurst();
+  }
+
+  async setDischargeLimitLocal(percent) {
+    await this._hybrid.setDischargeLimitLocal(percent);
+    this._refreshLocalSettings().catch(() => {});
+    this._scheduleLivePollBurst();
+  }
+
+  /**
+   * The Flow card's reserve SOC: whichever mode is active, which is the only
+   * thing the cloud endpoint can express. The per-mode sliders are the precise
+   * way to do this; this exists because the card predates them and Flows out
+   * there already use it.
+   */
+  async setReserveSocActiveMode(percent) {
+    await this._hybrid.setReserveSoc(percent);
+    this._refreshBatterySettings().catch(() => {});
+    this._scheduleLivePollBurst();
+  }
+
+  // The charge ceiling that binds in every mode — the fast way to stop a charge.
+  async setMaxSocLocal(percent) {
+    await this._hybrid.setMaxSocLocal(percent);
+    this._refreshLocalSettings().catch(() => {});
+    this._scheduleLivePollBurst();
+  }
+
+  // The reserve of a named mode, active or not. Refreshes the local settings
+  // afterwards so the matching slider shows what the register now holds rather
+  // than what we asked for — if the stick clamped it, the tile says so.
+  async setReserveSocForMode(mode, percent) {
+    await this._hybrid.setReserveSocForMode(mode, percent);
+    this._refreshLocalSettings().catch(() => {});
+    this._scheduleLivePollBurst();
+  }
+
   async setMaxSoc(percent) {
     await this._hybrid.setMaxSoc(percent);
     this._refreshBatterySettings().catch(() => {});
@@ -694,13 +926,34 @@ class HiOneDevice extends Device {
     await this._hybrid.setInverterState(serial, on);
   }
 
-  async _updateBatteryMode(mode) {
+  async _updateBatteryMode(mode, source) {
     await this._setCapabilitySafe('hoymiles_battery_mode', mode);
 
-    // Persist it so a restart while the internet is down still knows which
-    // mode is active — that is what decides where a local reserve-SOC write
-    // goes. The mode cannot change without the cloud, so a stored value stays
-    // valid for the whole outage.
+    // One tile that answers "what is it doing, and how fast can I change it":
+    // the mode, the battery power beside it, and the app's own cloud marker when
+    // the value came from the cloud rather than the stick. The marker is used
+    // instead of spelling out the source, because the words did not fit.
+    if (source) this._modeSource = source;
+    const name = SHORT_MODE_NAMES[Number(mode)] || BATTERY_MODES[Number(mode)] || mode;
+
+    // Keep this SHORT. The status indicator truncates around eighteen characters,
+    // and a cut-off label is worse than an abbreviation: "F-Discharge · -252…"
+    // hides both which mode it is and what the battery is doing. kW above a
+    // kilowatt, plain watts below it.
+    const power = this.getCapabilityValue('measure_power');
+    let text = String(name);
+    if (typeof power === 'number') {
+      text += ' ' + (Math.abs(power) >= 1000
+        ? (power / 1000).toFixed(1) + ' kW'
+        : Math.round(power) + ' W');
+    }
+    await this._setCapabilitySafe('hoymiles_battery_mode_value',
+      text + (this._modeSource === 'cloud' ? CLOUD_MARKER : ''));
+
+    // Persist it so a restart before the first poll still knows which mode is
+    // active — that is what decides where a local reserve-SOC write goes. Since
+    // v1.1.2 the mode is also read straight from the stick every poll, so this
+    // store is only a cold-start fallback rather than the sole source it was.
     if (mode !== undefined && mode !== null && mode !== this.getStoreValue('last_mode')) {
       await this.setStoreValue('last_mode', mode).catch(() => {});
     }

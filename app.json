@@ -1,6 +1,6 @@
 {
   "id": "com.hoymiles.hione",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "compatibility": ">=12.4.5",
   "sdk": 3,
   "brandColor": "#00A94F",
@@ -98,14 +98,18 @@
         "hoymiles_grid_power",
         "hoymiles_load_power",
         "hoymiles_pv_power",
-        "hoymiles_reserve_soc_value",
+        "hoymiles_reserve_soc_selfuse_value",
+        "hoymiles_reserve_soc_forcecharge_value",
+        "hoymiles_battery_mode_value",
+        "hoymiles_max_soc_local_value",
         "hoymiles_max_charge_power_value",
         "hoymiles_max_discharge_power_value",
         "hoymiles_cell_spread",
         "hoymiles_cell_temp_max",
         "hoymiles_battery_mode",
-        "hoymiles_reserve_soc",
-        "hoymiles_max_soc",
+        "hoymiles_reserve_soc_selfuse",
+        "hoymiles_reserve_soc_forcecharge",
+        "hoymiles_max_soc_local",
         "hoymiles_max_charge_power",
         "hoymiles_max_discharge_power",
         "hoymiles_meter_power",
@@ -434,27 +438,11 @@
       "uiComponent": "picker",
       "icon": "/assets/battery.svg"
     },
-    "hoymiles_reserve_soc": {
-      "type": "number",
-      "title": {
-        "en": "Reserved SOC % (floor when discharging, ceiling when charging)",
-        "nl": "Gereserveerde SOC % (ondergrens bij ontladen, bovengrens bij laden)"
-      },
-      "min": 0,
-      "max": 100,
-      "step": 1,
-      "decimals": 0,
-      "insights": true,
-      "getable": true,
-      "setable": true,
-      "uiComponent": "slider",
-      "icon": "/assets/battery.svg"
-    },
     "hoymiles_max_soc": {
       "type": "number",
       "title": {
-        "en": "Max SOC % (battery maximum)",
-        "nl": "Max laadniveau % (bovengrens accu)"
+        "en": "Max SOC % (per mode, cloud - replaced by the charge ceiling)",
+        "nl": "Max laadniveau % (per modus, cloud - vervangen door het laadplafond)"
       },
       "min": 0,
       "max": 100,
@@ -463,7 +451,7 @@
       "insights": true,
       "getable": true,
       "setable": true,
-      "uiComponent": "slider",
+      "uiComponent": null,
       "icon": "/assets/battery.svg"
     },
     "hoymiles_max_charge_power": {
@@ -474,7 +462,7 @@
       },
       "min": 0,
       "max": 100,
-      "step": 1,
+      "step": 5,
       "decimals": 0,
       "insights": true,
       "getable": true,
@@ -490,7 +478,7 @@
       },
       "min": 0,
       "max": 100,
-      "step": 1,
+      "step": 5,
       "decimals": 0,
       "insights": true,
       "getable": true,
@@ -525,20 +513,6 @@
       "setable": false,
       "uiComponent": "sensor",
       "icon": "/assets/cell-temp.svg"
-    },
-    "hoymiles_reserve_soc_value": {
-      "type": "number",
-      "title": {
-        "en": "Reserved SOC",
-        "nl": "Gereserveerde SOC"
-      },
-      "units": "%",
-      "insights": false,
-      "decimals": 0,
-      "getable": true,
-      "setable": false,
-      "uiComponent": "sensor",
-      "icon": "/assets/reserve-soc.svg"
     },
     "hoymiles_max_charge_power_value": {
       "type": "number",
@@ -736,6 +710,190 @@
       "setable": false,
       "uiComponent": "sensor",
       "icon": "/assets/connection.svg"
+    },
+    "hoymiles_reserve_soc_selfuse": {
+      "type": "number",
+      "title": {
+        "en": "Reserved SOC % - Self-Consumption (floor; also charges up to it)",
+        "nl": "Gereserveerde SOC % - Zelfconsumptie (ondergrens; laadt hier ook naartoe)"
+      },
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "decimals": 0,
+      "insights": true,
+      "getable": true,
+      "setable": true,
+      "uiComponent": "slider",
+      "icon": "/assets/reserve-soc.svg"
+    },
+    "hoymiles_reserve_soc_selfuse_value": {
+      "type": "number",
+      "title": {
+        "en": "Reserve Self-Consumption",
+        "nl": "Reserve zelfconsumptie"
+      },
+      "units": "%",
+      "insights": false,
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/reserve-soc.svg"
+    },
+    "hoymiles_reserve_soc_forcecharge": {
+      "type": "number",
+      "title": {
+        "en": "Reserved SOC % - Force Charge (charge target)",
+        "nl": "Gereserveerde SOC % - Force Charge (laaddoel)"
+      },
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "decimals": 0,
+      "insights": true,
+      "getable": true,
+      "setable": true,
+      "uiComponent": "slider",
+      "icon": "/assets/reserve-soc.svg"
+    },
+    "hoymiles_reserve_soc_forcecharge_value": {
+      "type": "number",
+      "title": {
+        "en": "Reserve Force Charge",
+        "nl": "Reserve Force Charge"
+      },
+      "units": "%",
+      "insights": false,
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/reserve-soc.svg"
+    },
+    "hoymiles_reserve_soc": {
+      "type": "number",
+      "title": {
+        "en": "Reserved SOC % (replaced by the per-mode sliders)",
+        "nl": "Gereserveerde SOC % (vervangen door de schuiven per modus)"
+      },
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "decimals": 0,
+      "insights": true,
+      "getable": true,
+      "setable": true,
+      "uiComponent": null,
+      "icon": "/assets/reserve-soc.svg"
+    },
+    "hoymiles_reserve_soc_value": {
+      "type": "number",
+      "title": {
+        "en": "Reserved SOC (replaced by the per-mode tiles)",
+        "nl": "Gereserveerde SOC (vervangen door de tegels per modus)"
+      },
+      "units": "%",
+      "insights": false,
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": null,
+      "icon": "/assets/reserve-soc.svg"
+    },
+    "hoymiles_battery_power": {
+      "type": "number",
+      "title": {
+        "en": "Battery power (retired)",
+        "nl": "Accuvermogen (vervallen)"
+      },
+      "units": "W",
+      "insights": false,
+      "decimals": 1,
+      "getable": true,
+      "setable": false,
+      "uiComponent": null
+    },
+    "hoymiles_max_power": {
+      "type": "number",
+      "title": {
+        "en": "Max power (retired)",
+        "nl": "Max vermogen (vervallen)"
+      },
+      "units": "W",
+      "insights": false,
+      "decimals": 1,
+      "getable": true,
+      "setable": false,
+      "uiComponent": null
+    },
+    "hoymiles_battery_in_energy": {
+      "type": "number",
+      "title": {
+        "en": "Battery charged (retired)",
+        "nl": "Accu geladen (vervallen)"
+      },
+      "units": "kWh",
+      "insights": false,
+      "decimals": 1,
+      "getable": true,
+      "setable": false,
+      "uiComponent": null
+    },
+    "hoymiles_battery_out_energy": {
+      "type": "number",
+      "title": {
+        "en": "Battery discharged (retired)",
+        "nl": "Accu ontladen (vervallen)"
+      },
+      "units": "kWh",
+      "insights": false,
+      "decimals": 1,
+      "getable": true,
+      "setable": false,
+      "uiComponent": null
+    },
+    "hoymiles_max_soc_local": {
+      "type": "number",
+      "title": {
+        "en": "Max charge level % (all modes)",
+        "nl": "Max laadniveau % (alle modi)"
+      },
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "decimals": 0,
+      "insights": true,
+      "getable": true,
+      "setable": true,
+      "uiComponent": "slider",
+      "icon": "/assets/battery.svg"
+    },
+    "hoymiles_max_soc_local_value": {
+      "type": "number",
+      "title": {
+        "en": "Max charge level",
+        "nl": "Max laadniveau"
+      },
+      "units": "%",
+      "insights": false,
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/battery.svg"
+    },
+    "hoymiles_battery_mode_value": {
+      "type": "string",
+      "title": {
+        "en": "Mode & power",
+        "nl": "Modus & vermogen"
+      },
+      "insights": false,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/battery.svg"
     }
   },
   "flow": {
@@ -755,7 +913,8 @@
               "nl": "Modus"
             },
             "example": {
-              "en": "Self-Consumption"
+              "en": "Self-Consumption",
+              "nl": "Eigen verbruik"
             }
           }
         ],
@@ -875,14 +1034,78 @@
           "nl": "Stel reserve laadniveau in op [[soc]]%"
         },
         "hint": {
-          "en": "Relevant for: all modes except Off-Grid (mode 4). Sets the minimum battery state of charge for the active battery mode. Cloud connection required.",
-          "nl": "Relevant voor: alle modi behalve Off-Grid (modus 4). Stelt het minimale laadniveau van de batterij in voor de actieve batterijmodus. Cloudverbinding vereist."
+          "en": "Relevant for: every mode except Off-Grid (4). Sets the reserved SOC of the ACTIVE battery mode. Written over Modbus when the mode has a known register, otherwise through the cloud. Beware that it means opposite things per mode: a floor the battery discharges to in Self-Consumption, but the ceiling it charges up to in Force Charge. Measured warning: it is not a dependable floor - a battery set to 40 was seen discharging straight through it to 37. The device now also has a slider per mode, each writing its own register locally; those let you set a mode's reserve without that mode being active, and cannot target the wrong one. Be aware that in Self-Consumption this is not only a floor: the inverter also charges the battery UP to this level, from the grid when there is no sun. Setting it above the current state of charge therefore costs money at a high tariff, rather than merely holding energy back.",
+          "nl": "Relevant voor: alle modi behalve Off-Grid (4). Stelt de gereserveerde SOC in van de ACTIEVE batterijmodus. Via Modbus als die modus een bekend register heeft, anders via de cloud. Let op dat het per modus het tegenovergestelde betekent: in Zelfconsumptie de ondergrens waartoe hij ontlaadt, in Force Charge juist de bovengrens waartoe hij laadt. Gemeten waarschuwing: als ondergrens is hij niet betrouwbaar - een accu met 40 ingesteld liep er dwars doorheen tot 37. Het apparaat heeft nu ook een schuif per modus, die elk hun eigen register lokaal wegschrijven; daarmee stel je de reserve van een modus in zonder dat die modus actief is, en kan de verkeerde niet geraakt worden. Let op dat dit in Zelfconsumptie niet alleen een ondergrens is: de omvormer laadt de accu ook TOT dit niveau op, uit het net als er geen zon is. Zet je hem boven de huidige laadtoestand, dan kost dat dus geld bij een hoog tarief, in plaats van alleen energie achterhouden."
         },
         "args": [
           {
             "name": "device",
             "type": "device",
             "filter": "driver_id=hione"
+          },
+          {
+            "name": "soc",
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "title": {
+              "en": "Reserve SOC (%)",
+              "nl": "Reserve laadniveau (%)"
+            }
+          }
+        ]
+      },
+      {
+        "id": "set_reserve_soc_for_mode",
+        "title": {
+          "en": "Set reserve SOC of a specific mode",
+          "nl": "Stel reserve laadniveau van een specifieke modus in"
+        },
+        "titleFormatted": {
+          "en": "Set the [[mode]] reserve SOC to [[soc]]%",
+          "nl": "Zet de reserve van [[mode]] op [[soc]]%"
+        },
+        "hint": {
+          "en": "Writes the reserved SOC of the mode you name, whether or not that mode is active. Local Modbus only: each mode keeps this value in its own register, so naming the mode addresses that register directly - the cloud can only ever write whichever mode is running. Use this to prepare a mode before switching to it, for example setting the Force Charge target while the station is still in Self-Consumption. Self-Consumption, Force Charge and Force Discharge have a known register; other modes are refused rather than redirected. Remember the value means opposite things: a discharge floor in Self-Consumption, a charge target in Force Charge - and as a floor it is not dependable (a battery set to 40 was seen discharging through it to 37). Be aware that in Self-Consumption this is not only a floor: the inverter also charges the battery UP to this level, from the grid when there is no sun. Setting it above the current state of charge therefore costs money at a high tariff, rather than merely holding energy back.",
+          "nl": "Schrijft de gereserveerde SOC van de modus die je noemt, of die modus nu actief is of niet. Alleen lokaal via Modbus: elke modus bewaart deze waarde in een eigen register, dus door de modus te noemen adresseer je dat register rechtstreeks - de cloud kan altijd alleen de draaiende modus wegschrijven. Handig om een modus voor te bereiden voordat je erheen schakelt, bijvoorbeeld het Force Charge-doel zetten terwijl je nog in Zelfconsumptie staat. Zelfconsumptie, Force Charge en Force Discharge hebben een bekend register; andere modi worden geweigerd in plaats van omgeleid. Let op dat de waarde per modus het tegenovergestelde betekent: een ondergrens voor ontladen in Zelfconsumptie, een laaddoel in Force Charge - en als ondergrens is hij niet betrouwbaar (een accu met 40 ingesteld liep er dwars doorheen tot 37). Let op dat dit in Zelfconsumptie niet alleen een ondergrens is: de omvormer laadt de accu ook TOT dit niveau op, uit het net als er geen zon is. Zet je hem boven de huidige laadtoestand, dan kost dat dus geld bij een hoog tarief, in plaats van alleen energie achterhouden."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "mode",
+            "type": "dropdown",
+            "title": {
+              "en": "Mode",
+              "nl": "Modus"
+            },
+            "values": [
+              {
+                "id": "1",
+                "label": {
+                  "en": "Self-Consumption",
+                  "nl": "Eigen verbruik"
+                }
+              },
+              {
+                "id": "5",
+                "label": {
+                  "en": "Force Charge",
+                  "nl": "Force Charge (geforceerd laden)"
+                }
+              },
+              {
+                "id": "6",
+                "label": {
+                  "en": "Force Discharge",
+                  "nl": "Force Discharge (geforceerd ontladen)"
+                }
+              }
+            ]
           },
           {
             "name": "soc",
@@ -1098,6 +1321,105 @@
         ]
       },
       {
+        "id": "set_charge_limit_local",
+        "title": {
+          "en": "Limit charge power (local, keeps mode)",
+          "nl": "Begrens laadvermogen (lokaal, modus blijft)"
+        },
+        "titleFormatted": {
+          "en": "Limit charge power to [[limit]]% without changing the battery mode",
+          "nl": "Begrens laadvermogen tot [[limit]]% zonder de batterijmodus te wijzigen"
+        },
+        "hint": {
+          "en": "Sets the Force Charge power limit without switching to that mode. NOTE: this register only governs while the station is in Force Charge — with the limit at 0 in Self-Consumption an inverter was still measured charging 5.5 kW from a neighbouring battery. To stop it absorbing someone else's export, switch the battery mode instead. Written straight to the stick over Modbus, so it lands in about ten seconds and keeps working without internet. Requires a local connection to the gateway.",
+          "nl": "Stelt de laadvermogensgrens van Force Charge in zonder naar die modus te schakelen. LET OP: dit register geldt alleen zolang de omvormer in Force Charge staat — met de grens op 0 in Zelfconsumptie is een omvormer gemeten die toch 5,5 kW opnam uit een naburige accu. Wil je voorkomen dat hij andermans teruglevering opzuigt, wissel dan de batterijmodus. Wordt rechtstreeks over Modbus geschreven, dus binnen ongeveer tien seconden actief, en blijft werken zonder internet. Vereist een lokale verbinding met de gateway."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "limit",
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "title": {
+              "en": "Charge limit (%)",
+              "nl": "Laadgrens (%)"
+            }
+          }
+        ]
+      },
+      {
+        "id": "set_max_soc_local",
+        "title": {
+          "en": "Set the local charge ceiling",
+          "nl": "Stel het lokale laadplafond in"
+        },
+        "titleFormatted": {
+          "en": "Set the local charge ceiling to [[limit]]%",
+          "nl": "Zet het lokale laadplafond op [[limit]]%"
+        },
+        "hint": {
+          "en": "Relevant for: EVERY battery mode. Writes the station's own maximum SOC straight to the stick over Modbus, so it binds whatever mode is running - unlike the max charge power action, which only governs inside Force Charge. Set it below the current state of charge to stop a charge: measured on live hardware, a battery taking 2028 W fell to zero within twenty seconds, and the surplus went to the grid instead. It does not discharge the battery and does not change the operating mode, so the inverter keeps covering the house. Set 100 to release it again. Use this rather than a mode switch when speed matters: a mode change travels through the cloud and takes about four minutes. Local only - without a Modbus connection it fails with a clear message instead of falling back.",
+          "nl": "Relevant voor: ELKE batterijmodus. Schrijft de maximale SOC van de omvormer rechtstreeks naar de stick via Modbus, en geldt dus in welke modus hij ook draait - anders dan de actie voor max laadvermogen, die alleen binnen Force Charge werkt. Zet hem onder de huidige laadtoestand om het laden te stoppen: op draaiende hardware gemeten viel een accu die 2028 W opnam binnen twintig seconden terug naar nul, en ging het overschot naar het net. Hij ontlaadt de accu niet en wijzigt de bedrijfsmodus niet, dus de omvormer blijft je huis dekken. Zet 100 om hem weer vrij te geven. Gebruik dit in plaats van een moduswissel als snelheid telt: een moduswissel gaat via de cloud en duurt ongeveer vier minuten. Alleen lokaal - zonder Modbus-verbinding faalt hij met een duidelijke melding."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "limit",
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "title": {
+              "en": "Charge ceiling (%)",
+              "nl": "Laadplafond (%)"
+            }
+          }
+        ]
+      },
+      {
+        "id": "set_discharge_limit_local",
+        "title": {
+          "en": "Limit discharge power (local, keeps mode)",
+          "nl": "Begrens ontlaadvermogen (lokaal, modus blijft)"
+        },
+        "titleFormatted": {
+          "en": "Limit discharge power to [[limit]]% without changing the battery mode",
+          "nl": "Begrens ontlaadvermogen tot [[limit]]% zonder de batterijmodus te wijzigen"
+        },
+        "hint": {
+          "en": "Stops the battery discharging at 0%, without switching to Force Discharge. Use it to keep the battery from emptying into another load. Written straight to the stick over Modbus, so it takes about ten seconds instead of the minutes a cloud mode switch needs, and it keeps working without internet. Requires a local connection to the gateway.",
+          "nl": "Zet het ontladen stil op 0%, zonder naar Force Discharge te schakelen. Handig om te voorkomen dat de accu leegloopt in een andere verbruiker. Wordt rechtstreeks over Modbus naar de stick geschreven, dus dit werkt binnen ongeveer tien seconden in plaats van de minuten die een moduswissel via de cloud kost, en het blijft werken zonder internet. Vereist een lokale verbinding met de gateway."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "limit",
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "title": {
+              "en": "Discharge limit (%)",
+              "nl": "Ontlaadgrens (%)"
+            }
+          }
+        ]
+      },
+      {
         "id": "set_max_soc",
         "title": {
           "en": "Set max SOC",
@@ -1183,14 +1505,98 @@
             "type": "device",
             "filter": "driver_id=hione"
           },
-          { "name": "charge_from", "type": "text", "title": { "en": "Charge from (HH:MM)", "nl": "Laden vanaf (UU:MM)" }, "placeholder": { "en": "10:00", "nl": "10:00" } },
-          { "name": "charge_to", "type": "text", "title": { "en": "Charge until (HH:MM)", "nl": "Laden tot (UU:MM)" }, "placeholder": { "en": "17:00", "nl": "17:00" } },
-          { "name": "charge_power", "type": "number", "min": 0, "max": 100, "step": 1, "title": { "en": "Charge power (%)", "nl": "Laadvermogen (%)" } },
-          { "name": "charge_soc", "type": "number", "min": 0, "max": 100, "step": 1, "title": { "en": "Charge up to SOC (%)", "nl": "Laden tot SOC (%)" } },
-          { "name": "discharge_from", "type": "text", "title": { "en": "Discharge from (HH:MM)", "nl": "Ontladen vanaf (UU:MM)" }, "placeholder": { "en": "17:01", "nl": "17:01" } },
-          { "name": "discharge_to", "type": "text", "title": { "en": "Discharge until (HH:MM)", "nl": "Ontladen tot (UU:MM)" }, "placeholder": { "en": "22:00", "nl": "22:00" } },
-          { "name": "discharge_power", "type": "number", "min": 0, "max": 100, "step": 1, "title": { "en": "Discharge power (%)", "nl": "Ontlaadvermogen (%)" } },
-          { "name": "discharge_soc", "type": "number", "min": 0, "max": 100, "step": 1, "title": { "en": "Discharge down to SOC (%)", "nl": "Ontladen tot SOC (%)" } }
+          {
+            "name": "charge_from",
+            "type": "text",
+            "title": {
+              "en": "Charge from (HH:MM)",
+              "nl": "Laden vanaf (UU:MM)"
+            },
+            "placeholder": {
+              "en": "10:00",
+              "nl": "10:00"
+            }
+          },
+          {
+            "name": "charge_to",
+            "type": "text",
+            "title": {
+              "en": "Charge until (HH:MM)",
+              "nl": "Laden tot (UU:MM)"
+            },
+            "placeholder": {
+              "en": "17:00",
+              "nl": "17:00"
+            }
+          },
+          {
+            "name": "charge_power",
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "title": {
+              "en": "Charge power (%)",
+              "nl": "Laadvermogen (%)"
+            }
+          },
+          {
+            "name": "charge_soc",
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "title": {
+              "en": "Charge up to SOC (%)",
+              "nl": "Laden tot SOC (%)"
+            }
+          },
+          {
+            "name": "discharge_from",
+            "type": "text",
+            "title": {
+              "en": "Discharge from (HH:MM)",
+              "nl": "Ontladen vanaf (UU:MM)"
+            },
+            "placeholder": {
+              "en": "17:01",
+              "nl": "17:01"
+            }
+          },
+          {
+            "name": "discharge_to",
+            "type": "text",
+            "title": {
+              "en": "Discharge until (HH:MM)",
+              "nl": "Ontladen tot (UU:MM)"
+            },
+            "placeholder": {
+              "en": "22:00",
+              "nl": "22:00"
+            }
+          },
+          {
+            "name": "discharge_power",
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "title": {
+              "en": "Discharge power (%)",
+              "nl": "Ontlaadvermogen (%)"
+            }
+          },
+          {
+            "name": "discharge_soc",
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "title": {
+              "en": "Discharge down to SOC (%)",
+              "nl": "Ontladen tot SOC (%)"
+            }
+          }
         ]
       },
       {

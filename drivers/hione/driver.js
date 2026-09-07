@@ -21,9 +21,28 @@ class HiOneDriver extends Driver {
       async ({ device, mode }) => device.triggerCapabilityListener('hoymiles_battery_mode', mode)
     );
 
+    // Targets whichever mode is active, which is all the cloud endpoint can do.
+    // It no longer rides on a capability: the single ambiguous reserve tile was
+    // split into one tile per mode, so there is no "the" reserve capability to
+    // trigger. Kept as-is for Flows that already use it.
     registerListener(
       this.homey.flow.getActionCard('set_reserve_soc'),
-      async ({ device, soc }) => device.triggerCapabilityListener('hoymiles_reserve_soc', soc)
+      async ({ device, soc }) => device.setReserveSocActiveMode(soc)
+    );
+
+    // Names its target mode, so it addresses that mode's register directly and
+    // works while another mode is running. Local only, by nature: the cloud has
+    // no way to express "the reserve of a mode that is not active".
+    registerListener(
+      this.homey.flow.getActionCard('set_reserve_soc_for_mode'),
+      async ({ device, mode, soc }) => device.setReserveSocForMode(Number(mode), soc)
+    );
+
+    // Binds in every mode, unlike the per-mode power limits, and lands in about
+    // twenty seconds where a mode switch takes four minutes.
+    registerListener(
+      this.homey.flow.getActionCard('set_max_soc_local'),
+      async ({ device, limit }) => device.setMaxSocLocal(limit)
     );
 
     registerListener(
@@ -50,6 +69,16 @@ class HiOneDriver extends Driver {
     registerListener(
       this.homey.flow.getActionCard('set_max_discharge_power'),
       async ({ device, power }) => device.setMaxDischargePower(power)
+    );
+
+    registerListener(
+      this.homey.flow.getActionCard('set_charge_limit_local'),
+      async ({ device, limit }) => device.setChargeLimitLocal(limit)
+    );
+
+    registerListener(
+      this.homey.flow.getActionCard('set_discharge_limit_local'),
+      async ({ device, limit }) => device.setDischargeLimitLocal(limit)
     );
 
     registerListener(

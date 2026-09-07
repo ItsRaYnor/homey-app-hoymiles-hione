@@ -22,14 +22,18 @@ const SCAN_WINDOWS = [
   [0x0000, 0x0100, true],
   [0x0400, 0x0060, true],
   [0x0860, 0x0060, true],
+  // Device-wide limits: maximum and minimum SOC, battery power caps, export
+  // limit. A layer above the per-mode block — these bind in every battery mode.
+  [0x0100, 0x0060, false],
   [0x10C0, 0x0040, false],
 ];
 // FC03 and FC04 addresses can collide, so holding registers carry a marker.
 const FC03_PREFIX = 'FC03 ';
 
 const CLOUD_ONLY_FIELDS = [
-  { field: 'batteryMode',   label: 'Battery mode' },
-  { field: 'maxSoc',        label: 'Max charge level' },
+  // The battery mode used to sit here. It is the first word of the EMS block and
+  // is read and written locally since v1.1.2 — see the local table below.
+  { field: 'maxSoc',        label: 'Max charge level (per mode, cloud only)' },
   { field: 'dailyEnergy',   label: 'Energy today / month / year / total' },
   { field: 'batteryInEnergy',  label: 'Battery charged / discharged energy' },
   { field: 'co2Reduction',  label: 'CO2 reduction' },
@@ -48,9 +52,38 @@ const FIELD_CAPABILITIES = {
   pvPower:        'hoymiles_pv_power',
   loadPower:      'hoymiles_load_power',
   // Settings that are read (and written) locally as well
-  reserveSoc:        'hoymiles_reserve_soc',
   maxChargePower:    'hoymiles_max_charge_power',
   maxDischargePower: 'hoymiles_max_discharge_power',
+};
+
+// The reserved SOC has one register per battery mode, each with its own tile.
+// Derived from the same map the reads and writes use, so this table cannot
+// drift from the code.
+const RESERVE_SOC_MODES = {
+  1: { label: 'Self-Consumption', capability: 'hoymiles_reserve_soc_selfuse' },
+  5: { label: 'Force Charge',     capability: 'hoymiles_reserve_soc_forcecharge' },
+  6: { label: 'Force Discharge' },
+};
+const reserveLabel = (mode) =>
+  'Reserved SOC: ' + ((RESERVE_SOC_MODES[mode] || {}).label || 'mode ' + mode);
+
+// Names for the register scan. Everything derived from the live maps above stays
+// in step with the code; the rest is spelled out here.
+//
+// 0x10CD and 0x10CE carry the community catalogue's names, marked unverified on
+// purpose: that catalogue calls 0x10CD the Self-Consumption reserve, while this
+// app uses 0x10CA for it — and 0x10CA is the one proven on the hardware, in both
+// directions. Until that contradiction is settled, giving them the same name in
+// the UI would hide it.
+const EXTRA_SCAN_NAMES = {
+  0x10CC: 'Battery mode (register = mode - 1)',
+  0x10CD: 'EMS self-use SOC (catalogue name, unverified)',
+  0x10CE: 'EMS backup SOC (catalogue name, unverified)',
+  0x0132: 'Battery max charge power (all modes, unverified scale)',
+  0x0133: 'Battery max discharge power (all modes, unverified scale)',
+  0x0136: 'Low SOC grid charge power',
+  0x0137: 'SOC start charge from grid',
+  0x0103: 'Maximum export power limit',
 };
 
 const FIELD_LABELS = {
@@ -61,9 +94,11 @@ const FIELD_LABELS = {
   gridPower:      'Grid power',
   pvPower:        'Solar power',
   loadPower:      'Home load power',
-  reserveSoc:        'Reserved SOC (of the active mode)',
-  maxChargePower:    'Max charge power',
-  maxDischargePower: 'Max discharge power',
+  // The mode belongs in the name. Neither limit does anything outside its own
+  // forced mode — a battery once gained 22 SOC points in 85 minutes with the
+  // charge limit sitting at 0, because the station was in Self-Consumption.
+  maxChargePower:    'Max charge power (Force Charge only)',
+  maxDischargePower: 'Max discharge power (Force Discharge only)',
 };
 
 module.exports = {
@@ -91,6 +126,31 @@ module.exports = {
     // Settings that are read locally too — and written locally where that is
     // exactly equivalent to the cloud call.
     const hex = (a) => '0x' + a.toString(16).toUpperCase().padStart(4, '0');
+
+    // The battery mode: first word of the EMS block, zero-based (register =
+    // mode - 1). Read on every poll and written locally, which is seconds
+    // instead of the roughly four minutes a cloud mode switch takes.
+    local.push({
+      field: 'batteryMode',
+      label: 'Battery mode (register = mode - 1)',
+      register: hex((HoymilesModbus.EMS_BLOCK || {}).addr || 0x10CC),
+      fc: 'FC03', scale: '', value: null,
+      capability: 'hoymiles_battery_mode',
+    });
+
+    // Device-wide SOC window. Unlike the per-mode settings below these bind in
+    // EVERY battery mode, which is what makes the maximum usable as a fast brake
+    // on charging: written below the current SOC it stops a charge in about
+    // twenty seconds, whatever mode the station is in.
+    for (const [field, def] of Object.entries(HoymilesModbus.DEVICE_LIMIT_REGISTERS || {})) {
+      local.push({
+        field,
+        label: field === 'maxSoc' ? 'Charge ceiling (all modes)' : 'Discharge floor (all modes)',
+        register: hex(def.addr), fc: 'FC03', scale: '', value: null,
+        capability: field === 'maxSoc' ? 'hoymiles_max_soc_local' : undefined,
+      });
+    }
+
     for (const [field, def] of Object.entries(HoymilesModbus.SETTING_REGISTERS || {})) {
       local.push({
         field,
@@ -113,25 +173,26 @@ module.exports = {
       const devices = homey.drivers.getDriver('hione').getDevices();
       const device = devices[0];
       if (device) {
-        // The reserved SOC sits in a different register per battery mode, so
-        // show the one actually in use. Modes without a mapped register fall
-        // back to the cloud, and the table should say so rather than imply a
-        // local read that is not happening.
-        const mode = device.hasCapability('hoymiles_battery_mode')
-          ? Number(device.getCapabilityValue('hoymiles_battery_mode'))
-          : NaN;
-        const reserveAddr = (HoymilesModbus.RESERVE_SOC_BY_MODE || {})[mode];
-        if (reserveAddr !== undefined) {
+        // Every mode's reserved SOC, each next to the register it comes from.
+        // This used to show one row for whichever mode was thought to be active,
+        // which hid the fact that the other register exists and holds a
+        // different number — and picked the wrong one whenever that idea of the
+        // active mode was stale.
+        for (const [mode, list] of Object.entries(HoymilesModbus.RESERVE_SOC_BY_MODE || {})) {
+          const known = RESERVE_SOC_MODES[mode] || {};
           local.push({
-            field: 'reserveSoc', label: FIELD_LABELS.reserveSoc,
-            register: hex(reserveAddr), fc: 'FC03', scale: '', value: null,
+            field: 'reserveSoc.' + mode,
+            label: reserveLabel(mode),
+            // Self-Consumption has two of them and the higher one wins, so show
+            // both addresses rather than pretend there is one.
+            register: [].concat(list).map(hex).join(' + '),
+            fc: 'FC03', scale: '', value: null,
+            capability: known.capability,
           });
-        } else {
-          cloudOnly.push({ field: 'reserveSoc', label: FIELD_LABELS.reserveSoc });
         }
 
         for (const row of local) {
-          const capability = FIELD_CAPABILITIES[row.field];
+          const capability = row.capability || FIELD_CAPABILITIES[row.field];
           if (capability && device.hasCapability(capability)) {
             row.value = device.getCapabilityValue(capability);
           }
@@ -364,10 +425,17 @@ module.exports = {
       for (let i = 0; i < (def.words || 1); i++) known[toHex(def.addr + i)] = field;
     }
     for (const [field, def] of Object.entries(HoymilesModbus.SETTING_REGISTERS || {})) {
-      known[FC03_PREFIX + toHex(def.addr)] = field;
+      known[FC03_PREFIX + toHex(def.addr)] = FIELD_LABELS[field] || field;
     }
-    for (const [mode, addr] of Object.entries(HoymilesModbus.RESERVE_SOC_BY_MODE || {})) {
-      known[FC03_PREFIX + toHex(addr)] = `reserveSoc (mode ${mode})`;
+    for (const [mode, list] of Object.entries(HoymilesModbus.RESERVE_SOC_BY_MODE || {})) {
+      for (const addr of [].concat(list)) known[FC03_PREFIX + toHex(addr)] = reserveLabel(mode);
+    }
+    for (const [field, def] of Object.entries(HoymilesModbus.DEVICE_LIMIT_REGISTERS || {})) {
+      known[FC03_PREFIX + toHex(def.addr)] =
+        field === 'maxSoc' ? 'Charge ceiling (all modes)' : 'Discharge floor (all modes)';
+    }
+    for (const [addr, name] of Object.entries(EXTRA_SCAN_NAMES)) {
+      known[FC03_PREFIX + toHex(Number(addr))] = name;
     }
     // Report gaps rather than letting a dropped chunk pass as "this range is
     // empty". Addresses themselves are trustworthy now — responses are matched
