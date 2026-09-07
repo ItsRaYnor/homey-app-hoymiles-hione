@@ -709,9 +709,14 @@ class HiOneDevice extends Device {
       await this._refreshBmsData();
       await this._applyCloudMarkers(data.source);
 
-      // Local data carries the active mode; cloud mode comes from settings
-      if (data.batteryMode !== null && data.batteryMode !== undefined) {
-        await this._updateBatteryMode(data.batteryMode);
+      // The mode in the live payload is the CLOUD's, and it lags a switch by
+      // minutes. Only use it when the stick is not supplying one, otherwise
+      // every poll would overwrite the fresh local reading with a stale value
+      // and the picker would flip between the two — which is exactly what it
+      // did. Same rule as the settings refresh below.
+      if (data.batteryMode !== null && data.batteryMode !== undefined
+          && this._modeSource !== 'lokaal') {
+        await this._updateBatteryMode(String(data.batteryMode), 'cloud');
       }
 
       // Refresh mode/reserve/max-power on their own slower cadence (the first
