@@ -48,6 +48,7 @@ const PERCENT_SLIDERS = [
   'hoymiles_max_soc_local',
   'hoymiles_reserve_soc_selfuse',
   'hoymiles_reserve_soc_forcecharge',
+  'hoymiles_reserve_soc_forcedischarge',
   'hoymiles_max_charge_power',
   'hoymiles_max_discharge_power',
 ];
@@ -71,6 +72,7 @@ const CLOUD_SOURCED_CAPABILITIES = [
   'hoymiles_profit_total',
   'hoymiles_reserve_soc_selfuse',
   'hoymiles_reserve_soc_forcecharge',
+  'hoymiles_reserve_soc_forcedischarge',
   'hoymiles_max_charge_power',
   'hoymiles_max_discharge_power',
   'hoymiles_meter_power',
@@ -85,6 +87,7 @@ const NEW_CAPABILITIES = [
   'meter_power.discharged',
   'hoymiles_reserve_soc_selfuse',
   'hoymiles_reserve_soc_forcecharge',
+  'hoymiles_reserve_soc_forcedischarge',
   'hoymiles_max_charge_power',
   'hoymiles_max_discharge_power',
   'hoymiles_meter_power',
@@ -97,8 +100,10 @@ const NEW_CAPABILITIES = [
   'hoymiles_battery_mode_value',
   'hoymiles_max_soc_local',
   'hoymiles_max_soc_local_value',
+  'hoymiles_min_soc_local_value',
   'hoymiles_reserve_soc_selfuse_value',
   'hoymiles_reserve_soc_forcecharge_value',
+  'hoymiles_reserve_soc_forcedischarge_value',
   'hoymiles_max_charge_power_value',
   'hoymiles_max_discharge_power_value',
   'hoymiles_cell_spread',
@@ -127,10 +132,12 @@ const SHORT_MODE_NAMES = {
 const RESERVE_SOC_SLIDERS = {
   1: 'hoymiles_reserve_soc_selfuse',
   5: 'hoymiles_reserve_soc_forcecharge',
+  6: 'hoymiles_reserve_soc_forcedischarge',
 };
 const RESERVE_SOC_LABELS = {
   1: 'Self-Consumption',
   5: 'Force Charge',
+  6: 'Force Discharge',
 };
 
 // The three settings that can be read straight off the stick. The sliders stay
@@ -140,6 +147,7 @@ const SETTING_VALUE_CAPABILITY = {
   hoymiles_max_soc_local:           'hoymiles_max_soc_local_value',
   hoymiles_reserve_soc_selfuse:     'hoymiles_reserve_soc_selfuse_value',
   hoymiles_reserve_soc_forcecharge: 'hoymiles_reserve_soc_forcecharge_value',
+  hoymiles_reserve_soc_forcedischarge: 'hoymiles_reserve_soc_forcedischarge_value',
   hoymiles_max_charge_power:    'hoymiles_max_charge_power_value',
   hoymiles_max_discharge_power: 'hoymiles_max_discharge_power_value',
 };
@@ -156,6 +164,65 @@ const LOCAL_SETTING_CAPABILITY = {
 // Capabilities replaced by a better equivalent — removed from existing devices.
 // The device is now a Homey "home battery": measure_power = battery power and
 // charged/discharged energy is tracked via meter_power.charged/.discharged.
+// The order the tiles appear in on the device card. Homey renders a device in
+// the order the DEVICE stores its capabilities, not the order in this manifest:
+// a manifest change reaches newly paired devices only, and addCapability always
+// appends. So an existing device is brought in line by re-adding everything from
+// the first difference onwards — see _migrateCapabilityOrder.
+//
+// Rule of the layout: what you look at or act on in the moment goes up top —
+// battery power and current, the mode, the SOC window, the power limits — and
+// what only matters as a trend over months (cell spread, cell temperature) goes
+// to the bottom.
+const CAPABILITY_ORDER = [
+  // Live, off the stick, every poll. Battery power and current sit together at
+  // the top; only measure_power keeps its original place, because Homey Energy
+  // reads it for the home battery and it is not worth removing even briefly.
+  'measure_power',
+  'hoymiles_battery_flow',
+  'measure_battery',
+  'measure_current',
+  'measure_voltage',
+  // What you operate: the mode, then the SOC window it works within, then the
+  // power limits. Each read-only tile sits next to the slider that sets it, so
+  // the tile grid and the control list come out in the same order.
+  'hoymiles_battery_mode_value',
+  'hoymiles_battery_mode',
+  'hoymiles_reserve_soc_selfuse_value',
+  'hoymiles_reserve_soc_selfuse',
+  'hoymiles_reserve_soc_forcecharge_value',
+  'hoymiles_reserve_soc_forcecharge',
+  'hoymiles_reserve_soc_forcedischarge_value',
+  'hoymiles_reserve_soc_forcedischarge',
+  'hoymiles_max_soc_local_value',
+  'hoymiles_max_soc_local',
+  'hoymiles_min_soc_local_value',
+  'hoymiles_max_charge_power_value',
+  'hoymiles_max_charge_power',
+  'hoymiles_max_discharge_power_value',
+  'hoymiles_max_discharge_power',
+  // The rest of the installation, also read locally.
+  'hoymiles_grid_power',
+  'hoymiles_load_power',
+  'hoymiles_pv_power',
+  'hoymiles_meter_power',
+  // Everything below here comes from the cloud and lags by minutes — the ☁
+  // tiles — so it sits out of the way of the values you act on.
+  'meter_power.charged',
+  'meter_power.discharged',
+  'hoymiles_daily_energy',
+  'hoymiles_monthly_energy',
+  'hoymiles_yearly_energy',
+  'hoymiles_total_energy',
+  'hoymiles_co2_reduction',
+  'hoymiles_profit_today',
+  'hoymiles_profit_total',
+  // Diagnostics last: months-long trends, nothing you act on in the moment.
+  'hoymiles_cell_spread',
+  'hoymiles_cell_temp_max',
+  'hoymiles_connection_source',
+];
+
 const REMOVED_CAPABILITIES = [
   'hoymiles_battery_power',
   'measure_power.battery',
@@ -469,8 +536,17 @@ class HiOneDevice extends Device {
       await this._setCapabilitySafe(SETTING_VALUE_CAPABILITY.hoymiles_max_soc_local, limits.maxSoc);
     }
 
-    // Both reserves, read from their own registers in one block request, so
-    // neither tile depends on knowing which mode is active.
+    // The other end of that window, and it comes free in the same block read.
+    // Shown but not settable: it is the floor that binds in every mode, so it
+    // decides how deep the battery may really go when a per-mode reserve is set
+    // lower — worth seeing. Writing it has not been tested on this hardware,
+    // which is why there is a tile and no slider.
+    if (limits && typeof limits.minSoc === 'number') {
+      await this._setCapabilitySafe('hoymiles_min_soc_local_value', limits.minSoc);
+    }
+
+    // All three reserves, read from their own registers in one block request,
+    // so no tile depends on knowing which mode is active.
     const reserves = await this._hybrid.getReserveSocByMode();
     if (reserves) {
       for (const [mode, slider] of Object.entries(RESERVE_SOC_SLIDERS)) {
@@ -565,6 +641,8 @@ class HiOneDevice extends Device {
       }
     }
 
+    await this._migrateCapabilityOrder();
+
     // Force the new 0–100 slider options on existing devices, and clear the
     // cached units "%" — Homey rendered a units-"%" capability as a 0–1 fraction
     // ×100, which made the Insights graph read 100× too small. Now stored as a
@@ -584,6 +662,56 @@ class HiOneDevice extends Device {
         } catch (err) {
           this.error('Could not update options for ' + capability + ': ' + err.message);
         }
+      }
+    }
+  }
+
+  /**
+   * Put the device card's tiles in CAPABILITY_ORDER.
+   *
+   * There is no reorder API: removeCapability + addCapability is the only lever,
+   * and adding always appends. Walking the target order and doing remove-then-add
+   * per capability therefore lands each one at the end in sequence, which builds
+   * exactly the wanted order — and leaves at most ONE capability missing at any
+   * moment, so a crash halfway cannot strip the device.
+   *
+   * Only the tail from the first difference is touched. Everything before it is
+   * already right, which is what keeps measure_power and the two energy meters —
+   * the ones Homey Energy reads for a home battery — from being removed at all.
+   *
+   * Insights history survives: a log is keyed by device + capability id, and the
+   * logs of capabilities retired in earlier versions are still there. Values are
+   * blank for the moment between remove and add; the poll at the end of onInit
+   * fills them straight back in.
+   */
+  async _migrateCapabilityOrder() {
+    const current = this.getCapabilities();
+    const desired = CAPABILITY_ORDER.filter((cap) => current.includes(cap));
+
+    // Refuse on anything unexpected rather than reshuffling a device whose set
+    // this list does not describe — a capability missing here would be dropped.
+    const unknown = current.filter((cap) => !CAPABILITY_ORDER.includes(cap));
+    if (unknown.length) {
+      this.log('Skipping tile reorder, unknown capabilities: ' + unknown.join(', '));
+      return;
+    }
+
+    let i = 0;
+    while (i < desired.length && current[i] === desired[i]) i++;
+    if (i >= desired.length) return; // already in order
+
+    this.log('Reordering ' + (desired.length - i) + ' tiles on the device card');
+    for (const capability of desired.slice(i)) {
+      try {
+        await this.removeCapability(capability);
+        await this.addCapability(capability);
+      } catch (err) {
+        this.error('Could not reorder ' + capability + ': ' + err.message);
+        // Try to put it back rather than leave the device without it.
+        if (!this.hasCapability(capability)) {
+          await this.addCapability(capability).catch(() => {});
+        }
+        return;
       }
     }
   }
@@ -768,8 +896,8 @@ class HiOneDevice extends Device {
         this._modeSupports = settings.supports || null;
         // The cloud reports one reserve SOC: the active mode's. That is not
         // ambiguous here — the same payload says which mode that is — so file it
-        // under that mode's tile and leave the other one to the Modbus read.
-        // This is what keeps both tiles populated on a cloud-only install.
+        // under that mode's tile and leave the others to the Modbus read.
+        // This is what keeps the tiles populated on a cloud-only install.
         const activeSlider = RESERVE_SOC_SLIDERS[Number(settings.mode)];
         if (activeSlider && typeof settings.reserveSoc === 'number') {
           await this._setCapabilitySafe(activeSlider, settings.reserveSoc);

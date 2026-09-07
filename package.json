@@ -1,6 +1,6 @@
 {
   "name": "com.hoymiles.hione",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "Unofficial Homey app for Hoymiles HiOne battery system",
   "main": "app.js",
   "engines": {

@@ -62,7 +62,7 @@ const FIELD_CAPABILITIES = {
 const RESERVE_SOC_MODES = {
   1: { label: 'Self-Consumption', capability: 'hoymiles_reserve_soc_selfuse' },
   5: { label: 'Force Charge',     capability: 'hoymiles_reserve_soc_forcecharge' },
-  6: { label: 'Force Discharge' },
+  6: { label: 'Force Discharge', capability: 'hoymiles_reserve_soc_forcedischarge' },
 };
 const reserveLabel = (mode) =>
   'Reserved SOC: ' + ((RESERVE_SOC_MODES[mode] || {}).label || 'mode ' + mode);
@@ -70,14 +70,12 @@ const reserveLabel = (mode) =>
 // Names for the register scan. Everything derived from the live maps above stays
 // in step with the code; the rest is spelled out here.
 //
-// 0x10CD and 0x10CE carry the community catalogue's names, marked unverified on
-// purpose: that catalogue calls 0x10CD the Self-Consumption reserve, while this
-// app uses 0x10CA for it — and 0x10CA is the one proven on the hardware, in both
-// directions. Until that contradiction is settled, giving them the same name in
-// the UI would hide it.
+// 0x10CD is named by the reserve map above, not here: it is the register the
+// cloud itself writes for Self-Consumption, measured by setting the value in
+// S-Miles and reading it back. 0x10CA holds a second Self-Consumption floor and
+// the inverter honours whichever is higher, so both appear under that name.
 const EXTRA_SCAN_NAMES = {
   0x10CC: 'Battery mode (register = mode - 1)',
-  0x10CD: 'EMS self-use SOC (catalogue name, unverified)',
   0x10CE: 'EMS backup SOC (catalogue name, unverified)',
   0x0132: 'Battery max charge power (all modes, unverified scale)',
   0x0133: 'Battery max discharge power (all modes, unverified scale)',
@@ -147,7 +145,7 @@ module.exports = {
         field,
         label: field === 'maxSoc' ? 'Charge ceiling (all modes)' : 'Discharge floor (all modes)',
         register: hex(def.addr), fc: 'FC03', scale: '', value: null,
-        capability: field === 'maxSoc' ? 'hoymiles_max_soc_local' : undefined,
+        capability: field === 'maxSoc' ? 'hoymiles_max_soc_local' : 'hoymiles_min_soc_local_value',
       });
     }
 

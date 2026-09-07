@@ -1,6 +1,6 @@
 {
   "id": "com.hoymiles.hione",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "compatibility": ">=12.4.5",
   "sdk": 3,
   "brandColor": "#00A94F",
@@ -91,28 +91,29 @@
         "measure_power",
         "hoymiles_battery_flow",
         "measure_battery",
-        "measure_voltage",
         "measure_current",
-        "meter_power.charged",
-        "meter_power.discharged",
+        "measure_voltage",
+        "hoymiles_battery_mode_value",
+        "hoymiles_battery_mode",
+        "hoymiles_reserve_soc_selfuse_value",
+        "hoymiles_reserve_soc_selfuse",
+        "hoymiles_reserve_soc_forcecharge_value",
+        "hoymiles_reserve_soc_forcecharge",
+        "hoymiles_reserve_soc_forcedischarge_value",
+        "hoymiles_reserve_soc_forcedischarge",
+        "hoymiles_max_soc_local_value",
+        "hoymiles_max_soc_local",
+        "hoymiles_min_soc_local_value",
+        "hoymiles_max_charge_power_value",
+        "hoymiles_max_charge_power",
+        "hoymiles_max_discharge_power_value",
+        "hoymiles_max_discharge_power",
         "hoymiles_grid_power",
         "hoymiles_load_power",
         "hoymiles_pv_power",
-        "hoymiles_reserve_soc_selfuse_value",
-        "hoymiles_reserve_soc_forcecharge_value",
-        "hoymiles_battery_mode_value",
-        "hoymiles_max_soc_local_value",
-        "hoymiles_max_charge_power_value",
-        "hoymiles_max_discharge_power_value",
-        "hoymiles_cell_spread",
-        "hoymiles_cell_temp_max",
-        "hoymiles_battery_mode",
-        "hoymiles_reserve_soc_selfuse",
-        "hoymiles_reserve_soc_forcecharge",
-        "hoymiles_max_soc_local",
-        "hoymiles_max_charge_power",
-        "hoymiles_max_discharge_power",
         "hoymiles_meter_power",
+        "meter_power.charged",
+        "meter_power.discharged",
         "hoymiles_daily_energy",
         "hoymiles_monthly_energy",
         "hoymiles_yearly_energy",
@@ -120,6 +121,8 @@
         "hoymiles_co2_reduction",
         "hoymiles_profit_today",
         "hoymiles_profit_total",
+        "hoymiles_cell_spread",
+        "hoymiles_cell_temp_max",
         "hoymiles_connection_source"
       ],
       "capabilitiesOptions": {
@@ -771,6 +774,36 @@
       "uiComponent": "sensor",
       "icon": "/assets/reserve-soc.svg"
     },
+    "hoymiles_reserve_soc_forcedischarge": {
+      "type": "number",
+      "title": {
+        "en": "Reserved SOC % - Force Discharge (floor it sells down to)",
+        "nl": "Gereserveerde SOC % - Force Discharge (ondergrens bij verkopen)"
+      },
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "decimals": 0,
+      "insights": true,
+      "getable": true,
+      "setable": true,
+      "uiComponent": "slider",
+      "icon": "/assets/reserve-soc.svg"
+    },
+    "hoymiles_reserve_soc_forcedischarge_value": {
+      "type": "number",
+      "title": {
+        "en": "Reserve Force Discharge",
+        "nl": "Reserve Force Discharge"
+      },
+      "units": "%",
+      "insights": false,
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/reserve-soc.svg"
+    },
     "hoymiles_reserve_soc": {
       "type": "number",
       "title": {
@@ -882,6 +915,20 @@
       "setable": false,
       "uiComponent": "sensor",
       "icon": "/assets/battery.svg"
+    },
+    "hoymiles_min_soc_local_value": {
+      "type": "number",
+      "title": {
+        "en": "Min discharge level",
+        "nl": "Min ontlaadniveau"
+      },
+      "units": "%",
+      "insights": false,
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/battery-floor.svg"
     },
     "hoymiles_battery_mode_value": {
       "type": "string",
