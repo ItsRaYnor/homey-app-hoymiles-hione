@@ -5,6 +5,10 @@ const HoymilesApi   = require('../../lib/HoymilesApi');
 const HoymilesLocal = require('../../lib/HoymilesLocal');
 const { discoverGateways, subnetBaseFromAddress } = require('../../lib/NetworkScan');
 
+// How far below the charge target the battery has to be before a forced charge
+// is worth entering at all.
+const CHARGE_NEEDED_MARGIN_PCT = 2;
+
 class HiOneDriver extends Driver {
 
   async onInit() {
@@ -112,6 +116,28 @@ class HiOneDriver extends Driver {
     );
 
     registerListener(
+      this.homey.flow.getActionCard('report_other_battery'),
+      async ({ device, state }) => device.reportOtherBattery(state)
+    );
+
+    registerListener(
+      this.homey.flow.getConditionCard('other_battery_charging'),
+      async ({ device }) => device.otherBatteryIs('charging')
+    );
+
+    registerListener(
+      this.homey.flow.getConditionCard('other_battery_discharging'),
+      async ({ device }) => device.otherBatteryIs('discharging')
+    );
+    registerListener(
+      this.homey.flow.getActionCard('charge_to_plan'),
+      async ({ device }) => device.chargeToPlan()
+    );
+    registerListener(
+      this.homey.flow.getActionCard('hold_battery'),
+      async ({ device }) => device.holdBatteryHere()
+    );
+    registerListener(
       this.homey.flow.getConditionCard('battery_mode_is'),
       async ({ device, mode }) => device.getCapabilityValue('hoymiles_battery_mode') === mode
     );
@@ -145,6 +171,62 @@ class HiOneDriver extends Driver {
       async ({ device }) => (device.getCapabilityValue('hoymiles_grid_power') || 0) > 0
     );
 
+    // The price conditions ask the device for a freshly computed plan, so a
+    // Flow that runs on the hour boundary judges the hour it is actually in.
+    //
+    // No plan THROWS rather than answering false. A false would be read as a
+    // real answer, and an inverted card would then turn "we do not know" into
+    // "yes" — which is how a restart during the evening peak once parked the
+    // battery instead of leaving it alone. Throwing stops the Flow dead, so an
+    // outage changes nothing rather than acting on a guess.
+    const plan = async (device) => {
+      const answer = await device.getPricePlan();
+      if (!answer) throw new Error(this.homey.__('errors.no_prices'));
+      return answer;
+    };
+    registerListener(
+      this.homey.flow.getConditionCard('price_is_buy_moment'),
+      async ({ device }) => Boolean((await plan(device)).buyNow),
+    );
+
+    registerListener(
+      this.homey.flow.getConditionCard('price_discharge_pays'),
+      async ({ device }) => Boolean((await plan(device)).dischargeNow),
+    );
+
+    registerListener(
+      this.homey.flow.getConditionCard('price_is_sell_moment'),
+      async ({ device }) => Boolean((await plan(device)).sellNow),
+    );
+
+    registerListener(
+      this.homey.flow.getConditionCard('price_is_peak_hour'),
+      async ({ device }) => Boolean((await plan(device)).peakNow),
+    );
+    registerListener(
+      this.homey.flow.getConditionCard('price_spread_pays'),
+      async ({ device }) => Boolean((await plan(device)).spreadPays),
+    );
+    // Guards the Force Charge switch. Force Charge charges TO its target and
+    // does nothing else: once the target is met the inverter sits idle and
+    // ignores the sun, because only Self-Consumption routes surplus PV into the
+    // battery. So entering it with a charge that already covers the dear hours
+    // does not merely waste a mode write - it parks the battery through a sunny
+    // afternoon while the surplus goes to the grid at the bare market price.
+    // The margin keeps it out of Force Charge for a percent or two that is not
+    // worth the round trip, and matches the write tolerance of charge_to_plan.
+    registerListener(
+      this.homey.flow.getConditionCard('price_charge_needed'),
+      async ({ device }) => {
+        const answer = await plan(device);
+        if (!Number.isFinite(answer.chargeTarget)) {
+          throw new Error(this.homey.__('errors.no_target'));
+        }
+        const soc = device.getCapabilityValue('measure_battery');
+        if (!Number.isFinite(soc)) throw new Error(this.homey.__('errors.no_soc'));
+        return soc < answer.chargeTarget - CHARGE_NEEDED_MARGIN_PCT;
+      },
+    );
     registerListener(
       this.homey.flow.getConditionCard('connection_is_local'),
       // Any transport that reads the battery over the LAN counts as local:

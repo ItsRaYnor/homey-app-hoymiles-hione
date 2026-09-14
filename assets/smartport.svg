@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Several sources on one port, merging into a single measured flow -->
+  <g fill="none" stroke="#00A94F" stroke-width="7"
+     stroke-linecap="round" stroke-linejoin="round">
+    <!-- upper branch -->
+    <path d="M14 26 H38 Q54 26 54 42 V50"/>
+    <!-- lower branch -->
+    <path d="M14 74 H38 Q54 74 54 58 V50"/>
+    <!-- middle branch -->
+    <path d="M14 50 H54"/>
+    <!-- the common trunk this register measures -->
+    <path d="M54 50 H76"/>
+    <path d="M68 40 L80 50 L68 60"/>
+  </g>
+</svg>

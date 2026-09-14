@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- A kWh leaving the house: worth only the bare market price -->
+  <path d="M22 50 L50 26 L78 50" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M32 48 L32 78 L68 78 L68 48" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M50 70 L50 54" stroke="#00A94F" stroke-width="6" stroke-linecap="round"/>
+  <path d="M42 60 L50 52 L58 60" fill="none" stroke="#00A94F" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

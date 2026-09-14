@@ -67,6 +67,11 @@
     }
     .btn-secondary:hover { background: #f0faf4; }
     .btn-secondary:disabled { color: #9bd4b3; border-color: #9bd4b3; cursor: wait; }
+    .price-summary { font-size: 13px; color: #444; margin-bottom: 10px; }
+    .price-summary b { color: #1a1a1a; }
+    .price-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; font-size: 11px; color: #666; }
+    .price-legend span { display: flex; align-items: center; gap: 5px; }
+    .price-legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
   </style>
 </head>
 <body>
@@ -79,6 +84,7 @@
     <button id='t-tabAccount' class='active' onclick="showTab('account')">Account</button>
     <button id='t-tabLan' onclick="showTab('lan')">Verbinding</button>
     <button id='t-tabData' onclick="showTab('data')">Waarden</button>
+    <button id='t-tabPrices' onclick="showTab('prices')">Prijzen</button>
   </div>
 
   <div class='tab-panel active' id='panel-account'>
@@ -117,7 +123,7 @@
   <div class='tab-panel' id='panel-lan'>
   <h3 class='section-title' id='t-lanTitle'>Local connection (LAN)</h3>
   <div class='hint' id='t-lanHint' style='margin-bottom:10px'>
-    The IP address of the DTS-G3 stick on your network. Saved here, it is prefilled when pairing.
+    The IP address of the DTS-WL-G3 stick on your network. Saved here, it is prefilled when pairing. If the stick moves, the app finds it again and updates this field.
   </div>
   <label><span id='t-lanIp'>Gateway/DTS IP address</span>
     <input type='text' id='lan_ip' placeholder='192.168.1.100'>
@@ -181,6 +187,15 @@
   <pre id='bms_out' style='display:none; font-size:11px; background:#f5f5f5; border-radius:8px; padding:10px; margin-top:8px; max-height:300px; overflow:auto; white-space:pre-wrap;'></pre>
   </div>
 
+  <div class='tab-panel' id='panel-prices'>
+  <h3 class='section-title' id='t-priceTitle'>Prijzen van vandaag</h3>
+  <div class='hint' id='t-priceHint' style='margin-bottom:10px'></div>
+  <div id='price_summary' class='price-summary'></div>
+  <div id='price_chart'></div>
+  <div class='price-legend' id='price_legend'></div>
+  <div class='status' id='price_status'></div>
+  </div>
+
   <script>
     var i18n = {
       nl: {
@@ -211,6 +226,28 @@
         tabAccount: 'Account',
         tabLan: 'Verbinding',
         tabData: 'Waarden',
+        tabPrices: 'Prijzen',
+        priceTitle: 'Prijzen van vandaag',
+        priceHint: 'De all-in prijs per uur bij Frank Energie, met het oordeel van de app erbij. Insights toont alleen wat de prijs was; dit toont ook de uren die nog komen.',
+        priceLow: 'Laagste',
+        priceHigh: 'Hoogste',
+        priceFloor: 'Ontlaaddrempel',
+        priceBuy: 'Kopen',
+        priceDischarge: 'Ontladen loont',
+        priceSell: 'Verkopen',
+        priceMarket: 'Terugleverprijs (markt)',
+        priceMarketPeak: 'Hoogste terugleverprijs',
+        priceCovered: 'accu haalt nog {n} uur',
+        priceHold: 'Niets doen',
+        priceErr: 'Geen prijzen: ',
+        priceActions: {
+          buy: 'Nu kopen: de prijs zit vlak bij het dagminimum.',
+          sell: 'Nu verkopen: er komt vandaag geen hogere prijs meer.',
+          discharge: 'Ontladen loont: de accu mag het huis voeden.',
+          hold: 'Wachten: de accu blijft staan tot het dal of de piek.',
+          save: 'Bewaren: ontladen loont, maar er komen duurdere uren die de accu beter kan dekken.',
+          flat: 'Vlakke dag: de spreiding dekt de slijtage niet, niet handelen.'
+        },
         scanTitle: 'Registerscan',
         scanHint: 'Leest de drie FC04-vensters met live gegevens (0x0000, 0x0400, 0x0800) en twee FC03-blokken: de apparaat-brede grenzen bij 0x0100 (laadplafond 0x0134 en ontlaadvloer 0x0135, die in elke modus gelden) en het instellingenblok per modus bij 0x10C0, waarvan 0x10CC de batterijmodus zelf is — die telt vanaf nul, dus register 4 is modus 5. Holding-registers krijgen het voorvoegsel FC03, omdat die adressen los staan van FC04. Registers die de app gebruikt worden gemarkeerd, en negatieve waarden staan tussen haakjes.',
         srcLocal: 'Lokaal via Modbus (unit-ID {unit})',
@@ -232,7 +269,7 @@
           '<li><strong>AI-modus</strong> — cloudgestuurde optimalisatie op basis van energieprijzen, prognoses en verbruik.</li>' +
           '</ul>',
         lanTitle: 'Lokale verbinding (LAN)',
-        lanHint: 'Het IP-adres van de DTS-WL-G3 stick in je netwerk. Hier opgeslagen wordt het automatisch ingevuld bij het koppelen.',
+        lanHint: 'Het IP-adres van de DTS-WL-G3 stick in je netwerk. Hier opgeslagen wordt het automatisch ingevuld bij het koppelen. Verhuist de stick naar een ander adres, dan zoekt de app hem terug en werkt dit veld bij — anders dan het veld bij het apparaat zelf, dat blijft staan zoals jij het invulde.',
         lanIp: 'Gateway/DTS IP-adres',
         lanProto: 'Lokaal protocol',
         lanPort: 'Lokale poort',
@@ -287,6 +324,28 @@
         tabAccount: 'Account',
         tabLan: 'Connection',
         tabData: 'Values',
+        tabPrices: 'Prices',
+        priceTitle: "Today's prices",
+        priceHint: 'The all-in hourly price at Frank Energie, with the verdict of the app beside it. Insights can only show what the price was; this also shows the hours still to come.',
+        priceLow: 'Lowest',
+        priceHigh: 'Highest',
+        priceFloor: 'Discharge floor',
+        priceBuy: 'Buy',
+        priceDischarge: 'Discharging pays',
+        priceSell: 'Sell',
+        priceMarket: 'Feed-in price (market)',
+        priceMarketPeak: 'Highest feed-in price',
+        priceCovered: 'battery still covers {n} hours',
+        priceHold: 'Do nothing',
+        priceErr: 'No prices: ',
+        priceActions: {
+          buy: 'Buy now: the price is near the day low.',
+          sell: 'Sell now: no higher price is left today.',
+          discharge: 'Discharging pays: the battery may feed the house.',
+          hold: 'Waiting: the battery sits still until the low or the peak.',
+          save: 'Saving: discharging pays, but dearer hours are coming that the battery can serve instead.',
+          flat: 'Flat day: the spread does not cover the wear, do not trade.'
+        },
         scanTitle: 'Register scan',
         scanHint: 'Reads the three FC04 windows holding live data (0x0000, 0x0400, 0x0800) and two FC03 blocks: the device-wide limits at 0x0100 (charge ceiling 0x0134 and discharge floor 0x0135, which bind in every mode) and the per-mode settings block at 0x10C0, whose first word 0x10CC is the battery mode itself — zero-based, so register 4 means mode 5. Holding registers are prefixed FC03, because those addresses are separate from FC04. Registers the app uses are marked, and negative values are shown in brackets.',
         srcLocal: 'Local via Modbus (unit ID {unit})',
@@ -308,7 +367,7 @@
           '<li><strong>AI Mode</strong> — cloud-managed optimization using energy prices, forecasts and consumption.</li>' +
           '</ul>',
         lanTitle: 'Local connection (LAN)',
-        lanHint: 'The IP address of the DTS-WL-G3 stick on your network. Saved here, it is prefilled when pairing.',
+        lanHint: 'The IP address of the DTS-WL-G3 stick on your network. Saved here, it is prefilled when pairing. If the stick moves to another address, the app finds it again and updates this field — unlike the one on the device itself, which keeps whatever you typed.',
         lanIp: 'Gateway/DTS IP address',
         lanProto: 'Local protocol',
         lanPort: 'Local port',
@@ -381,6 +440,9 @@
       document.getElementById('t-srcTitle').textContent = t.srcTitle;
       document.getElementById('t-srcHelp').textContent = t.srcHelp;
       document.getElementById('t-tabAccount').textContent = t.tabAccount;
+      document.getElementById('t-tabPrices').textContent = t.tabPrices;
+      document.getElementById('t-priceTitle').textContent = t.priceTitle;
+      document.getElementById('t-priceHint').textContent = t.priceHint;
       document.getElementById('t-tabLan').textContent = t.tabLan;
       document.getElementById('t-tabData').textContent = t.tabData;
       document.getElementById('t-scanTitle').textContent = t.scanTitle;
@@ -534,8 +596,99 @@
       el.style.display = 'block';
     }
 
+    // The day's price curve. Insights can only draw what a value already was,
+    // so it can never show the hours ahead; the app has the whole day after one
+    // fetch, and this puts it on screen — including which hours the plan picks.
+    function loadPrices() {
+      var t = i18n[_lang] || i18n.en;
+      var status = document.getElementById('price_status');
+      status.style.display = 'none';
+
+      _homey.api('POST', '/prices', {}, function (err, res) {
+        if (err || !res || !res.hours || !res.hours.length) {
+          status.textContent = t.priceErr + ((err && (err.message || err)) || '');
+          status.className = 'status err';
+          status.style.display = 'block';
+          document.getElementById('price_chart').innerHTML = '';
+          document.getElementById('price_summary').innerHTML = '';
+          document.getElementById('price_legend').innerHTML = '';
+          return;
+        }
+        drawPrices(res, t);
+      });
+    }
+
+    function drawPrices(data, t) {
+      var ct = function (value) { return (value * 100).toFixed(1).replace('.', _lang === 'nl' ? ',' : '.'); };
+      var hours = data.hours;
+      var top = Math.max(data.dayHigh, data.dischargeFloor) * 1.08;
+      var W = 460, H = 200, padL = 34, padB = 18, padT = 8;
+      var plot = H - padB - padT;
+      var slot = (W - padL) / hours.length;
+      var bar = Math.max(6, slot - 3);
+      var y = function (value) { return padT + plot - (value / top) * plot; };
+
+      var svg = ["<svg viewBox='0 0 " + W + ' ' + H + "' width='100%' role='img'>"];
+
+      // The line every decision hangs on: below it a stored kWh loses money.
+      var floorY = y(data.dischargeFloor);
+      svg.push("<line x1='" + padL + "' y1='" + floorY + "' x2='" + W + "' y2='" + floorY
+        + "' stroke='#d32f2f' stroke-width='1' stroke-dasharray='4 3'/>");
+      svg.push("<text x='2' y='" + (floorY + 3) + "' font-size='9' fill='#d32f2f'>" + ct(data.dischargeFloor) + '</text>');
+      svg.push("<text x='2' y='" + (y(data.dayHigh) + 3) + "' font-size='9' fill='#999'>" + ct(data.dayHigh) + '</text>');
+      svg.push("<text x='2' y='" + (y(data.dayLow) + 3) + "' font-size='9' fill='#999'>" + ct(data.dayLow) + '</text>');
+
+      hours.forEach(function (hour, index) {
+        var x = padL + index * slot;
+        var top_ = y(hour.price);
+        // Amber is an hour the battery should actually serve; pale amber is an
+        // hour that clears the floor but loses the ranking, so it is worth more
+        // later than now.
+        var fill = hour.buy ? '#00A94F'
+          : (hour.sell ? '#d32f2f'
+          : (hour.peak ? '#f4a261'
+          : (hour.discharge ? '#f8ddc2' : '#d8d8d8')));
+        svg.push("<rect x='" + x + "' y='" + top_ + "' width='" + bar + "' height='" + (padT + plot - top_)
+          + "' fill='" + fill + "' rx='2'>"
+          + '<title>' + new Date(hour.from).getHours() + ':00 — ' + ct(hour.price) + ' ct</title></rect>');
+        if (hour.now) {
+          svg.push("<rect x='" + (x - 1.5) + "' y='" + (top_ - 1.5) + "' width='" + (bar + 3)
+            + "' height='" + (padT + plot - top_ + 3) + "' fill='none' stroke='#1a1a1a' stroke-width='1.5' rx='3'/>");
+        }
+        var label = new Date(hour.from).getHours();
+        if (label % 3 === 0) {
+          svg.push("<text x='" + (x + bar / 2) + "' y='" + (H - 5)
+            + "' font-size='9' fill='#999' text-anchor='middle'>" + label + '</text>');
+        }
+      });
+
+      // What you are actually paid for a kWh that leaves the house. The gap to
+      // the bars is tax, markup and VAT — the reason self-consumption wins.
+      var line = hours.map(function (hour, index) {
+        return (padL + index * slot + bar / 2) + ',' + y(hour.market);
+      }).join(' ');
+      svg.push("<polyline points='" + line + "' fill='none' stroke='#5b6b7f' stroke-width='2'/>");
+
+      svg.push('</svg>');
+      document.getElementById('price_chart').innerHTML = svg.join('');
+
+      var planText = data.plan ? (t.priceActions[data.plan.action] || data.plan.action) : '';
+      document.getElementById('price_summary').innerHTML =
+        t.priceLow + ' <b>' + ct(data.dayLow) + '</b> · ' + t.priceHigh + ' <b>' + ct(data.dayHigh) + '</b> · '
+        + t.priceFloor + ' <b>' + ct(data.dischargeFloor) + '</b> ct<br>'
+        + t.priceMarketPeak + ' <b>' + ct(data.marketHigh) + '</b> ct'
+        + (data.hoursCovered ? ' · ' + t.priceCovered.replace('{n}', data.hoursCovered) : '')
+        + '<br>' + planText;
+
+      document.getElementById('price_legend').innerHTML =
+        "<span><i style='background:#00A94F'></i>" + t.priceBuy + '</span>'
+        + "<span><i style='background:#f4a261'></i>" + t.priceDischarge + '</span>'
+        + "<span><i style='background:#d32f2f'></i>" + t.priceSell + '</span>'
+        + "<span><i style='background:#d8d8d8'></i>" + t.priceHold + '</span>'
+        + "<span><i style='background:#5b6b7f'></i>" + t.priceMarket + '</span>';
+    }
     function showTab(name) {
-      ['account', 'lan', 'data'].forEach(function (n) {
+      ['account', 'lan', 'data', 'prices'].forEach(function (n) {
         var panel = document.getElementById('panel-' + n);
         var tab   = document.getElementById('t-tab' + n.charAt(0).toUpperCase() + n.slice(1));
         if (panel) panel.className = 'tab-panel' + (n === name ? ' active' : '');
@@ -543,6 +696,7 @@
       });
       // Values are read live, so refresh them whenever the tab is opened.
       if (name === 'data') loadDataSources();
+      if (name === 'prices') loadPrices();
     }
 
     // Say plainly when the chosen protocol needs a port this gateway does not

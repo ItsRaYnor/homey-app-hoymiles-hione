@@ -21,7 +21,7 @@ Monitor and control your **Hoymiles HiOne** all-in-one battery energy storage sy
 
 ## Features
 
-- **Real-time monitoring**: PV power, battery state-of-charge, battery charge/discharge power, grid import/export, home load
+- **Real-time monitoring**: smart port power, battery state-of-charge, battery charge/discharge power, grid import/export, home load
 - **Energy totals**: daily yield and lifetime total
 - **Battery mode control** via Flows:
   - Self-Consumption, Economy, Backup, Off-Grid, Force Charge, Force Discharge, Peak Shaving, Time of Use
@@ -94,7 +94,7 @@ The HiBox-63T-G3 gateway connects to your local network via Ethernet. To find it
 
 | Capability | Description | Unit |
 |---|---|---|
-| PV Power | Current solar panel output | W |
+| Smart Port Power | Everything the smart port carries — AC-coupled solar, plus anything else wired to it | W |
 | Battery Power | Battery charge (+) / discharge (-) power | W |
 | Grid Power | Grid import (+) / export (-) power | W |
 | Load Power | Current home consumption | W |

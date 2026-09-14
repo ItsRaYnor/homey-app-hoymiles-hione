@@ -2,7 +2,12 @@
   "errors": {
     "poll_failed": "Kan S-Miles Cloud niet bereiken. Controleer je internetverbinding.",
     "login_failed": "Inloggen mislukt. Controleer je S-Miles Cloud e-mail en wachtwoord.",
-    "missing_credentials": "Ontbrekende inloggegevens. Koppel het apparaat opnieuw."
+    "missing_credentials": "Ontbrekende inloggegevens. Koppel het apparaat opnieuw.",
+    "no_soc": "Nog geen laadniveau bekend — probeer het zo opnieuw.",
+    "no_prices": "Geen prijzen beschikbaar — de flow is met rust gelaten in plaats van op een gok te handelen.",
+    "no_target": "Nog geen laaddoel — het prijsplan of het huisverbruik ontbreekt.",
+    "gateway_moved": "De DTS-stick is verhuisd naar {{ip}} en daar teruggevonden. De app praat weer lokaal. Zet een vaste DHCP-reservering op je router om dit te voorkomen.",
+    "set_failed": "HiOne: {{what}} kon niet worden ingesteld — {{reason}}"
   },
   "pair": {
     "login_title": "Inloggen bij S-Miles Cloud",
@@ -13,5 +18,23 @@
     "charging": "Laden",
     "discharging": "Ontladen",
     "idle": "Inactief"
+  },
+  "price": {
+    "buy": "Kopen tot {{price}} ct",
+    "sell": "Verkopen boven {{price}} ct",
+    "discharge": "Ontladen boven {{price}} ct",
+    "hold": "Wachten op {{price}} ct",
+    "flat": "Vlakke dag, niet handelen",
+    "unknown": "Geen prijzen",
+    "save": "Bewaren voor de duurste uren"
+  },
+  "labels": {
+    "reserve_selfuse": "de reserve voor Zelfconsumptie",
+    "reserve_forcecharge": "de reserve voor Force Charge",
+    "reserve_forcedischarge": "de reserve voor Force Discharge",
+    "max_charge_power": "het maximale laadvermogen",
+    "max_discharge_power": "het maximale ontlaadvermogen",
+    "charge_ceiling": "het maximale laadniveau",
+    "grid_limit": "de netvermogensgrens"
   }
 }

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Rising to the peak of the day -->
+  <line x1="22" y1="18" x2="78" y2="18" stroke="#00A94F" stroke-width="8" stroke-linecap="round"/>
+  <path d="M50 84 L50 36" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/>
+  <path d="M30 54 L50 34 L70 54" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

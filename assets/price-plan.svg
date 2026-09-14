@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- The day's shape: cheap, cheaper, dear -->
+  <rect x="18" y="52" width="16" height="30" rx="3" fill="none" stroke="#FFFFFF" stroke-width="6"/>
+  <rect x="42" y="64" width="16" height="18" rx="3" fill="#00A94F"/>
+  <rect x="66" y="30" width="16" height="52" rx="3" fill="none" stroke="#FFFFFF" stroke-width="6"/>
+</svg>

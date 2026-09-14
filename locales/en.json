@@ -2,7 +2,12 @@
   "errors": {
     "poll_failed": "Could not reach S-Miles Cloud. Check your internet connection.",
     "login_failed": "Login failed. Check your S-Miles Cloud email and password.",
-    "missing_credentials": "Missing credentials. Please re-pair the device."
+    "missing_credentials": "Missing credentials. Please re-pair the device.",
+    "no_soc": "No state of charge yet — try again in a moment.",
+    "no_prices": "No prices available — the Flow was left alone rather than acting on a guess.",
+    "no_target": "No charge target yet — the price plan or the house load is missing.",
+    "gateway_moved": "The DTS stick moved to {{ip}} and was found again there. The app is talking locally once more. A fixed DHCP reservation on your router stops this recurring.",
+    "set_failed": "HiOne: {{what}} could not be set — {{reason}}"
   },
   "pair": {
     "login_title": "Log in to S-Miles Cloud",
@@ -13,5 +18,23 @@
     "charging": "Charging",
     "discharging": "Discharging",
     "idle": "Idle"
+  },
+  "price": {
+    "buy": "Buy up to {{price}} ct",
+    "sell": "Sell above {{price}} ct",
+    "discharge": "Discharge above {{price}} ct",
+    "hold": "Waiting for {{price}} ct",
+    "flat": "Flat day, no trade",
+    "unknown": "No prices",
+    "save": "Saving for the dearest hours"
+  },
+  "labels": {
+    "reserve_selfuse": "the Self-Consumption reserve",
+    "reserve_forcecharge": "the Force Charge reserve",
+    "reserve_forcedischarge": "the Force Discharge reserve",
+    "max_charge_power": "the maximum charge power",
+    "max_discharge_power": "the maximum discharge power",
+    "charge_ceiling": "the maximum charge level",
+    "grid_limit": "the grid power limit"
   }
 }

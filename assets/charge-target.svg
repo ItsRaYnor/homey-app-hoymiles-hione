@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Battery filled to a mark rather than to the brim -->
+  <rect x="28" y="22" width="44" height="62" rx="6" fill="none" stroke="#FFFFFF" stroke-width="7"/>
+  <path d="M41 16 L59 16" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/>
+  <rect x="35" y="52" width="30" height="25" rx="3" fill="#00A94F"/>
+  <path d="M20 50 L80 50" stroke="#00A94F" stroke-width="4" stroke-dasharray="5 4" stroke-linecap="round"/>
+</svg>

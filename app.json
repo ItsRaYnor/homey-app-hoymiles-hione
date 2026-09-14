@@ -1,6 +1,6 @@
 {
   "id": "com.hoymiles.hione",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "compatibility": ">=12.4.5",
   "sdk": 3,
   "brandColor": "#00A94F",
@@ -62,6 +62,10 @@
     "checkPorts": {
       "method": "POST",
       "path": "/ports"
+    },
+    "dayPrices": {
+      "method": "POST",
+      "path": "/prices"
     }
   },
   "images": {
@@ -108,9 +112,15 @@
         "hoymiles_max_charge_power",
         "hoymiles_max_discharge_power_value",
         "hoymiles_max_discharge_power",
+        "hoymiles_price_plan",
+        "hoymiles_price_now",
+        "hoymiles_price_market_now",
+        "hoymiles_price_charge_target",
+        "hoymiles_price_low_today",
+        "hoymiles_price_high_today",
         "hoymiles_grid_power",
         "hoymiles_load_power",
-        "hoymiles_pv_power",
+        "hoymiles_smartport_power",
         "hoymiles_meter_power",
         "meter_power.charged",
         "meter_power.discharged",
@@ -207,8 +217,8 @@
             "nl": "Gateway/DTS IP-adres (optioneel)"
           },
           "hint": {
-            "en": "Local LAN IP of the DTS-WL-G3 stick or HiBox gateway for offline access (e.g. 192.168.1.100). Leave empty to use cloud only.",
-            "nl": "Lokaal LAN IP-adres van de DTS-WL-G3 stick of HiBox gateway voor offline toegang (bijv. 192.168.1.100). Leeg laten voor cloud only."
+            "en": "Local LAN IP of the DTS-WL-G3 stick or HiBox gateway (e.g. 192.168.1.100). Leave empty to use the address on the app settings page; only when no address is known anywhere does the app fall back to cloud only. If the address here does not answer, the app finds the stick again by itself and carries on with the one that works — this field is NOT updated then, so it can show an address that is not in use.",
+            "nl": "Lokaal LAN IP-adres van de DTS-WL-G3 stick of HiBox gateway (bijv. 192.168.1.100). Leeg laten om het adres van de app-instellingenpagina te gebruiken; pas als er nergens een adres bekend is, valt de app terug op alleen de cloud. Antwoordt het adres hier niet, dan zoekt de app de stick zelf terug en praat verder op het adres dat wél werkt — dit veld wordt dan NIET bijgewerkt en kan dus een adres tonen dat niet in gebruik is."
           },
           "value": ""
         },
@@ -233,8 +243,8 @@
             "nl": "Station-ID (optioneel)"
           },
           "hint": {
-            "en": "Only needed for devices added with the local-only option: those have no station linked, so cloud data (grid, load, PV, energy totals, battery mode) stays empty. Enter the station ID from the S-Miles portal URL to enable it, together with the cloud login on the app settings page.",
-            "nl": "Alleen nodig voor apparaten die lokaal-only zijn toegevoegd: die hebben geen station gekoppeld, waardoor cloudgegevens (net, verbruik, PV, energietotalen, batterijmodus) leeg blijven. Vul hier het station-ID uit de S-Miles portal-URL in, samen met de cloud-login op de app-instellingenpagina."
+            "en": "Only needed for devices added with the local-only option: those have no station linked, so cloud data (grid, load, smart port, energy totals, battery mode) stays empty. Enter the station ID from the S-Miles portal URL to enable it, together with the cloud login on the app settings page.",
+            "nl": "Alleen nodig voor apparaten die lokaal-only zijn toegevoegd: die hebben geen station gekoppeld, waardoor cloudgegevens (net, verbruik, smartport, energietotalen, batterijmodus) leeg blijven. Vul hier het station-ID uit de S-Miles portal-URL in, samen met de cloud-login op de app-instellingenpagina."
           },
           "value": ""
         },
@@ -252,6 +262,163 @@
           "value": 60,
           "min": 30,
           "max": 300
+        },
+        {
+          "type": "group",
+          "label": {
+            "en": "Price plan (Frank Energie)",
+            "nl": "Prijsplan (Frank Energie)"
+          },
+          "children": [
+            {
+              "id": "price_enabled",
+              "type": "checkbox",
+              "label": {
+                "en": "Follow day-ahead prices",
+                "nl": "Dagprijzen volgen"
+              },
+              "value": true,
+              "hint": {
+                "en": "Fetches Frank Energie's public all-in prices and works out the day plan. No account or key needed.",
+                "nl": "Haalt de publieke all-in prijzen van Frank Energie op en rekent het dagplan uit. Geen account of sleutel nodig."
+              }
+            },
+            {
+              "id": "price_wear_cost",
+              "type": "number",
+              "label": {
+                "en": "Battery wear (ct/kWh)",
+                "nl": "Accuslijtage (ct/kWh)"
+              },
+              "value": 6,
+              "min": 0,
+              "max": 50,
+              "hint": {
+                "en": "System cost divided by the warranted throughput. Every stored kWh has to earn this back first.",
+                "nl": "Systeemkosten gedeeld door de gegarandeerde doorzet. Elke opgeslagen kWh moet dit eerst terugverdienen."
+              }
+            },
+            {
+              "id": "price_round_trip",
+              "type": "number",
+              "label": {
+                "en": "Round trip efficiency (%)",
+                "nl": "Retourrendement (%)"
+              },
+              "value": 90,
+              "min": 50,
+              "max": 100,
+              "hint": {
+                "en": "What comes back out of every kWh you put in.",
+                "nl": "Wat er van elke ingeladen kWh weer uit komt."
+              }
+            },
+            {
+              "id": "price_min_margin",
+              "type": "number",
+              "label": {
+                "en": "Required margin (ct/kWh)",
+                "nl": "Gevraagde marge (ct/kWh)"
+              },
+              "value": 5,
+              "min": 0,
+              "max": 50,
+              "hint": {
+                "en": "What has to be left over on top of break-even before the battery moves at all.",
+                "nl": "Wat er bovenop de break-even moet overblijven voordat de accu uberhaupt in beweging komt."
+              }
+            },
+            {
+              "id": "price_buy_band",
+              "type": "number",
+              "label": {
+                "en": "Buy band (ct/kWh)",
+                "nl": "Koopband (ct/kWh)"
+              },
+              "value": 2,
+              "min": 0,
+              "max": 50,
+              "hint": {
+                "en": "How far above the day's cheapest hour still counts as a buy moment. Widen it when the battery does not fill up in time.",
+                "nl": "Hoever boven het goedkoopste uur van de dag nog als koopmoment telt. Verruim dit als de accu niet op tijd vol komt."
+              }
+            },
+            {
+              "id": "price_sell_band",
+              "type": "number",
+              "label": {
+                "en": "Sell band (ct/kWh)",
+                "nl": "Verkoopband (ct/kWh)"
+              },
+              "value": 2,
+              "min": 0,
+              "max": 50,
+              "hint": {
+                "en": "How far below the highest price still to come still counts as a sell moment.",
+                "nl": "Hoever onder de hoogste prijs die nog komt nog als verkoopmoment telt."
+              }
+            },
+            {
+              "id": "price_capacity_kwh",
+              "type": "number",
+              "label": {
+                "en": "Usable battery capacity (kWh)",
+                "nl": "Bruikbare accucapaciteit (kWh)"
+              },
+              "value": 31.2,
+              "min": 1,
+              "max": 200,
+              "hint": {
+                "en": "The energy across the full 0-100% span. Used to work out how many of the dearest hours the battery can still cover.",
+                "nl": "De energie over het volle bereik van 0 tot 100%. Hiermee wordt bepaald hoeveel van de duurste uren de accu nog kan dekken."
+              }
+            },
+            {
+              "id": "price_floor_soc",
+              "type": "number",
+              "label": {
+                "en": "Planning discharge floor (%)",
+                "nl": "Ontlaadgrens voor de planning (%)"
+              },
+              "value": 30,
+              "min": 0,
+              "max": 100,
+              "hint": {
+                "en": "How deep the battery is allowed to go when it does deliver. Used only to work out how much energy there is to spend, so it must be the level you release it to — not the reserve it is sitting at right now.",
+                "nl": "Hoe diep de accu mag gaan wanneer hij wél levert. Wordt alleen gebruikt om uit te rekenen hoeveel energie er te besteden is, dus dit moet het niveau zijn waar je hem naartoe laat gaan — niet de reserve waar hij nu op staat."
+              }
+            },
+            {
+              "id": "price_load_kw",
+              "type": "number",
+              "label": {
+                "en": "Assumed house load (kW, 0 = measure)",
+                "nl": "Aangenomen huisverbruik (kW, 0 = meten)"
+              },
+              "value": 0,
+              "min": 0,
+              "max": 25,
+              "hint": {
+                "en": "How much the battery has to supply per hour during the dear hours. It decides how many of those hours it can still cover, and how far to charge in the dip. At 0 the app uses the house load measured at that moment - but that is a snapshot used to plan a whole evening: at three in the afternoon it is your fridge, not your hob. And if anything else shares the meter, such as home batteries your supplier trades, that reading swings wildly in both directions. Enter your real draw during the expensive hours instead, and revise it when the season changes.",
+                "nl": "Hoeveel de accu per uur moet leveren tijdens de dure uren. Daarmee wordt bepaald hoeveel van die uren hij nog kan dekken, en hoe ver hij in het dal moet laden. Op 0 gebruikt de app het belastingsvermogen van dat moment - maar dat is een momentopname waarmee een hele avond wordt gepland: om drie uur 's middags meet hij je koelkast, niet je kookplaat. Zit er bovendien iets anders op dezelfde meter, zoals thuisaccu's die je leverancier verhandelt, dan slaat die meting alle kanten op. Vul dan je werkelijke verbruik tijdens de dure uren in, en pas het aan als het seizoen verandert."
+              }
+            },
+            {
+              "id": "price_feed_in_penalty",
+              "type": "number",
+              "label": {
+                "en": "Export earns less than self-use (ct/kWh)",
+                "nl": "Terugleveren levert minder op dan zelf gebruiken (ct/kWh)"
+              },
+              "value": 5.3,
+              "min": 0,
+              "max": 60,
+              "hint": {
+                "en": "Read it off your invoice: the supply fee per imported kWh plus the feed-in fee per exported kWh. Where energy tax is levied on the year's net import, that is the whole difference, because an exported kWh removes a taxed one just as a self-consumed one does. Once net metering ends the gap becomes the tax as well, and grows with the price.",
+                "nl": "Lees het van je factuur: de inkoopvergoeding per ingekochte kWh plus de terugleverkosten per teruggeleverde kWh. Zolang de energiebelasting over het netto jaarverbruik gaat, is dat het hele verschil, want een teruggeleverde kWh haalt net zo goed een belaste kWh van de rekening als een zelf verbruikte. Zodra het salderen stopt komt de belasting er bovenop en groeit het gat mee met de prijs."
+              }
+            }
+          ]
         },
         {
           "type": "group",
@@ -339,11 +506,11 @@
       "uiComponent": "sensor",
       "icon": "/assets/load.svg"
     },
-    "hoymiles_pv_power": {
+    "hoymiles_smartport_power": {
       "type": "number",
       "title": {
-        "en": "PV Power",
-        "nl": "Zonnepaneelvermogen"
+        "en": "Smart Port Power",
+        "nl": "Smartportvermogen"
       },
       "units": "W",
       "insights": true,
@@ -351,7 +518,7 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/pv.svg"
+      "icon": "/assets/smartport.svg"
     },
     "hoymiles_battery_flow": {
       "type": "string",
@@ -941,6 +1108,87 @@
       "setable": false,
       "uiComponent": "sensor",
       "icon": "/assets/battery.svg"
+    },
+    "hoymiles_price_now": {
+      "type": "number",
+      "title": {
+        "en": "Price now",
+        "nl": "Prijs nu"
+      },
+      "units": "ct/kWh",
+      "insights": true,
+      "decimals": 1,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/price-now.svg"
+    },
+    "hoymiles_price_low_today": {
+      "type": "number",
+      "title": {
+        "en": "Lowest today",
+        "nl": "Laagste vandaag"
+      },
+      "units": "ct/kWh",
+      "insights": true,
+      "decimals": 1,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/price-low.svg"
+    },
+    "hoymiles_price_high_today": {
+      "type": "number",
+      "title": {
+        "en": "Highest today",
+        "nl": "Hoogste vandaag"
+      },
+      "units": "ct/kWh",
+      "insights": true,
+      "decimals": 1,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/price-high.svg"
+    },
+    "hoymiles_price_plan": {
+      "type": "string",
+      "title": {
+        "en": "Price plan",
+        "nl": "Prijsplan"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/price-plan.svg"
+    },
+    "hoymiles_price_market_now": {
+      "type": "number",
+      "title": {
+        "en": "Feed-in price now",
+        "nl": "Terugleverprijs nu"
+      },
+      "units": "ct/kWh",
+      "insights": true,
+      "decimals": 1,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/price-market.svg"
+    },
+    "hoymiles_price_charge_target": {
+      "type": "number",
+      "title": {
+        "en": "Charge target",
+        "nl": "Laaddoel"
+      },
+      "units": "%",
+      "insights": true,
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/charge-target.svg"
     }
   },
   "flow": {
@@ -1736,6 +1984,88 @@
             ]
           }
         ]
+      },
+      {
+        "id": "hold_battery",
+        "title": {
+          "en": "Hold the battery at its current charge",
+          "nl": "Houd de accu vast op het huidige niveau"
+        },
+        "hint": {
+          "en": "Sets the Self-Consumption reserve to the charge already on board, so the battery neither discharges nor charges. Use this to save energy for a dearer hour: parking the reserve at 100% would instead buy energy from the grid at the current price, because in Self-Consumption the inverter charges up to the reserve as well.",
+          "nl": "Zet de reserve voor Zelfconsumptie op de lading die er al in zit, zodat de accu niet ontlaadt en ook niet laadt. Gebruik dit om energie te bewaren voor een duurder uur: de reserve op 100% parkeren zou juist stroom uit het net kopen tegen de prijs van dit moment, omdat de omvormer in Zelfconsumptie ook naar de reserve toe laadt."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          }
+        ]
+      },
+      {
+        "id": "charge_to_plan",
+        "title": {
+          "en": "Charge to what the dear hours will need",
+          "nl": "Laad tot wat de dure uren vragen"
+        },
+        "hint": {
+          "en": "Sets the Force Charge target to the floor plus the energy the coming hours above the discharge threshold will draw, capped at 95%. Buying past that spends a cycle on energy the day has no use for and fills the room the sun would have used for nothing.",
+          "nl": "Zet het Force Charge-doel op de ontlaadgrens plus de energie die de komende uren boven de ontlaaddrempel vragen, met 95% als plafond. Verder kopen kost een cyclus aan energie waar de dag niets mee doet, en vult de ruimte die de zon gratis had opgevuld."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          }
+        ]
+      },
+      {
+        "id": "report_other_battery",
+        "title": {
+          "en": "Report that another battery is ...",
+          "nl": "Meld dat een andere accu ..."
+        },
+        "titleFormatted": {
+          "en": "Report that another battery is [[state]]",
+          "nl": "Meld dat een andere accu [[state]]"
+        },
+        "hint": {
+          "en": "This app only sees its own devices, so it cannot tell what other batteries on the same meter are doing. Call this from a Flow while the state holds — once a minute is fine. The report expires by itself after three minutes, so a disabled Flow or a restart opens the guards again instead of holding this battery back forever.",
+          "nl": "Deze app ziet alleen zijn eigen apparaten en weet dus niet wat andere accu's op dezelfde meter doen. Roep dit aan vanuit een flow zolang de toestand geldt — één keer per minuut is genoeg. De melding vervalt na drie minuten vanzelf, zodat een uitgezette flow of een herstart de remmen weer opent in plaats van deze accu eeuwig tegen te houden."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "title": {
+              "en": "State",
+              "nl": "Toestand"
+            },
+            "values": [
+              {
+                "id": "charging",
+                "title": {
+                  "en": "charging",
+                  "nl": "laadt"
+                }
+              },
+              {
+                "id": "discharging",
+                "title": {
+                  "en": "discharging",
+                  "nl": "ontlaadt"
+                }
+              }
+            ]
+          }
+        ]
       }
     ],
     "conditions": [
@@ -1937,6 +2267,150 @@
         "title": {
           "en": "Connection !{{is|is not}} local (LAN)",
           "nl": "Verbinding is !{{lokaal|niet lokaal}} (LAN)"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          }
+        ]
+      },
+      {
+        "id": "price_is_buy_moment",
+        "title": {
+          "en": "It !{{is|is not}} a buy moment",
+          "nl": "Het !{{is|is geen}} koopmoment"
+        },
+        "hint": {
+          "en": "True when the price is near today's low and the day's spread covers the round trip.",
+          "nl": "Waar als de prijs vlak bij het dagminimum ligt en de dagspreiding de heenreis en terugreis dekt."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          }
+        ]
+      },
+      {
+        "id": "price_discharge_pays",
+        "title": {
+          "en": "Discharging !{{pays|does not pay}}",
+          "nl": "Ontladen !{{loont|loont niet}}"
+        },
+        "hint": {
+          "en": "True when the price is above the break-even on today's low, plus the required margin.",
+          "nl": "Waar als de prijs boven de break-even op het dagminimum ligt, plus de gevraagde marge."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          }
+        ]
+      },
+      {
+        "id": "price_is_sell_moment",
+        "title": {
+          "en": "It !{{is|is not}} a sell moment",
+          "nl": "Het !{{is|is geen}} verkoopmoment"
+        },
+        "hint": {
+          "en": "True when discharging pays and no meaningfully higher price is left today.",
+          "nl": "Waar als ontladen loont en er vandaag geen noemenswaardig hogere prijs meer komt."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          }
+        ]
+      },
+      {
+        "id": "price_spread_pays",
+        "title": {
+          "en": "Today's spread !{{pays|does not pay}}",
+          "nl": "De dagspreiding !{{loont|loont niet}}"
+        },
+        "hint": {
+          "en": "True when the gap between the cheapest and dearest hour covers wear and losses.",
+          "nl": "Waar als het gat tussen het goedkoopste en duurste uur de slijtage en verliezen dekt."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          }
+        ]
+      },
+      {
+        "id": "price_charge_needed",
+        "title": {
+          "en": "The battery !{{still needs|does not need}} charging",
+          "nl": "De accu !{{moet nog laden|hoeft niet te laden}}"
+        },
+        "hint": {
+          "en": "True while the charge is below what the dear hours still ahead will draw. Put it in front of a Flow that switches to Force Charge: that mode charges TO its target and nothing more, so once the target is met the inverter sits idle and stops taking in surplus solar - only Self-Consumption does that. Without this check a cheap sunny afternoon parks the battery while the sun goes to the grid.",
+          "nl": "Waar zolang de lading onder ligt wat de dure uren die nog komen vragen. Zet dit voor een flow die naar Force Charge schakelt: die modus laadt TOT zijn doel en verder niets, dus zodra dat doel gehaald is staat de omvormer stil en neemt hij geen zonoverschot meer op - dat doet alleen Zelfconsumptie. Zonder deze controle zet een goedkope zonnige middag de accu stil terwijl de zon het net op gaat."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          }
+        ]
+      },
+      {
+        "id": "price_is_peak_hour",
+        "title": {
+          "en": "This hour !{{is|is not}} one of the dearest the battery can still cover",
+          "nl": "Dit uur !{{hoort|hoort niet}} bij de duurste uren die de accu nog haalt"
+        },
+        "hint": {
+          "en": "Ranks the hours left today by price and keeps only as many as the charge on board can serve at the current house load. A battery that cannot cover the whole expensive stretch should spend itself on the dearest part of it.",
+          "nl": "Rangschikt de resterende uren van de dag op prijs en houdt er zoveel over als de lading aan boord bij het huidige huisverbruik kan dekken. Een accu die de hele dure periode niet haalt, moet zich aan het duurste deel ervan uitgeven."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          }
+        ]
+      },
+      {
+        "id": "other_battery_charging",
+        "title": {
+          "en": "Another battery !{{is|is not}} charging",
+          "nl": "Een andere accu !{{laadt|laadt niet}}"
+        },
+        "hint": {
+          "en": "True while a Flow has recently reported another battery on this meter as charging. Charging this battery at the same time would buy the same energy twice; discharging into it would be a round trip for nothing.",
+          "nl": "Waar zolang een flow kort geleden heeft gemeld dat een andere accu op deze meter aan het laden is. Deze accu tegelijk laden koopt dezelfde energie twee keer; erin ontladen is een rondje voor niets."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          }
+        ]
+      },
+      {
+        "id": "other_battery_discharging",
+        "title": {
+          "en": "Another battery !{{is|is not}} discharging",
+          "nl": "Een andere accu !{{ontlaadt|ontlaadt niet}}"
+        },
+        "hint": {
+          "en": "True while a Flow has recently reported another battery on this meter as discharging. Charging this battery from that export just moves energy between batteries and loses a little on the way.",
+          "nl": "Waar zolang een flow kort geleden heeft gemeld dat een andere accu op deze meter aan het ontladen is. Deze accu daaruit laden verplaatst alleen energie tussen accu's en verliest onderweg een deel."
         },
         "args": [
           {

@@ -49,7 +49,7 @@ const FIELD_CAPABILITIES = {
   batteryVoltage: 'measure_voltage',
   batteryCurrent: 'measure_current',
   gridPower:      'hoymiles_grid_power',
-  pvPower:        'hoymiles_pv_power',
+  pvPower:        'hoymiles_smartport_power',
   loadPower:      'hoymiles_load_power',
   // Settings that are read (and written) locally as well
   maxChargePower:    'hoymiles_max_charge_power',
@@ -90,7 +90,7 @@ const FIELD_LABELS = {
   batteryVoltage: 'Battery voltage',
   batteryCurrent: 'Battery current (derived from power / voltage)',
   gridPower:      'Grid power',
-  pvPower:        'Solar power',
+  pvPower:        'Smart port power (sum of the three phase registers)',
   loadPower:      'Home load power',
   // The mode belongs in the name. Neither limit does anything outside its own
   // forced mode — a battery once gained 22 SOC points in 85 minutes with the
@@ -240,6 +240,27 @@ module.exports = {
    * not for the device card. Goes through the device so it shares the stick's
    * request queue instead of opening a competing conversation.
    */
+  /**
+   * The day's price curve for the settings page. Comes from the device so it
+   * uses that device's own wear and margin settings — the same numbers the
+   * Flow conditions judge on, not a second opinion.
+   */
+  async dayPrices({ homey }) {
+    let device;
+    try {
+      device = homey.drivers.getDriver('hione').getDevices()[0];
+    } catch (err) {
+      throw new Error('Could not reach the HiOne device: ' + err.message);
+    }
+    if (!device) throw new Error('No HiOne device added yet');
+    if (typeof device.getPriceCurve !== 'function') {
+      throw new Error('Device is still starting up — try again in a moment');
+    }
+
+    const curve = await device.getPriceCurve();
+    if (!curve) throw new Error('No prices available');
+    return curve;
+  },
   async bmsDetail({ homey }) {
     let device;
     try {

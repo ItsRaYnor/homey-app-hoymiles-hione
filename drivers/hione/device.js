@@ -3,6 +3,8 @@
 const { Device } = require('homey');
 const HoymilesHybrid = require('../../lib/HoymilesHybrid');
 const { BATTERY_MODES } = require('../../lib/HoymilesApi');
+const FrankPrices = require('../../lib/FrankPrices');
+const { discoverGateways, subnetBaseFromAddress } = require('../../lib/NetworkScan');
 
 // Battery mode / reserve / max-power use a slow async cloud command (a job
 // read that can take ~30s), so they refresh on their own slower cadence —
@@ -11,6 +13,34 @@ const { BATTERY_MODES } = require('../../lib/HoymilesApi');
 // Heavy cloud settings (mode / reserve / max-power / EPS) — keep light live
 // data on the normal poll interval (~60s) and refresh this slower.
 const SETTINGS_REFRESH_MS = 5 * 60_000; // 5 min
+
+// How often to confirm the stick is still at the address we are using, and
+// the floor between two subnet sweeps. The check costs one Modbus read when
+// the stick is there and one timeout when it is not, so it can be frequent;
+// the sweep touches 254 hosts, so it may not be.
+const GATEWAY_WATCH_MS      = 15 * 60_000;
+const GATEWAY_RESCAN_MIN_MS = 30 * 60_000;
+
+// The day plan only changes when the clock moves into the next price hour, and
+// the prices themselves are fetched once a day. Recomputing every minute would
+// be free but pointless; once a minute past the poll is close enough to catch
+// the hour change without a burst of capability writes.
+const PRICE_REFRESH_MS = 60_000; // 1 min
+
+// How far the Self-Consumption reserve may sit below the charge before holding
+// the battery rewrites it. Slack, so a drifting SOC reading does not spend an
+// EEPROM write every few minutes; small enough that little can leak out first.
+const HOLD_TOLERANCE_PCT = 3;
+
+// Same idea for the charge target: a percent either way is not worth a write.
+const TARGET_TOLERANCE_PCT = 2;
+
+// Other batteries on the same meter are invisible to this app: a Homey app only
+// sees its own devices. So a Flow tells it, once a minute, and the report keeps
+// for a little longer than that. Expiring rather than latching is deliberate —
+// if the reporting Flow is disabled or Homey restarts, the guards open again
+// instead of silently holding this battery back forever.
+const OTHER_BATTERY_TTL_MS = 3 * 60_000;
 
 // Selecting the battery mode in the app fires for every value scrolled past.
 // Wait until the choice settles before writing it, so scrolling through the
@@ -80,6 +110,7 @@ const CLOUD_SOURCED_CAPABILITIES = [
 const CLOUD_MARKER = ' ☁';
 
 const NEW_CAPABILITIES = [
+  'hoymiles_smartport_power',
   'hoymiles_battery_flow',
   'measure_voltage',
   'measure_current',
@@ -101,6 +132,12 @@ const NEW_CAPABILITIES = [
   'hoymiles_max_soc_local',
   'hoymiles_max_soc_local_value',
   'hoymiles_min_soc_local_value',
+  'hoymiles_price_plan',
+  'hoymiles_price_now',
+  'hoymiles_price_market_now',
+  'hoymiles_price_charge_target',
+  'hoymiles_price_low_today',
+  'hoymiles_price_high_today',
   'hoymiles_reserve_soc_selfuse_value',
   'hoymiles_reserve_soc_forcecharge_value',
   'hoymiles_reserve_soc_forcedischarge_value',
@@ -138,6 +175,11 @@ const RESERVE_SOC_LABELS = {
   1: 'Self-Consumption',
   5: 'Force Charge',
   6: 'Force Discharge',
+};
+const RESERVE_SOC_LABEL_KEYS = {
+  1: 'labels.reserve_selfuse',
+  5: 'labels.reserve_forcecharge',
+  6: 'labels.reserve_forcedischarge',
 };
 
 // The three settings that can be read straight off the stick. The sliders stay
@@ -201,10 +243,17 @@ const CAPABILITY_ORDER = [
   'hoymiles_max_charge_power',
   'hoymiles_max_discharge_power_value',
   'hoymiles_max_discharge_power',
+  // What the market says to do, right under the controls it applies to.
+  'hoymiles_price_plan',
+  'hoymiles_price_now',
+  'hoymiles_price_market_now',
+  'hoymiles_price_charge_target',
+  'hoymiles_price_low_today',
+  'hoymiles_price_high_today',
   // The rest of the installation, also read locally.
   'hoymiles_grid_power',
   'hoymiles_load_power',
-  'hoymiles_pv_power',
+  'hoymiles_smartport_power',
   'hoymiles_meter_power',
   // Everything below here comes from the cloud and lags by minutes — the ☁
   // tiles — so it sits out of the way of the values you act on.
@@ -224,6 +273,10 @@ const CAPABILITY_ORDER = [
 ];
 
 const REMOVED_CAPABILITIES = [
+  // Renamed to hoymiles_smartport_power. The register is the SMART PORT total
+  // (three phase registers summed), so on a site with a battery on that port
+  // the old name promised solar and delivered solar plus battery.
+  'hoymiles_pv_power',
   'hoymiles_battery_power',
   'measure_power.battery',
   'hoymiles_max_power',           // → split into max_charge_power / max_discharge_power
@@ -255,12 +308,25 @@ class HiOneDevice extends Device {
     this._lastModeApplyAt = 0;
     this._pollInFlight = false;
     this._settingsRefreshInFlight = null;
+    this._lastPriceRefresh = 0;
+    this._otherBatteryReports = { charging: 0, discharging: 0 };
+    this._pricePlan = null;
+    this._prices = new FrankPrices({
+      log: (...args) => this.log(...args),
+      error: (...args) => this.error(...args),
+    });
+
+    this._gatewayOverride = null;
+    this._gatewayHost = null;
+    this._gatewayScanAt = 0;
+    this._gatewayCheckInFlight = null;
 
     await this._migrateCapabilities();
     this._createHybrid();
-    this._hybrid.probeLocal()
+    this._ensureGatewayReachable()
       .catch(() => {})
       .finally(() => this._fetchGatewayInfo());
+    this._startGatewayWatch();
 
     this.registerCapabilityListener('hoymiles_battery_mode', async (value) => {
       // Debounce: the picker fires for every mode scrolled past. Only apply the
@@ -294,29 +360,30 @@ class HiOneDevice extends Device {
         this._settingListener(RESERVE_SOC_LABELS[mode] + ' reserve', async (value) => {
           await this._hybrid.setReserveSocForMode(Number(mode), value);
           await this._setCapabilitySafe(SETTING_VALUE_CAPABILITY[slider], value);
-        }));
+        }, RESERVE_SOC_LABEL_KEYS[mode]));
     }
 
     this.registerCapabilityListener('hoymiles_max_charge_power',
       this._settingListener('Max charge power', async (value) => {
         await this._hybrid.setMaxChargePower(value);
         await this._setCapabilitySafe(SETTING_VALUE_CAPABILITY.hoymiles_max_charge_power, value);
-      }));
+      }, 'labels.max_charge_power'));
 
     this.registerCapabilityListener('hoymiles_max_discharge_power',
       this._settingListener('Max discharge power', async (value) => {
         await this._hybrid.setMaxDischargePower(value);
         await this._setCapabilitySafe(SETTING_VALUE_CAPABILITY.hoymiles_max_discharge_power, value);
-      }));
+      }, 'labels.max_discharge_power'));
 
     this.registerCapabilityListener('hoymiles_max_soc_local',
       this._settingListener('Local charge ceiling', async (value) => {
         await this._hybrid.setMaxSocLocal(value);
         await this._setCapabilitySafe(SETTING_VALUE_CAPABILITY.hoymiles_max_soc_local, value);
-      }));
+      }, 'labels.charge_ceiling'));
 
     this.registerCapabilityListener('hoymiles_meter_power',
-      this._settingListener('Grid limit', (value) => this._hybrid.setGridLimit(value)));
+      this._settingListener('Grid limit', (value) => this._hybrid.setGridLimit(value),
+        'labels.grid_limit'));
 
     this._startPolling();
     await this._poll();
@@ -326,6 +393,7 @@ class HiOneDevice extends Device {
   async onDeleted() {
     this._stopPolling();
     this._clearFollowupPolls();
+    if (this._gatewayWatch) this.homey.clearInterval(this._gatewayWatch);
     if (this._modeChangeTimer) this.homey.clearTimeout(this._modeChangeTimer);
     if (this._pausePollingTimer) this.homey.clearTimeout(this._pausePollingTimer);
     this.log('HiOne device removed');
@@ -445,7 +513,7 @@ class HiOneDevice extends Device {
    * the tile back to what the station actually reports and say why — by then
    * there is no request left to reject.
    */
-  _settingListener(what, write) {
+  _settingListener(what, write, labelKey) {
     return async (value) => {
       const settled = write(value).then(
         () => ({ ok: true }),
@@ -468,7 +536,7 @@ class HiOneDevice extends Device {
       settled.then((late) => {
         if (late.ok) return;
         this.error(what + ' change failed after the listener returned: ' + late.err.message);
-        return this._reportLateFailure(what, late.err);
+        return this._reportLateFailure(labelKey || what, late.err, Boolean(labelKey));
       }).catch(() => {});
     };
   }
@@ -477,13 +545,16 @@ class HiOneDevice extends Device {
   // Reconcile the tile with the station first, so it stops showing a value that
   // was never applied, then tell the user why — silently reverting a slider
   // under someone's finger is its own kind of bug.
-  async _reportLateFailure(what, err) {
+  async _reportLateFailure(what, err, translate) {
     await this._refreshBatterySettings().catch(() => {});
     try {
       if (this.homey.notifications) {
-        await this.homey.notifications.createNotification({
-          excerpt: 'HiOne: ' + what + ' could not be set — ' + err.message,
-        });
+        const name = translate ? String(this.homey.__(what)) : what;
+        // Homey's __() does not substitute tokens, so do it here.
+        const excerpt = String(this.homey.__('errors.set_failed'))
+          .replace('{{what}}', name)
+          .replace('{{reason}}', err.message);
+        await this.homey.notifications.createNotification({ excerpt });
       }
     } catch (notifyErr) {
       this.error('Could not raise a notification: ' + notifyErr.message);
@@ -601,12 +672,144 @@ class HiOneDevice extends Device {
     }
   }
 
+  /**
+   * Keep talking to the stick after DHCP moves it.
+   *
+   * A lease renewal can hand the stick a new address at any time, and the app
+   * then talks to a host that is not there: every local read spends a timeout,
+   * the battery mode falls back to the cloud and the power tiles freeze on
+   * their last good reading with nothing to say so. Worse, the device settings
+   * page - the one place to correct the address - is served by the same busy
+   * app, so the correction is exactly what stops working.
+   *
+   * So the stick gets found instead of asked for. Order: the address in use,
+   * then every other address we know of, then a sweep of the local /24. What
+   * answers is remembered in the device STORE, which code can write; the
+   * setting is left alone, because writing it needs the page that is stuck.
+   */
+  async _ensureGatewayReachable({ allowScan = true } = {}) {
+    if (this._gatewayCheckInFlight) return this._gatewayCheckInFlight;
+    this._gatewayCheckInFlight = this._runGatewayCheck({ allowScan })
+      .finally(() => { this._gatewayCheckInFlight = null; });
+    return this._gatewayCheckInFlight;
+  }
+
+  async _runGatewayCheck({ allowScan }) {
+    // A cloud-only install has no stick to find; never sweep on its behalf.
+    const known = this._gatewayHost
+      || this.getSetting('gateway_ip')
+      || this.getStoreValue('gatewayIp')
+      || this.homey.settings.get('saved_gateway_ip');
+    if (!known) return null;
+
+    if (await this._hybrid.probeLocal().catch(() => false)) {
+      // Remember where it actually answered, so the next restart can fall
+      // straight back here instead of sweeping again.
+      if (this._gatewayHost && this.getStoreValue('gatewayIpVerified') !== this._gatewayHost) {
+        await this.setStoreValue('gatewayIpVerified', this._gatewayHost).catch(() => {});
+      }
+      return this._gatewayHost;
+    }
+
+    const tried = new Set([this._gatewayHost].filter(Boolean));
+    const candidates = [
+      this.getStoreValue('gatewayIpVerified'),
+      this.getSetting('gateway_ip'),
+      this.getStoreValue('gatewayIp'),
+      this.homey.settings.get('saved_gateway_ip'),
+    ].filter((ip) => ip && !tried.has(ip));
+
+    for (const ip of candidates) {
+      if (tried.has(ip)) continue;
+      tried.add(ip);
+      this.log('Gateway silent at ' + (this._gatewayHost || '?') + ' - trying ' + ip);
+      if (await this._adoptGateway(ip)) return ip;
+    }
+
+    if (!allowScan) return null;
+    if (Date.now() - (this._gatewayScanAt || 0) < GATEWAY_RESCAN_MIN_MS) return null;
+    this._gatewayScanAt = Date.now();
+
+    let base = null;
+    try {
+      base = subnetBaseFromAddress(await this.homey.cloud.getLocalAddress());
+    } catch (err) {
+      this.log('Could not read Homey local address: ' + err.message);
+    }
+    if (!base) base = subnetBaseFromAddress(known);
+    if (!base) return null;
+
+    this.log('Gateway not on any known address - sweeping ' + base + '0/24');
+    let found = [];
+    try {
+      found = await discoverGateways({
+        subnetBase: base,
+        log:   (...args) => this.log(...args),
+        error: (...args) => this.error(...args),
+      });
+    } catch (err) {
+      this.error('Gateway sweep failed: ' + err.message);
+      return null;
+    }
+
+    // Only a stick that actually answered its protocol - an open port alone is
+    // a candidate, not a gateway, and adopting one would swap a dead address
+    // for a silent one.
+    for (const hit of found) {
+      if (!hit.verified || tried.has(hit.ip)) continue;
+      tried.add(hit.ip);
+      if (await this._adoptGateway(hit.ip)) {
+        await this._notifyGatewayMoved(hit.ip);
+        return hit.ip;
+      }
+    }
+    this.log('Sweep found no gateway that answers');
+    return null;
+  }
+
+  /** Point the connection at `ip`, and keep it only if the stick answers there. */
+  async _adoptGateway(ip) {
+    const previous = this._gatewayHost;
+    this._createHybrid(ip);
+    if (!await this._hybrid.probeLocal().catch(() => false)) {
+      this._createHybrid();            // back to whatever was configured
+      return false;
+    }
+    this._gatewayOverride = ip;
+    this.log('Gateway answers at ' + ip + ' (was ' + (previous || 'unset') + ')');
+    await this.setStoreValue('gatewayIpVerified', ip).catch(() => {});
+    this.homey.settings.set('saved_gateway_ip', ip);
+    return true;
+  }
+
+  async _notifyGatewayMoved(ip) {
+    try {
+      await this.homey.notifications.createNotification({
+        // Homey's __() does not substitute tokens, so do it here.
+        excerpt: String(this.homey.__('errors.gateway_moved')).replace('{{ip}}', ip),
+      });
+    } catch (err) {
+      this.error('Could not raise the gateway notification: ' + err.message);
+    }
+  }
+
+  _startGatewayWatch() {
+    if (this._gatewayWatch) this.homey.clearInterval(this._gatewayWatch);
+    this._gatewayWatch = this.homey.setInterval(() => {
+      this._ensureGatewayReachable().catch(() => {});
+    }, GATEWAY_WATCH_MS);
+  }
+
   async onSettings({ newSettings, changedKeys }) {
     if (changedKeys.includes('gateway_ip') || changedKeys.includes('cloud_api_url')
       || changedKeys.includes('station_id')) {
       this.log('Connection settings changed — reinitialising');
-      this._createHybrid();
-      this._hybrid.probeLocal()
+      // The user just named an address: drop the discovered one so their choice
+      // is tried first. If it turns out to be dead, the recovery finds the stick
+      // again by itself rather than leaving the device stranded.
+      this._gatewayOverride = null;
+      this._createHybrid(undefined, newSettings);
+      this._ensureGatewayReachable()
         .catch(() => {})
         .finally(() => this._fetchGatewayInfo());
     }
@@ -811,6 +1014,167 @@ class HiOneDevice extends Device {
     }
   }
 
+  /**
+   * The day's price plan, straight from Frank Energie's public API.
+   *
+   * Recomputed on every call rather than cached: the prices themselves are
+   * fetched once a day, but which of them is 'now' changes on the hour, and a
+   * Flow condition must never answer for the previous hour.
+   */
+  async getPricePlan() {
+    if (this.getSetting('price_enabled') === false) return null;
+    return this._prices.getPlan(this._priceOptions());
+  }
+
+  /**
+   * A Flow reporting what the other batteries on this meter are doing, because
+   * the app cannot see them itself. Call it while the state holds, not once when
+   * it starts: the report expires on its own.
+   */
+  reportOtherBattery(state) {
+    if (!Object.prototype.hasOwnProperty.call(this._otherBatteryReports, state)) {
+      throw new Error(`Unknown battery state: ${state}`);
+    }
+    this._otherBatteryReports[state] = Date.now();
+  }
+
+  /** True while a report of that state is still fresh. */
+  otherBatteryIs(state) {
+    const at = this._otherBatteryReports[state] || 0;
+    return Date.now() - at < OTHER_BATTERY_TTL_MS;
+  }
+  /** The whole day for the settings page, including the hours still to come. */
+  async getPriceCurve() {
+    if (this.getSetting('price_enabled') === false) return null;
+    return this._prices.getCurve(this._priceOptions());
+  }
+  /**
+   * Aim the Force Charge target at what the coming expensive hours will ask for,
+   * instead of at a fixed level. Buying past that costs a cycle for energy the
+   * day has no use for, and fills the room the sun was going to use for free.
+   */
+  async chargeToPlan() {
+    const plan = await this.getPricePlan();
+    if (!plan || !Number.isFinite(plan.chargeTarget)) {
+      throw new Error(this.homey.__('errors.no_target'));
+    }
+
+    const current = this.getCapabilityValue('hoymiles_reserve_soc_forcecharge');
+    if (Number.isFinite(current) && Math.abs(current - plan.chargeTarget) <= TARGET_TOLERANCE_PCT) {
+      this.log(`Charge target already ${current}% (plan says ${plan.chargeTarget}%) - no write`);
+      return null;
+    }
+
+    await this._hybrid.setReserveSocForMode(5, plan.chargeTarget);
+    this._refreshLocalSettings().catch(() => {});
+    this._scheduleLivePollBurst();
+    return plan.chargeTarget;
+  }
+  /** Settings are kept in ct/kWh and percent; the plan works in EUR/kWh. */
+  _priceOptions() {
+    const cents = (key, fallback) => {
+      const value = this.getSetting(key);
+      return Number.isFinite(value) ? value / 100 : fallback;
+    };
+    const roundTrip = this.getSetting('price_round_trip');
+    const capacity = this.getSetting('price_capacity_kwh');
+    return {
+      ...this._batteryState(Number.isFinite(capacity) ? capacity : FrankPrices.DEFAULTS.capacityKwh),
+      wearCost:   cents('price_wear_cost',  FrankPrices.DEFAULTS.wearCost),
+      minMargin:  cents('price_min_margin', FrankPrices.DEFAULTS.minMargin),
+      buyBand:    cents('price_buy_band',   FrankPrices.DEFAULTS.buyBand),
+      sellBand:   cents('price_sell_band',  FrankPrices.DEFAULTS.sellBand),
+      feedInPenalty: cents('price_feed_in_penalty', FrankPrices.DEFAULTS.feedInPenalty),
+      floorSoc:   Number.isFinite(this.getSetting('price_floor_soc'))
+        ? this.getSetting('price_floor_soc')
+        : FrankPrices.DEFAULTS.floorSoc,
+      capacityKwh: Number.isFinite(this.getSetting('price_capacity_kwh'))
+        ? this.getSetting('price_capacity_kwh')
+        : FrankPrices.DEFAULTS.capacityKwh,
+      efficiency: Number.isFinite(roundTrip) && roundTrip > 0
+        ? roundTrip / 100
+        : FrankPrices.DEFAULTS.efficiency,
+    };
+  }
+
+  /**
+   * What the battery has to spend and what the house is drawing. Both are
+   * needed to work out how many of the coming expensive hours it can cover.
+   * Either may be missing right after a restart; the plan then simply does not
+   * rank, rather than assuming the battery is empty.
+   */
+  _batteryState(capacityKwh) {
+    const soc = this.getCapabilityValue('measure_battery');
+    const load = this.getCapabilityValue('hoymiles_load_power');
+    const state = {};
+
+    // Measured against the level the battery is ALLOWED to discharge to, never
+    // against the reserve it happens to sit at. Using the live reserve makes the
+    // answer depend on the very setting it is meant to drive: a reserve parked
+    // above the charge reads as "nothing usable", so no hour is ever dear enough
+    // to release it, so the reserve stays parked. Seen live, holding the battery
+    // idle straight through the most expensive hour of the day.
+    const configured = this.getSetting('price_floor_soc');
+    const floor = Number.isFinite(configured) ? configured : 30;
+    if (Number.isFinite(soc)) {
+      state.usableKwh = Math.max(0, (soc - floor) / 100 * capacityKwh);
+    }
+    // The load reading is taken at the grid connection, so anything else on the
+    // meter lands in it — here a set of batteries traded by the supplier on a
+    // separate contract. Five kilowatts of somebody else's trade makes the house
+    // look ravenous and shrinks the hours this battery thinks it can cover. A
+    // configured figure overrides the measurement for exactly that reason.
+    const assumed = this.getSetting('price_load_kw');
+    if (Number.isFinite(assumed) && assumed > 0) state.loadKw = assumed;
+    else if (Number.isFinite(load)) state.loadKw = load / 1000;
+    return state;
+  }
+  async _refreshPricePlan() {
+    if (this.getSetting('price_enabled') === false) return;
+    const now = Date.now();
+    if (now - this._lastPriceRefresh < PRICE_REFRESH_MS) return;
+    this._lastPriceRefresh = now;
+
+    const plan = await this.getPricePlan().catch((err) => {
+      this.error('Price plan failed: ' + err.message);
+      return null;
+    });
+    this._pricePlan = plan;
+
+    if (!plan) {
+      await this._setCapabilitySafe('hoymiles_price_plan', this.homey.__('price.unknown'));
+      return;
+    }
+
+    const ct = (value) => Math.round(value * 1000) / 10;
+    await this._setCapabilitySafe('hoymiles_price_now',        ct(plan.priceNow));
+    await this._setCapabilitySafe('hoymiles_price_market_now', ct(plan.marketNow));
+    await this._setCapabilitySafe('hoymiles_price_charge_target', plan.chargeTarget);
+    await this._setCapabilitySafe('hoymiles_price_low_today',  ct(plan.dayLow));
+    await this._setCapabilitySafe('hoymiles_price_high_today', ct(plan.dayHigh));
+    await this._setCapabilitySafe('hoymiles_price_plan',       this._pricePlanText(plan));
+  }
+
+  /** One line for the tile: what to do, and the price that decides it. */
+  _pricePlanText(plan) {
+    const buyCeiling = plan.dayLow + (this._priceOptions().buyBand || 0);
+    const price = ['buy', 'hold'].includes(plan.action) ? buyCeiling : plan.dischargeFloor;
+    // Substituted here rather than handed to __(): Homey's i18n leaves the
+    // {{price}} placeholder standing, which put it on the tile verbatim.
+    return String(this.homey.__('price.' + plan.action))
+      .replace('{{price}}', this._formatCents(price));
+  }
+
+  _formatCents(euroPerKwh) {
+    const text = (euroPerKwh * 100).toFixed(1);
+    let language = 'en';
+    try {
+      language = this.homey.i18n.getLanguage() || 'en';
+    } catch (err) {
+      // Older firmware without i18n.getLanguage: the dot is a safe default.
+    }
+    return language === 'nl' ? text.replace('.', ',') : text;
+  }
   async _poll() {
     if (this._pollInFlight) return;
     this._pollInFlight = true;
@@ -821,7 +1185,7 @@ class HiOneDevice extends Device {
       await this._setCapabilitySafe('hoymiles_battery_flow',        this._batteryFlowText(data.batteryPower));
       await this._setCapabilitySafe('measure_voltage',              data.batteryVoltage);
       await this._setCapabilitySafe('measure_current',              data.batteryCurrent);
-      await this._setCapabilitySafe('hoymiles_pv_power',            data.pvPower);
+      await this._setCapabilitySafe('hoymiles_smartport_power',     data.pvPower);
       await this._setCapabilitySafe('measure_battery',              data.batterySoc);
       await this._setCapabilitySafe('hoymiles_grid_power',          data.gridPower);
       await this._setCapabilitySafe('hoymiles_load_power',          data.loadPower);
@@ -835,6 +1199,7 @@ class HiOneDevice extends Device {
       await this._setCapabilitySafe('hoymiles_connection_source',   data.source);
       await this._refreshLocalSettings();
       await this._refreshBmsData();
+      await this._refreshPricePlan();
       await this._applyCloudMarkers(data.source);
 
       // The mode in the live payload is the CLOUD's, and it lags a switch by
@@ -1005,6 +1370,39 @@ class HiOneDevice extends Device {
     this._scheduleLivePollBurst();
   }
 
+  /**
+   * Stop the battery discharging without inviting it to charge.
+   *
+   * In Self-Consumption the reserve is not only a floor: the inverter also
+   * charges UP to it, from the grid when there is no sun. Parking the reserve
+   * at 100% to hold energy back therefore buys energy at the very price you
+   * were trying to avoid. Setting it to the charge already on board holds the
+   * battery still instead — nothing to discharge to, nothing to charge up to.
+   */
+  async holdBatteryHere() {
+    const soc = this.getCapabilityValue('measure_battery');
+    if (!Number.isFinite(soc)) throw new Error(this.homey.__('errors.no_soc'));
+
+    // Floor, never round: one percent above the real charge is still a buy order.
+    const level = Math.max(5, Math.min(100, Math.floor(soc)));
+    const current = this.getCapabilityValue('hoymiles_reserve_soc_selfuse');
+
+    // Every write lands in EEPROM, which wears out, so only write when it changes
+    // something. A reserve already just under the charge is holding fine — chasing
+    // the last percent as the reading drifts would write all day for nothing. A
+    // reserve ABOVE the charge is corrected at once whatever the gap: that is not
+    // a hold but a standing order to buy up to it.
+    if (Number.isFinite(current)
+        && current <= level && level - current <= HOLD_TOLERANCE_PCT) {
+      this.log(`Hold: reserve ${current}% already holds ${soc}% - no write`);
+      return null;
+    }
+
+    await this._hybrid.setReserveSocForMode(1, level);
+    this._refreshLocalSettings().catch(() => {});
+    this._scheduleLivePollBurst();
+    return level;
+  }
   async setMaxSoc(percent) {
     await this._hybrid.setMaxSoc(percent);
     this._refreshBatterySettings().catch(() => {});
@@ -1136,14 +1534,24 @@ class HiOneDevice extends Device {
     }).join('\n\n');
   }
 
-  _createHybrid() {
+  // settingsOverride exists for onSettings: while that handler runs, Homey has
+  // NOT stored the new values yet, so getSettings() still returns the previous
+  // ones and a reinit here would rebuild the connection from the setting the
+  // user just replaced — one save behind, every time.
+  _createHybrid(hostOverride, settingsOverride) {
     const store     = this.getStore();
-    const settings  = this.getSettings();
-    // Device-specific IP wins; fall back to the app-wide saved IP
-    const gatewayIp = (settings && settings.gateway_ip)
+    const settings  = settingsOverride || this.getSettings();
+    // An address proven to answer wins over everything, because a configured
+    // address that is not there is worse than useless: it costs a timeout per
+    // read and locks out the one that works. Otherwise the device setting wins,
+    // then the store, then the app-wide saved IP.
+    const gatewayIp = hostOverride
+      || this._gatewayOverride
+      || (settings && settings.gateway_ip)
       || store.gatewayIp
       || this.homey.settings.get('saved_gateway_ip')
       || null;
+    this._gatewayHost = gatewayIp;
 
     const baseUrl = (settings && settings.cloud_api_url)
       || this.homey.settings.get('cloud_api_url')
