@@ -207,6 +207,13 @@ class HiOneDriver extends Driver {
       this.homey.flow.getConditionCard('price_spread_pays'),
       async ({ device }) => Boolean((await plan(device)).spreadPays),
     );
+    // Meant to sit INVERTED in front of a Flow that parks the battery: hold the
+    // charge only when it cannot be bought back cheaply enough before the hour
+    // it is being held for.
+    registerListener(
+      this.homey.flow.getConditionCard('price_cheaper_refill_ahead'),
+      async ({ device }) => Boolean((await plan(device)).cheaperRefillAhead),
+    );
     // Guards the Force Charge switch. Force Charge charges TO its target and
     // does nothing else: once the target is met the inverter sits idle and
     // ignores the sun, because only Self-Consumption routes surplus PV into the

@@ -58,6 +58,15 @@ const MODE_APPLY_DELAY_MS = 3_000;
 // (~10s), so enforce a minimum gap between mode writes to avoid API errors.
 const MODE_MIN_INTERVAL_MS = 10_000;
 
+// How long a mode read from the stick outranks the cloud. The cloud lags a
+// local switch by minutes, so one failed local read must not hand the picker
+// straight back to it: that showed Self-Consumption while the inverter was in
+// Force Discharge. Only a stick that stays silent this long loses the say.
+const LOCAL_MODE_TRUST_MS = 15 * 60_000;
+
+// First entry of the mode picker; means "no change". See the mode listener.
+const MODE_PLACEHOLDER = '0';
+
 // Homey fails a capability listener with "Timeout after 10000ms" if it has not
 // resolved in ten seconds. Our cloud calls carry a fifteen-second HTTP timeout
 // and setMaxSoc makes two of them back to back, so simply awaiting the write
@@ -314,6 +323,10 @@ class HiOneDevice extends Device {
     this._prices = new FrankPrices({
       log: (...args) => this.log(...args),
       error: (...args) => this.error(...args),
+      store: {
+        read: () => this.getStoreValue('frank_prices'),
+        write: (value) => this.setStoreValue('frank_prices', value),
+      },
     });
 
     this._gatewayOverride = null;
@@ -333,13 +346,40 @@ class HiOneDevice extends Device {
       // value the user settles on. Also enforce a ~10s gap between writes — the
       // cloud rejects a new mode while the previous one is still settling — so a
       // quick second choice waits out the cooldown instead of erroring.
-      this._pendingMode = value;
       if (this._modeChangeTimer) this.homey.clearTimeout(this._modeChangeTimer);
+      this._modeChangeTimer = null;
+
+      // The Homey app opens this picker on its FIRST entry and reports that
+      // entry as a choice, whatever the mode is - measured: opening the card
+      // during Force Discharge switched the battery to Self-Consumption. So the
+      // first entry is a placeholder that changes nothing. Landing on it also
+      // cancels a choice still waiting out its delay, and the tile is put back
+      // on the mode that is really running.
+      if (String(value) === MODE_PLACEHOLDER) {
+        this._pendingMode = null;
+        this.homey.setTimeout(() => {
+          const active = (this._hybrid && this._hybrid.getKnownMode()) ?? this.getStoreValue('last_mode');
+          if (active !== null && active !== undefined) {
+            this._setCapabilitySafe('hoymiles_battery_mode', String(active)).catch(() => {});
+          }
+        }, 500);
+        return;
+      }
+
+      this._pendingMode = value;
       const cooldown = this._hybrid && this._hybrid.isModbusActive() ? 0 : MODE_MIN_INTERVAL_MS;
       const cooldownLeft = this._lastModeApplyAt + cooldown - Date.now();
       const delay = Math.max(MODE_APPLY_DELAY_MS, cooldownLeft);
       this._modeChangeTimer = this.homey.setTimeout(() => {
         this._modeChangeTimer = null;
+        // Settling on the mode that is already running is not a change. Opening
+        // the picker and closing it again must never cost a mode write.
+        const active = this._hybrid && this._hybrid.getKnownMode();
+        if (this._localModeFresh() && active !== null
+            && String(active) === String(this._pendingMode)) {
+          this.log(`Mode ${this._pendingMode} already active - no write`);
+          return;
+        }
         this._applyBatteryMode(this._pendingMode)
           .catch(err => this.error('Mode change failed: ' + err.message));
       }, delay);
@@ -566,11 +606,14 @@ class HiOneDevice extends Device {
     // one value where being a poll late actually changes behaviour, because the
     // reserve SOC register is chosen by it.
     const localMode = await this._hybrid.getBatteryMode();
+    this._localModeAttempted = true;
     if (localMode !== null && localMode !== undefined) {
+      this._lastLocalModeAt = Date.now();
       await this._updateBatteryMode(String(localMode), 'lokaal');
-    } else {
-      // No trustworthy local read: hand the mode back to the cloud rather than
-      // let a stale 'lokaal' label keep the cloud value out.
+    } else if (!this._localModeFresh()) {
+      // The stick has been silent for a while: hand the mode back to the cloud
+      // rather than let a stale 'lokaal' label keep the cloud value out. A
+      // single missed read does not count - see LOCAL_MODE_TRUST_MS.
       this._modeSource = null;
     }
 
@@ -1043,10 +1086,13 @@ class HiOneDevice extends Device {
     const at = this._otherBatteryReports[state] || 0;
     return Date.now() - at < OTHER_BATTERY_TTL_MS;
   }
-  /** The whole day for the settings page, including the hours still to come. */
-  async getPriceCurve() {
+  /**
+   * A whole day for the settings page: today including the hours still to
+   * come, or tomorrow once Frank has published it.
+   */
+  async getPriceCurve(day = 'today') {
     if (this.getSetting('price_enabled') === false) return null;
-    return this._prices.getCurve(this._priceOptions());
+    return this._prices.getCurve(this._priceOptions(), Date.now(), day);
   }
   /**
    * Aim the Force Charge target at what the coming expensive hours will ask for,
@@ -1208,7 +1254,7 @@ class HiOneDevice extends Device {
       // and the picker would flip between the two — which is exactly what it
       // did. Same rule as the settings refresh below.
       if (data.batteryMode !== null && data.batteryMode !== undefined
-          && this._modeSource !== 'lokaal') {
+          && this._cloudMayReportMode()) {
         await this._updateBatteryMode(String(data.batteryMode), 'cloud');
       }
 
@@ -1247,7 +1293,7 @@ class HiOneDevice extends Device {
         // Only when the stick is not supplying it. The cloud lags a mode change
         // by minutes, so applying it here would undo a switch that already
         // happened.
-        if (settings.mode !== undefined && this._modeSource !== 'lokaal') {
+        if (settings.mode !== undefined && this._cloudMayReportMode()) {
           await this._updateBatteryMode(settings.mode, 'cloud');
         }
 
@@ -1457,7 +1503,62 @@ class HiOneDevice extends Device {
     await this._hybrid.setInverterState(serial, on);
   }
 
+  /**
+   * Put the running mode at the top of the picker.
+   *
+   * The Homey app opens this picker on its first entry and reports that entry
+   * as a choice. With the running mode first, opening the card shows it and
+   * the "choice" it reports is the mode already active - which the listener
+   * leaves alone. The static list in app.json starts with a do-nothing
+   * placeholder, so if this ever fails the picker is still harmless.
+   */
+  static modePickerValues(allValues, mode) {
+    const real = allValues.filter((value) => value.id !== MODE_PLACEHOLDER);
+    const current = real.find((value) => value.id === String(mode));
+    if (!current) return null;
+    return [current, ...real.filter((value) => value !== current)];
+  }
+
+  async _orderModePicker(mode) {
+    if (mode === undefined || mode === null) return;
+    if (this._pickerOrderedFor === String(mode)) return;
+    const definition = this.homey.manifest
+      && this.homey.manifest.capabilities
+      && this.homey.manifest.capabilities.hoymiles_battery_mode;
+    const values = definition && HiOneDevice.modePickerValues(definition.values || [], mode);
+    if (!values) return;
+    try {
+      let options = {};
+      try { options = this.getCapabilityOptions('hoymiles_battery_mode') || {}; } catch (_) { /* none set yet */ }
+      await this.setCapabilityOptions('hoymiles_battery_mode', { ...options, values });
+      this._pickerOrderedFor = String(mode);
+    } catch (err) {
+      this.error('Could not reorder the mode picker: ' + err.message);
+    }
+  }
+
+  /** True while a mode read from the stick is recent enough to trust. */
+  _localModeFresh() {
+    return Number.isFinite(this._lastLocalModeAt)
+      && Date.now() - this._lastLocalModeAt < LOCAL_MODE_TRUST_MS;
+  }
+
+  /**
+   * Whether the cloud's mode may be shown. Never while the stick has spoken
+   * recently, and never before the stick has had its first chance after a
+   * start: the poll reads the cloud payload before the stick, and letting the
+   * cloud go first put its stale mode on the picker for a moment on every
+   * restart.
+   */
+  _cloudMayReportMode() {
+    const modbus = this._hybrid && this._hybrid.isModbusActive();
+    if (!modbus) return true;
+    if (!this._localModeAttempted) return false;
+    return !this._localModeFresh();
+  }
+
   async _updateBatteryMode(mode, source) {
+    await this._orderModePicker(mode);
     await this._setCapabilitySafe('hoymiles_battery_mode', mode);
 
     // One tile that answers "what is it doing, and how fast can I change it":

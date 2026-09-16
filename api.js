@@ -243,9 +243,11 @@ module.exports = {
   /**
    * The day's price curve for the settings page. Comes from the device so it
    * uses that device's own wear and margin settings — the same numbers the
-   * Flow conditions judge on, not a second opinion.
+   * Flow conditions judge on, not a second opinion. `body.day` is 'today'
+   * (default) or 'tomorrow'.
    */
-  async dayPrices({ homey }) {
+  async dayPrices({ homey, body }) {
+    const day = body && body.day === 'tomorrow' ? 'tomorrow' : 'today';
     let device;
     try {
       device = homey.drivers.getDriver('hione').getDevices()[0];
@@ -257,8 +259,13 @@ module.exports = {
       throw new Error('Device is still starting up — try again in a moment');
     }
 
-    const curve = await device.getPriceCurve();
-    if (!curve) throw new Error('No prices available');
+    const curve = await device.getPriceCurve(day);
+    if (!curve) {
+      // Not an error the user can do anything about: Frank publishes tomorrow
+      // in the early afternoon. The page shows this as a plain notice.
+      if (day === 'tomorrow') return { day, notYet: true };
+      throw new Error('No prices available');
+    }
     return curve;
   },
   async bmsDetail({ homey }) {

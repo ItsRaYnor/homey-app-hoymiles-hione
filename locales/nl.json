@@ -20,13 +20,13 @@
     "idle": "Inactief"
   },
   "price": {
-    "buy": "Kopen tot {{price}} ct",
-    "sell": "Verkopen boven {{price}} ct",
-    "discharge": "Ontladen boven {{price}} ct",
-    "hold": "Wachten op {{price}} ct",
-    "flat": "Vlakke dag, niet handelen",
+    "buy": "Kopen ≤ {{price}}",
+    "sell": "Verkoop ≥ {{price}}",
+    "discharge": "Ontlaad ≥ {{price}}",
+    "hold": "Wacht op {{price}}",
+    "flat": "Vlakke dag",
     "unknown": "Geen prijzen",
-    "save": "Bewaren voor de duurste uren"
+    "save": "Piek afwachten"
   },
   "labels": {
     "reserve_selfuse": "de reserve voor Zelfconsumptie",

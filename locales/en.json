@@ -20,13 +20,13 @@
     "idle": "Idle"
   },
   "price": {
-    "buy": "Buy up to {{price}} ct",
-    "sell": "Sell above {{price}} ct",
-    "discharge": "Discharge above {{price}} ct",
-    "hold": "Waiting for {{price}} ct",
-    "flat": "Flat day, no trade",
+    "buy": "Buy ≤ {{price}}",
+    "sell": "Sell ≥ {{price}}",
+    "discharge": "Discharge ≥{{price}}",
+    "hold": "Wait for {{price}}",
+    "flat": "Flat day",
     "unknown": "No prices",
-    "save": "Saving for the dearest hours"
+    "save": "Saving for peak"
   },
   "labels": {
     "reserve_selfuse": "the Self-Consumption reserve",

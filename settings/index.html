@@ -72,6 +72,12 @@
     .price-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; font-size: 11px; color: #666; }
     .price-legend span { display: flex; align-items: center; gap: 5px; }
     .price-legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+    .price-days { display: flex; gap: 6px; margin-bottom: 10px; }
+    .price-days button {
+      flex: 1; padding: 7px; font-size: 13px; font-weight: 600; cursor: pointer;
+      background: #fff; color: #00A94F; border: 1.5px solid #00A94F; border-radius: 8px;
+    }
+    .price-days button.active { background: #00A94F; color: #fff; }
   </style>
 </head>
 <body>
@@ -190,6 +196,10 @@
   <div class='tab-panel' id='panel-prices'>
   <h3 class='section-title' id='t-priceTitle'>Prijzen van vandaag</h3>
   <div class='hint' id='t-priceHint' style='margin-bottom:10px'></div>
+  <div class='price-days'>
+    <button id='t-priceToday' class='active' onclick="loadPrices('today')">Vandaag</button>
+    <button id='t-priceTomorrow' onclick="loadPrices('tomorrow')">Morgen</button>
+  </div>
   <div id='price_summary' class='price-summary'></div>
   <div id='price_chart'></div>
   <div class='price-legend' id='price_legend'></div>
@@ -228,7 +238,13 @@
         tabData: 'Waarden',
         tabPrices: 'Prijzen',
         priceTitle: 'Prijzen van vandaag',
+        priceTitleTomorrow: 'Prijzen van morgen',
         priceHint: 'De all-in prijs per uur bij Frank Energie, met het oordeel van de app erbij. Insights toont alleen wat de prijs was; dit toont ook de uren die nog komen.',
+        priceToday: 'Vandaag',
+        priceTomorrow: 'Morgen',
+        priceNotYet: 'De prijzen van morgen zijn er nog niet. Frank publiceert ze meestal rond 13:00.',
+        priceTomorrowNote: 'Morgen zoals het er om middernacht voor staat: de kleuren gaan uit van het dal van morgen zelf en nog zonder de lading waarmee de accu begint.',
+        priceRefLow: 'rekent met het dal van morgen',
         priceLow: 'Laagste',
         priceHigh: 'Hoogste',
         priceFloor: 'Ontlaaddrempel',
@@ -326,7 +342,13 @@
         tabData: 'Values',
         tabPrices: 'Prices',
         priceTitle: "Today's prices",
+        priceTitleTomorrow: "Tomorrow's prices",
         priceHint: 'The all-in hourly price at Frank Energie, with the verdict of the app beside it. Insights can only show what the price was; this also shows the hours still to come.',
+        priceToday: 'Today',
+        priceTomorrow: 'Tomorrow',
+        priceNotYet: 'Tomorrow\'s prices are not out yet. Frank usually publishes them around 13:00.',
+        priceTomorrowNote: 'Tomorrow as it stands at midnight: the colours use tomorrow\'s own low and do not yet know the charge the battery starts with.',
+        priceRefLow: 'uses tomorrow\'s low',
         priceLow: 'Lowest',
         priceHigh: 'Highest',
         priceFloor: 'Discharge floor',
@@ -443,6 +465,8 @@
       document.getElementById('t-tabPrices').textContent = t.tabPrices;
       document.getElementById('t-priceTitle').textContent = t.priceTitle;
       document.getElementById('t-priceHint').textContent = t.priceHint;
+      document.getElementById('t-priceToday').textContent = t.priceToday;
+      document.getElementById('t-priceTomorrow').textContent = t.priceTomorrow;
       document.getElementById('t-tabLan').textContent = t.tabLan;
       document.getElementById('t-tabData').textContent = t.tabData;
       document.getElementById('t-scanTitle').textContent = t.scanTitle;
@@ -599,19 +623,38 @@
     // The day's price curve. Insights can only draw what a value already was,
     // so it can never show the hours ahead; the app has the whole day after one
     // fetch, and this puts it on screen — including which hours the plan picks.
-    function loadPrices() {
+    var _priceDay = 'today';
+    function loadPrices(day) {
+      if (day) _priceDay = day;
       var t = i18n[_lang] || i18n.en;
+      var tomorrow = _priceDay === 'tomorrow';
       var status = document.getElementById('price_status');
       status.style.display = 'none';
+      document.getElementById('t-priceTitle').textContent = tomorrow ? t.priceTitleTomorrow : t.priceTitle;
+      document.getElementById('t-priceToday').className = tomorrow ? '' : 'active';
+      document.getElementById('t-priceTomorrow').className = tomorrow ? 'active' : '';
 
-      _homey.api('POST', '/prices', {}, function (err, res) {
+      var clear = function () {
+        document.getElementById('price_chart').innerHTML = '';
+        document.getElementById('price_summary').innerHTML = '';
+        document.getElementById('price_legend').innerHTML = '';
+      };
+
+      _homey.api('POST', '/prices', { day: _priceDay }, function (err, res) {
+        // A late answer for the other tab must not overwrite this one.
+        if (res && res.day && res.day !== _priceDay) return;
+        if (!err && res && res.notYet) {
+          clear();
+          status.textContent = t.priceNotYet;
+          status.className = 'status';
+          status.style.display = 'block';
+          return;
+        }
         if (err || !res || !res.hours || !res.hours.length) {
+          clear();
           status.textContent = t.priceErr + ((err && (err.message || err)) || '');
           status.className = 'status err';
           status.style.display = 'block';
-          document.getElementById('price_chart').innerHTML = '';
-          document.getElementById('price_summary').innerHTML = '';
-          document.getElementById('price_legend').innerHTML = '';
           return;
         }
         drawPrices(res, t);
@@ -672,10 +715,17 @@
       svg.push('</svg>');
       document.getElementById('price_chart').innerHTML = svg.join('');
 
-      var planText = data.plan ? (t.priceActions[data.plan.action] || data.plan.action) : '';
+      var planText = data.day === 'tomorrow'
+        ? t.priceTomorrowNote
+        : (data.plan ? (t.priceActions[data.plan.action] || data.plan.action) : '');
+      // Today's floor drops once tomorrow's cheaper low is known; say so, or
+      // the dashed line sits below the day's own low without explanation.
+      var refNote = data.day !== 'tomorrow' && data.referenceLow < data.dayLow
+        ? ' (' + t.priceRefLow + ' ' + ct(data.referenceLow) + ')'
+        : '';
       document.getElementById('price_summary').innerHTML =
         t.priceLow + ' <b>' + ct(data.dayLow) + '</b> · ' + t.priceHigh + ' <b>' + ct(data.dayHigh) + '</b> · '
-        + t.priceFloor + ' <b>' + ct(data.dischargeFloor) + '</b> ct<br>'
+        + t.priceFloor + ' <b>' + ct(data.dischargeFloor) + '</b> ct' + refNote + '<br>'
         + t.priceMarketPeak + ' <b>' + ct(data.marketHigh) + '</b> ct'
         + (data.hoursCovered ? ' · ' + t.priceCovered.replace('{n}', data.hoursCovered) : '')
         + '<br>' + planText;

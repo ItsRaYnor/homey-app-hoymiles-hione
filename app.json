@@ -1,6 +1,6 @@
 {
   "id": "com.hoymiles.hione",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "compatibility": ">=12.4.5",
   "sdk": 3,
   "brandColor": "#00A94F",
@@ -538,6 +538,13 @@
         "nl": "Batterijmodus"
       },
       "values": [
+        {
+          "id": "0",
+          "title": {
+            "en": "— choose a mode —",
+            "nl": "— kies een modus —"
+          }
+        },
         {
           "id": "1",
           "title": {
@@ -2375,6 +2382,24 @@
         "hint": {
           "en": "Ranks the hours left today by price and keeps only as many as the charge on board can serve at the current house load. A battery that cannot cover the whole expensive stretch should spend itself on the dearest part of it.",
           "nl": "Rangschikt de resterende uren van de dag op prijs en houdt er zoveel over als de lading aan boord bij het huidige huisverbruik kan dekken. Een accu die de hele dure periode niet haalt, moet zich aan het duurste deel ervan uitgeven."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          }
+        ]
+      },
+      {
+        "id": "price_cheaper_refill_ahead",
+        "title": {
+          "en": "A cheaper refill !{{is|is not}} coming before the dearest hour",
+          "nl": "Er !{{komt|komt geen}} goedkoper laadmoment voor het duurste uur"
+        },
+        "hint": {
+          "en": "True when some hour before the dearest hour still ahead refills the battery for less than the energy is worth right now - charging losses and wear included. Then holding the charge is the worse trade: spend it now and buy it back in the dip. Put it INVERTED in front of a Flow that parks the battery, so it only parks when the charge really cannot be replaced in time. Without it an overnight stretch at 35 ct parks the battery to serve a 45 ct evening that the 17 ct afternoon in between would have filled for a third of the price.",
+          "nl": "Waar zodra een uur voor het duurste uur dat nog komt de accu goedkoper vult dan wat de energie op dit moment waard is, inclusief laadverlies en slijtage. Dan is vasthouden de slechtere ruil: nu gebruiken en in het dal terugkopen. Zet deze OMGEKEERD voor een flow die de accu vastzet, zodat dat alleen gebeurt als de lading echt niet op tijd te vervangen is. Zonder deze controle zet een nacht van 35 ct de accu stil voor een avond van 45 ct, terwijl de middag van 17 ct ertussen hem voor een derde van die prijs had gevuld."
         },
         "args": [
           {
