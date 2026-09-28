@@ -99,6 +99,32 @@ const FIELD_LABELS = {
   maxDischargePower: 'Max discharge power (Force Discharge only)',
 };
 
+/**
+ * The stick address a settings-page tool should talk to.
+ *
+ * The device finds the stick again when DHCP moves it and remembers the
+ * address that answers in its store; the saved app setting is NOT updated,
+ * because writing it needs the very page that can no longer reach the stick.
+ * So the setting can hold an old address (.159) while the app runs fine on the
+ * new one (.160) - and a scan aimed at the setting then simply times out.
+ *
+ * An address the user typed that differs from the saved setting is a
+ * deliberate choice and is used as given. Otherwise the verified working
+ * address wins over the saved one.
+ */
+function stickAddress(homey, body) {
+  const saved = String(homey.settings.get('saved_gateway_ip') || '').trim();
+  const typed = String((body && body.ip) || '').trim();
+  if (typed && typed !== saved) return typed;
+
+  let working = null;
+  try {
+    const device = homey.drivers.getDriver('hione').getDevices()[0];
+    if (device) working = device._gatewayHost || device.getStoreValue('gatewayIpVerified') || null;
+  } catch (_) { /* no device yet */ }
+  return String(working || typed || saved || '').trim();
+}
+
 module.exports = {
 
   /**
@@ -163,7 +189,7 @@ module.exports = {
     // Show the values the device already polled rather than querying the stick
     // again — this stick only handles one conversation at a time, so an extra
     // read here would compete with the running poll.
-    const ip = (homey.settings.get('saved_gateway_ip') || '').trim();
+    const ip = stickAddress(homey, null);
     const unitId = Number(homey.settings.get('modbus_unit_id')) || 1;
     let error = null;
     const cloudOnly = CLOUD_ONLY_FIELDS.slice();
@@ -212,7 +238,7 @@ module.exports = {
    * from "right protocol, something else is broken".
    */
   async checkPorts({ homey, body }) {
-    const ip = (body && body.ip || homey.settings.get('saved_gateway_ip') || '').trim();
+    const ip = stickAddress(homey, body);
     if (!ip) throw new Error('No gateway IP set');
 
     const probe = (port) => new Promise((resolve) => {
@@ -378,7 +404,7 @@ module.exports = {
    * Body: { ip, port, unitId, start, count, input }
    */
   async scanModbus({ homey, body }) {
-    const ip = (body && body.ip || homey.settings.get('saved_gateway_ip') || '').trim();
+    const ip = stickAddress(homey, body);
     if (!ip) throw new Error('No gateway IP set');
 
     const modbus = new HoymilesModbus({
@@ -467,7 +493,7 @@ module.exports = {
     // empty". Addresses themselves are trustworthy now — responses are matched
     // on transaction id, so a chunk either arrives correctly or not at all.
     const missing = Math.max(0, expected - Object.keys(registers).length);
-    return { reachable, registers, known, missing };
+    return { ip, reachable, registers, known, missing };
   },
 
 };

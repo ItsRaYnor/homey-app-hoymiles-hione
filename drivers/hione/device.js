@@ -1131,6 +1131,9 @@ class HiOneDevice extends Device {
       buyBand:    cents('price_buy_band',   FrankPrices.DEFAULTS.buyBand),
       sellBand:   cents('price_sell_band',  FrankPrices.DEFAULTS.sellBand),
       feedInPenalty: cents('price_feed_in_penalty', FrankPrices.DEFAULTS.feedInPenalty),
+      sellKw:     Number.isFinite(this.getSetting('price_sell_kw'))
+        ? this.getSetting('price_sell_kw')
+        : FrankPrices.DEFAULTS.sellKw,
       floorSoc:   Number.isFinite(this.getSetting('price_floor_soc'))
         ? this.getSetting('price_floor_soc')
         : FrankPrices.DEFAULTS.floorSoc,
@@ -1448,6 +1451,92 @@ class HiOneDevice extends Device {
     this._refreshLocalSettings().catch(() => {});
     this._scheduleLivePollBurst();
     return level;
+  }
+
+  /**
+   * Force Charge to `soc`% at `power`% - one card for what used to take four,
+   * with delays between them so they landed in the right order.
+   *
+   * The order is the point. Target first, so the mode never starts charging
+   * towards yesterday's target; the ceiling open next, because a closed one
+   * silently stops the charge; power before the mode, so it never starts at the
+   * old rate. The power goes through the local limit on purpose: the other
+   * route sends it via the cloud while the station is not yet in Force Charge,
+   * and the cloud switches the mode itself - minutes late and out of order.
+   * Every write is skipped when the register already holds the value.
+   */
+  async startCharging(soc, power) {
+    const target = Math.round(Math.max(0, Math.min(100, soc)));
+    await this._hybrid.setReserveSocForMode(5, target);
+    await this._hybrid.setMaxSocLocal(100);
+    await this._hybrid.setChargeLimitLocal(power);
+    await this._setModeNow(5);
+    this._refreshLocalSettings().catch(() => {});
+    this._scheduleLivePollBurst();
+    return target;
+  }
+
+  /** startCharging to the level the price plan says the dear hours need. */
+  async startChargingToPlan(power) {
+    const plan = await this.getPricePlan();
+    if (!plan || !Number.isFinite(plan.chargeTarget)) {
+      throw new Error(this.homey.__('errors.no_target'));
+    }
+    return this.startCharging(plan.chargeTarget, power);
+  }
+
+  /**
+   * Force Discharge down to `soc`% at `power`%. Floor first, so selling never
+   * runs past an older, lower floor; power next, so it never starts at the old
+   * rate; the mode last.
+   */
+  async startSelling(soc, power) {
+    const floor = Math.round(Math.max(0, Math.min(100, soc)));
+    await this._hybrid.setReserveSocForMode(6, floor);
+    await this._hybrid.setDischargeLimitLocal(power);
+    await this._setModeNow(6);
+    this._refreshLocalSettings().catch(() => {});
+    this._scheduleLivePollBurst();
+    return floor;
+  }
+
+  /**
+   * End a forced charge or sale: charge power to zero, then Self-Consumption.
+   * The zero is the deliberate off switch for Force Charge, so a later switch
+   * back into it does not resume at the old rate. Without a local connection
+   * that write is skipped rather than failing the card - the mode switch is
+   * what matters, and it has a cloud route.
+   */
+  async stopToSelfUse() {
+    if (this._hybrid.isModbusActive()) {
+      await this._hybrid.setChargeLimitLocal(0);
+    }
+    await this._setModeNow(1);
+    this._refreshLocalSettings().catch(() => {});
+    this._scheduleLivePollBurst();
+  }
+
+  /**
+   * Switch the mode now and wait for it, for the cards above. The picker path
+   * debounces for seconds and swallows errors, which is right for a finger on
+   * a tile but wrong for a Flow step that the next step depends on. A choice
+   * still waiting out the picker's debounce is dropped, so it cannot land
+   * after this one and undo it.
+   */
+  async _setModeNow(mode) {
+    if (this._modeChangeTimer) this.homey.clearTimeout(this._modeChangeTimer);
+    this._modeChangeTimer = null;
+    this._pendingMode = null;
+
+    const active = this._hybrid.getKnownMode();
+    if (this._localModeFresh() && active !== null && Number(active) === Number(mode)) {
+      this.log(`Mode ${mode} already active - no write`);
+      return;
+    }
+    this._lastModeApplyAt = Date.now();
+    await this._hybrid.setBatteryMode(mode);
+    // Conditions that read the tile must see the new mode on the very next run.
+    await this._setCapabilitySafe('hoymiles_battery_mode', String(mode));
   }
   async setMaxSoc(percent) {
     await this._hybrid.setMaxSoc(percent);

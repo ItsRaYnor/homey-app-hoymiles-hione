@@ -137,6 +137,25 @@ class HiOneDriver extends Driver {
       this.homey.flow.getActionCard('hold_battery'),
       async ({ device }) => device.holdBatteryHere()
     );
+    // One card per intent instead of a chain of setting cards with delays in
+    // between: the device writes the steps in the order that keeps the battery
+    // from acting on a stale target or rate, and waits for each one.
+    registerListener(
+      this.homey.flow.getActionCard('start_charging'),
+      async ({ device, soc, power }) => device.startCharging(soc, power)
+    );
+    registerListener(
+      this.homey.flow.getActionCard('start_charging_to_plan'),
+      async ({ device, power }) => device.startChargingToPlan(power)
+    );
+    registerListener(
+      this.homey.flow.getActionCard('start_selling'),
+      async ({ device, soc, power }) => device.startSelling(soc, power)
+    );
+    registerListener(
+      this.homey.flow.getActionCard('stop_to_selfuse'),
+      async ({ device }) => device.stopToSelfUse()
+    );
     registerListener(
       this.homey.flow.getConditionCard('battery_mode_is'),
       async ({ device, mode }) => device.getCapabilityValue('hoymiles_battery_mode') === mode

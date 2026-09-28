@@ -1,6 +1,6 @@
 {
   "id": "com.hoymiles.hione",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "compatibility": ">=12.4.5",
   "sdk": 3,
   "brandColor": "#00A94F",
@@ -401,6 +401,21 @@
               "hint": {
                 "en": "How much the battery has to supply per hour during the dear hours. It decides how many of those hours it can still cover, and how far to charge in the dip. At 0 the app uses the house load measured at that moment - but that is a snapshot used to plan a whole evening: at three in the afternoon it is your fridge, not your hob. And if anything else shares the meter, such as home batteries your supplier trades, that reading swings wildly in both directions. Enter your real draw during the expensive hours instead, and revise it when the season changes.",
                 "nl": "Hoeveel de accu per uur moet leveren tijdens de dure uren. Daarmee wordt bepaald hoeveel van die uren hij nog kan dekken, en hoe ver hij in het dal moet laden. Op 0 gebruikt de app het belastingsvermogen van dat moment - maar dat is een momentopname waarmee een hele avond wordt gepland: om drie uur 's middags meet hij je koelkast, niet je kookplaat. Zit er bovendien iets anders op dezelfde meter, zoals thuisaccu's die je leverancier verhandelt, dan slaat die meting alle kanten op. Vul dan je werkelijke verbruik tijdens de dure uren in, en pas het aan als het seizoen verandert."
+              }
+            },
+            {
+              "id": "price_sell_kw",
+              "type": "number",
+              "label": {
+                "en": "Selling power (kW, 0 = do not plan to sell)",
+                "nl": "Verkoopvermogen (kW, 0 = niet inplannen)"
+              },
+              "value": 5,
+              "min": 0,
+              "max": 16,
+              "hint": {
+                "en": "What the battery delivers while it sells: the discharge limit your selling Flow uses, times 16 kW (32% is about 5.1 kW). The charge target counts it for every quarter hour where exporting clears the floor, so on a day with an expensive evening the battery is filled for selling too, not just for the house. At 0 the target only covers the house, as before.",
+                "nl": "Wat de accu levert tijdens het verkopen: de ontlaadgrens die je verkoopflow gebruikt, maal 16 kW (32% is ongeveer 5,1 kW). Het laaddoel telt dit mee voor elk kwartier waarin terugleveren boven de drempel uitkomt, zodat de accu op een dag met een dure avond ook voor de verkoop wordt gevuld, niet alleen voor het huis. Op 0 dekt het doel alleen het huis, zoals voorheen."
               }
             },
             {
@@ -2011,14 +2026,153 @@
         ]
       },
       {
+        "id": "start_charging",
+        "title": {
+          "en": "Start charging to a level",
+          "nl": "Start laden tot een niveau"
+        },
+        "titleFormatted": {
+          "en": "Start charging to [[soc]]% at [[power]]% power",
+          "nl": "Start laden tot [[soc]]% op [[power]]% vermogen"
+        },
+        "hint": {
+          "en": "Force Charge from the grid up to the level you name, at the power you name. One card for what used to take four setting cards with delays between them: the app writes the Force Charge target, opens the charge ceiling, sets the power and only then switches the mode, waiting for each step, so the battery never charges towards an old target or at an old rate. Written locally over Modbus; needs a connection to the stick. 40% is 6.4 kW, about 9.3 A per phase.",
+          "nl": "Force Charge uit het net tot het niveau dat je noemt, op het vermogen dat je noemt. Eén kaart voor wat eerst vier instelkaarten met wachttijden ertussen kostte: de app zet het Force Charge-doel, opent het laadplafond, zet het vermogen en schakelt pas dan de modus, en wacht telkens tot de stap gelukt is. Zo laadt de accu nooit naar een oud doel of op een oud vermogen. Wordt lokaal via Modbus geschreven; vereist een verbinding met de stick. 40% is 6,4 kW, ongeveer 9,3 A per fase."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "soc",
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "title": {
+              "en": "Charge to (%)",
+              "nl": "Laden tot (%)"
+            }
+          },
+          {
+            "name": "power",
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "title": {
+              "en": "Power (% of 16 kW)",
+              "nl": "Vermogen (% van 16 kW)"
+            }
+          }
+        ]
+      },
+      {
+        "id": "start_charging_to_plan",
+        "title": {
+          "en": "Start charging to what the dear hours will need",
+          "nl": "Start laden tot wat de dure uren vragen"
+        },
+        "titleFormatted": {
+          "en": "Start charging to what the dear hours will need, at [[power]]% power",
+          "nl": "Start laden tot wat de dure uren vragen, op [[power]]% vermogen"
+        },
+        "hint": {
+          "en": "As \"Start charging to a level\", with the level taken from the price plan: the floor plus what the coming dear slots will draw from the house, plus what the slots where selling pays can export (see the \"selling power\" setting), capped at 95%. The target is shown on the Charge target tile.",
+          "nl": "Als \"Start laden tot een niveau\", met het niveau uit het prijsplan: de ontlaadgrens plus wat de komende dure kwartieren van het huis vragen, plus wat de kwartieren waarin verkopen loont kunnen terugleveren (zie de instelling \"Verkoopvermogen\"), met 95% als plafond. Het doel staat op de tegel Laaddoel."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "power",
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "title": {
+              "en": "Power (% of 16 kW)",
+              "nl": "Vermogen (% van 16 kW)"
+            }
+          }
+        ]
+      },
+      {
+        "id": "start_selling",
+        "title": {
+          "en": "Start selling down to a level",
+          "nl": "Start verkopen tot een niveau"
+        },
+        "titleFormatted": {
+          "en": "Start selling down to [[soc]]% at [[power]]% power",
+          "nl": "Start verkopen tot [[soc]]% op [[power]]% vermogen"
+        },
+        "hint": {
+          "en": "Force Discharge down to the level you name, at the power you name. The app sets the Force Discharge floor first, then the power, and only then switches the mode, waiting for each step - so a sale never runs past an older, lower floor or starts at an old rate. Written locally over Modbus; needs a connection to the stick. 32% is about 5.1 kW, 20% about 3.2 kW.",
+          "nl": "Force Discharge tot het niveau dat je noemt, op het vermogen dat je noemt. De app zet eerst de ondergrens voor Force Discharge, dan het vermogen en pas dan de modus, en wacht telkens tot de stap gelukt is - zo loopt een verkoop nooit door tot een oudere, lagere grens en begint hij nooit op een oud vermogen. Wordt lokaal via Modbus geschreven; vereist een verbinding met de stick. 32% is ongeveer 5,1 kW, 20% ongeveer 3,2 kW."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "soc",
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "title": {
+              "en": "Sell down to (%)",
+              "nl": "Verkopen tot (%)"
+            }
+          },
+          {
+            "name": "power",
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "title": {
+              "en": "Power (% of 16 kW)",
+              "nl": "Vermogen (% van 16 kW)"
+            }
+          }
+        ]
+      },
+      {
+        "id": "stop_to_selfuse",
+        "title": {
+          "en": "Stop charging or selling, back to Self-Consumption",
+          "nl": "Stop laden of verkopen, terug naar Zelfconsumptie"
+        },
+        "hint": {
+          "en": "Sets the Force Charge power to 0 and switches to Self-Consumption, in that order. The zero keeps a later switch back into Force Charge from resuming at the old rate. Without a local connection only the mode is switched, through the cloud.",
+          "nl": "Zet het Force Charge-vermogen op 0 en schakelt naar Zelfconsumptie, in die volgorde. De nul voorkomt dat een latere switch terug naar Force Charge op het oude vermogen verdergaat. Zonder lokale verbinding wordt alleen de modus geschakeld, via de cloud."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          }
+        ]
+      },
+      {
         "id": "charge_to_plan",
         "title": {
           "en": "Charge to what the dear hours will need",
           "nl": "Laad tot wat de dure uren vragen"
         },
         "hint": {
-          "en": "Sets the Force Charge target to the floor plus the energy the coming hours above the discharge threshold will draw, capped at 95%. Buying past that spends a cycle on energy the day has no use for and fills the room the sun would have used for nothing.",
-          "nl": "Zet het Force Charge-doel op de ontlaadgrens plus de energie die de komende uren boven de ontlaaddrempel vragen, met 95% als plafond. Verder kopen kost een cyclus aan energie waar de dag niets mee doet, en vult de ruimte die de zon gratis had opgevuld."
+          "en": "Sets the Force Charge target to the floor plus what the coming dear slots will draw from the house, plus what the slots where selling pays can export (see the \"selling power\" setting), capped at 95%. Only sets the target; \"Start charging to what the dear hours will need\" also starts the charge.",
+          "nl": "Zet het Force Charge-doel op de ontlaadgrens plus wat de komende dure kwartieren van het huis vragen, plus wat de kwartieren waarin verkopen loont kunnen terugleveren (zie de instelling \"Verkoopvermogen\"), met 95% als plafond. Zet alleen het doel; \"Start laden tot wat de dure uren vragen\" start ook het laden."
         },
         "args": [
           {
@@ -2376,12 +2530,12 @@
       {
         "id": "price_is_peak_hour",
         "title": {
-          "en": "This hour !{{is|is not}} one of the dearest the battery can still cover",
-          "nl": "Dit uur !{{hoort|hoort niet}} bij de duurste uren die de accu nog haalt"
+          "en": "This quarter hour !{{is|is not}} one of the dearest the battery can still cover",
+          "nl": "Dit kwartier !{{hoort|hoort niet}} bij de duurste momenten die de accu nog haalt"
         },
         "hint": {
-          "en": "Ranks the hours left today by price and keeps only as many as the charge on board can serve at the current house load. A battery that cannot cover the whole expensive stretch should spend itself on the dearest part of it.",
-          "nl": "Rangschikt de resterende uren van de dag op prijs en houdt er zoveel over als de lading aan boord bij het huidige huisverbruik kan dekken. Een accu die de hele dure periode niet haalt, moet zich aan het duurste deel ervan uitgeven."
+          "en": "Ranks the quarter hours left today by price and keeps as many as the charge on board can serve at the house load. A battery that cannot cover the whole expensive stretch should spend itself on the dearest part of it. A single quarter just outside a run is counted in, so the battery does not stop for fifteen minutes.",
+          "nl": "Rangschikt de resterende kwartieren van de dag op prijs en houdt er zoveel over als de lading aan boord bij het huisverbruik kan dekken. Een accu die de hele dure periode niet haalt, moet zich aan het duurste deel ervan uitgeven. Eén los kwartier net buiten een reeks telt mee, zodat de accu niet een kwartier stilvalt."
         },
         "args": [
           {
@@ -2394,8 +2548,8 @@
       {
         "id": "price_cheaper_refill_ahead",
         "title": {
-          "en": "A cheaper refill !{{is|is not}} coming before the dearest hour",
-          "nl": "Er !{{komt|komt geen}} goedkoper laadmoment voor het duurste uur"
+          "en": "A cheaper refill !{{is|is not}} coming before the dearest moment",
+          "nl": "Er !{{komt|komt geen}} goedkoper laadmoment voor het duurste moment"
         },
         "hint": {
           "en": "True when some hour before the dearest hour still ahead refills the battery for less than the energy is worth right now - charging losses and wear included. Then holding the charge is the worse trade: spend it now and buy it back in the dip. Put it INVERTED in front of a Flow that parks the battery, so it only parks when the charge really cannot be replaced in time. Without it an overnight stretch at 35 ct parks the battery to serve a 45 ct evening that the 17 ct afternoon in between would have filled for a third of the price.",

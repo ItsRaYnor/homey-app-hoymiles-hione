@@ -78,6 +78,14 @@
       background: #fff; color: #00A94F; border: 1.5px solid #00A94F; border-radius: 8px;
     }
     .price-days button.active { background: #00A94F; color: #fff; }
+    /* pan-y keeps vertical scrolling on a phone while a sideways drag reads the chart. */
+    #price_chart svg { touch-action: pan-y; cursor: crosshair; display: block; }
+    .price-detail {
+      min-height: 20px; margin-top: 6px; padding: 7px 10px; border-radius: 8px;
+      background: #f4f6f8; font-size: 13px; color: #444;
+    }
+    .price-detail b { color: #1a1a1a; }
+    .price-detail i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 4px; vertical-align: -1px; }
   </style>
 </head>
 <body>
@@ -202,6 +210,7 @@
   </div>
   <div id='price_summary' class='price-summary'></div>
   <div id='price_chart'></div>
+  <div id='price_detail' class='price-detail' style='display:none'></div>
   <div class='price-legend' id='price_legend'></div>
   <div class='status' id='price_status'></div>
   </div>
@@ -239,7 +248,7 @@
         tabPrices: 'Prijzen',
         priceTitle: 'Prijzen van vandaag',
         priceTitleTomorrow: 'Prijzen van morgen',
-        priceHint: 'De all-in prijs per uur bij Frank Energie, met het oordeel van de app erbij. Insights toont alleen wat de prijs was; dit toont ook de uren die nog komen.',
+        priceHint: 'De all-in prijs per kwartier bij Frank Energie, met het oordeel van de app erbij. Insights toont alleen wat de prijs was; dit toont ook de kwartieren die nog komen.',
         priceToday: 'Vandaag',
         priceTomorrow: 'Morgen',
         priceNotYet: 'De prijzen van morgen zijn er nog niet. Frank publiceert ze meestal rond 13:00.',
@@ -249,6 +258,9 @@
         priceHigh: 'Hoogste',
         priceFloor: 'Ontlaaddrempel',
         priceBuy: 'Kopen',
+        priceDetailBuy: 'Inkoop',
+        priceDetailExport: 'Teruglevering',
+        priceLater: 'Loont, maar later meer',
         priceDischarge: 'Ontladen loont',
         priceSell: 'Verkopen',
         priceMarket: 'Terugleverprijs (markt)',
@@ -343,7 +355,7 @@
         tabPrices: 'Prices',
         priceTitle: "Today's prices",
         priceTitleTomorrow: "Tomorrow's prices",
-        priceHint: 'The all-in hourly price at Frank Energie, with the verdict of the app beside it. Insights can only show what the price was; this also shows the hours still to come.',
+        priceHint: 'The all-in price per quarter hour at Frank Energie, with the verdict of the app beside it. Insights can only show what the price was; this also shows the quarters still to come.',
         priceToday: 'Today',
         priceTomorrow: 'Tomorrow',
         priceNotYet: 'Tomorrow\'s prices are not out yet. Frank usually publishes them around 13:00.',
@@ -353,6 +365,9 @@
         priceHigh: 'Highest',
         priceFloor: 'Discharge floor',
         priceBuy: 'Buy',
+        priceDetailBuy: 'Import',
+        priceDetailExport: 'Feed-in',
+        priceLater: 'Pays, but more later',
         priceDischarge: 'Discharging pays',
         priceSell: 'Sell',
         priceMarket: 'Feed-in price (market)',
@@ -636,6 +651,7 @@
 
       var clear = function () {
         document.getElementById('price_chart').innerHTML = '';
+        document.getElementById('price_detail').style.display = 'none';
         document.getElementById('price_summary').innerHTML = '';
         document.getElementById('price_legend').innerHTML = '';
       };
@@ -668,7 +684,12 @@
       var W = 460, H = 200, padL = 34, padB = 18, padT = 8;
       var plot = H - padB - padT;
       var slot = (W - padL) / hours.length;
-      var bar = Math.max(6, slot - 3);
+      // 24 hourly bars get a gap of 3; 96 quarter bars would vanish behind it.
+      var bar = slot > 9 ? slot - 3 : Math.max(1, slot - 1);
+      var clock = function (ms) {
+        var d = new Date(ms);
+        return d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0');
+      };
       var y = function (value) { return padT + plot - (value / top) * plot; };
 
       var svg = ["<svg viewBox='0 0 " + W + ' ' + H + "' width='100%' role='img'>"];
@@ -681,25 +702,29 @@
       svg.push("<text x='2' y='" + (y(data.dayHigh) + 3) + "' font-size='9' fill='#999'>" + ct(data.dayHigh) + '</text>');
       svg.push("<text x='2' y='" + (y(data.dayLow) + 3) + "' font-size='9' fill='#999'>" + ct(data.dayLow) + '</text>');
 
+      // Amber is a slot the battery should actually serve; pale amber is a slot
+      // that clears the floor but loses the ranking, so it is worth more later
+      // than now. The detail line under the chart uses the same verdict.
+      var verdict = function (hour) {
+        if (hour.buy) return { fill: '#00A94F', label: t.priceBuy };
+        if (hour.sell) return { fill: '#d32f2f', label: t.priceSell };
+        if (hour.peak) return { fill: '#f4a261', label: t.priceDischarge };
+        if (hour.discharge) return { fill: '#f8ddc2', label: t.priceLater };
+        return { fill: '#d8d8d8', label: t.priceHold };
+      };
+
       hours.forEach(function (hour, index) {
         var x = padL + index * slot;
         var top_ = y(hour.price);
-        // Amber is an hour the battery should actually serve; pale amber is an
-        // hour that clears the floor but loses the ranking, so it is worth more
-        // later than now.
-        var fill = hour.buy ? '#00A94F'
-          : (hour.sell ? '#d32f2f'
-          : (hour.peak ? '#f4a261'
-          : (hour.discharge ? '#f8ddc2' : '#d8d8d8')));
         svg.push("<rect x='" + x + "' y='" + top_ + "' width='" + bar + "' height='" + (padT + plot - top_)
-          + "' fill='" + fill + "' rx='2'>"
-          + '<title>' + new Date(hour.from).getHours() + ':00 — ' + ct(hour.price) + ' ct</title></rect>');
+          + "' fill='" + verdict(hour).fill + "' rx='2'/>");
         if (hour.now) {
           svg.push("<rect x='" + (x - 1.5) + "' y='" + (top_ - 1.5) + "' width='" + (bar + 3)
             + "' height='" + (padT + plot - top_ + 3) + "' fill='none' stroke='#1a1a1a' stroke-width='1.5' rx='3'/>");
         }
-        var label = new Date(hour.from).getHours();
-        if (label % 3 === 0) {
+        var start = new Date(hour.from);
+        var label = start.getHours();
+        if (start.getMinutes() === 0 && label % 3 === 0) {
           svg.push("<text x='" + (x + bar / 2) + "' y='" + (H - 5)
             + "' font-size='9' fill='#999' text-anchor='middle'>" + label + '</text>');
         }
@@ -712,8 +737,51 @@
       }).join(' ');
       svg.push("<polyline points='" + line + "' fill='none' stroke='#5b6b7f' stroke-width='2'/>");
 
+      // The cursor: a hairline through the chosen slot and a dot where it meets
+      // the feed-in line, so the exact value of that line can be read off too.
+      svg.push("<line id='price_cursor' y1='" + padT + "' y2='" + (padT + plot)
+        + "' stroke='#1a1a1a' stroke-width='1' stroke-dasharray='2 2' visibility='hidden'/>");
+      svg.push("<circle id='price_cursor_dot' r='3.5' fill='#5b6b7f' stroke='#fff' stroke-width='1.5' visibility='hidden'/>");
+
       svg.push('</svg>');
-      document.getElementById('price_chart').innerHTML = svg.join('');
+      var chart = document.getElementById('price_chart');
+      chart.innerHTML = svg.join('');
+
+      // Hover with a mouse, tap or drag with a finger: the detail line shows the
+      // slot's times, both prices and what the plan does in it. A tooltip alone
+      // would not do - the Homey app runs on phones, where nothing hovers.
+      var detail = document.getElementById('price_detail');
+      var svgEl = chart.querySelector('svg');
+      var cursor = document.getElementById('price_cursor');
+      var dot = document.getElementById('price_cursor_dot');
+      var show = function (index) {
+        var hour = hours[index];
+        if (!hour) return;
+        var cx = padL + index * slot + bar / 2;
+        cursor.setAttribute('x1', cx); cursor.setAttribute('x2', cx);
+        cursor.setAttribute('visibility', 'visible');
+        dot.setAttribute('cx', cx); dot.setAttribute('cy', y(hour.market));
+        dot.setAttribute('visibility', 'visible');
+        var v = verdict(hour);
+        detail.innerHTML = '<b>' + clock(hour.from) + '–' + clock(hour.till) + '</b> · '
+          + t.priceDetailBuy + ' <b>' + ct(hour.price) + '</b> ct · '
+          + t.priceDetailExport + ' <b>' + ct(hour.market) + '</b> ct · '
+          + "<i style='background:" + v.fill + "'></i>" + v.label;
+        detail.style.display = 'block';
+      };
+      var pick = function (event) {
+        var box = svgEl.getBoundingClientRect();
+        if (!box.width) return;
+        var sx = (event.clientX - box.left) / box.width * W;
+        var index = Math.floor((sx - padL) / slot);
+        show(Math.max(0, Math.min(hours.length - 1, index)));
+      };
+      svgEl.addEventListener('pointermove', pick);
+      svgEl.addEventListener('pointerdown', pick);
+
+      // Open on the slot that is running now, or the first of tomorrow.
+      var nowIndex = hours.findIndex(function (hour) { return hour.now; });
+      show(nowIndex >= 0 ? nowIndex : 0);
 
       var planText = data.day === 'tomorrow'
         ? t.priceTomorrowNote
@@ -727,12 +795,14 @@
         t.priceLow + ' <b>' + ct(data.dayLow) + '</b> · ' + t.priceHigh + ' <b>' + ct(data.dayHigh) + '</b> · '
         + t.priceFloor + ' <b>' + ct(data.dischargeFloor) + '</b> ct' + refNote + '<br>'
         + t.priceMarketPeak + ' <b>' + ct(data.marketHigh) + '</b> ct'
-        + (data.hoursCovered ? ' · ' + t.priceCovered.replace('{n}', data.hoursCovered) : '')
+        + (data.hoursCovered ? ' · ' + t.priceCovered.replace('{n}',
+          String(data.hoursCovered).replace('.', _lang === 'nl' ? ',' : '.')) : '')
         + '<br>' + planText;
 
       document.getElementById('price_legend').innerHTML =
         "<span><i style='background:#00A94F'></i>" + t.priceBuy + '</span>'
         + "<span><i style='background:#f4a261'></i>" + t.priceDischarge + '</span>'
+        + "<span><i style='background:#f8ddc2'></i>" + t.priceLater + '</span>'
         + "<span><i style='background:#d32f2f'></i>" + t.priceSell + '</span>'
         + "<span><i style='background:#d8d8d8'></i>" + t.priceHold + '</span>'
         + "<span><i style='background:#5b6b7f'></i>" + t.priceMarket + '</span>';
