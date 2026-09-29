@@ -1,6 +1,6 @@
 {
   "id": "com.hoymiles.hione",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "compatibility": ">=12.4.5",
   "sdk": 3,
   "brandColor": "#00A94F",
@@ -209,6 +209,35 @@
         }
       ],
       "settings": [
+        {
+          "id": "connection_mode",
+          "type": "dropdown",
+          "label": {
+            "en": "Connection",
+            "nl": "Verbinding"
+          },
+          "hint": {
+            "en": "Cloud only is for an installation whose DTS stick is NOT on this network, for example a second station on the same S-Miles account. The device then never talks to a local stick - not even the address from the app settings, which belongs to your own installation - and shows only what the cloud supplies. Actions that need the stick (start charging or selling, per-mode reserve of a mode that is not active, local power limits) refuse with a message. Switching changes the tiles on the device card.",
+            "nl": "Alleen cloud is voor een installatie waarvan de DTS-stick NIET op dit netwerk zit, bijvoorbeeld een tweede station op hetzelfde S-Miles-account. Het apparaat praat dan nooit met een lokale stick - ook niet met het adres uit de app-instellingen, want dat is van je eigen installatie - en toont alleen wat de cloud levert. Acties die de stick nodig hebben (laden of verkopen starten, de reserve van een modus die niet actief is, lokale vermogensgrenzen) weigeren met een melding. Omschakelen past de tegels op de apparaatkaart aan."
+          },
+          "value": "auto",
+          "values": [
+            {
+              "id": "auto",
+              "label": {
+                "en": "Local (Modbus) with cloud top-up",
+                "nl": "Lokaal (Modbus) met cloud als aanvulling"
+              }
+            },
+            {
+              "id": "cloud",
+              "label": {
+                "en": "Cloud only (no local stick)",
+                "nl": "Alleen cloud (geen lokale stick)"
+              }
+            }
+          ]
+        },
         {
           "id": "gateway_ip",
           "type": "text",

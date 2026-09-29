@@ -186,8 +186,13 @@
   <div class='tab-panel' id='panel-data'>
   <h3 class='section-title' id='t-srcTitle'>Where each value comes from</h3>
   <div class='hint' id='t-srcHelp' style='margin-bottom:10px'></div>
+  <label id='src_device_row' style='display:none; margin-bottom:10px'><span id='t-srcDevice'>Device</span>
+    <select id='src_device' onchange='loadDataSources(this.value)'></select>
+  </label>
   <div id='src_out'></div>
 
+  <!-- Both tools talk to the local stick; hidden while a cloud-only device is picked. -->
+  <div id='src_modbus_tools'>
   <h3 class='section-title' id='t-scanTitle' style='margin-top:28px'>Register scan</h3>
   <div class='hint' id='t-scanHint' style='margin-bottom:10px'></div>
   <button class='btn-secondary' id='t-scanBtn' onclick='scanModbus()'>Test &amp; scan Modbus registers</button>
@@ -199,6 +204,7 @@
   <button class='btn-secondary' id='t-bmsBtn' onclick='loadBms()'>Read cell data</button>
   <div class='status' id='bms_status'></div>
   <pre id='bms_out' style='display:none; font-size:11px; background:#f5f5f5; border-radius:8px; padding:10px; margin-top:8px; max-height:300px; overflow:auto; white-space:pre-wrap;'></pre>
+  </div>
   </div>
 
   <div class='tab-panel' id='panel-prices'>
@@ -280,6 +286,8 @@
         scanHint: 'Leest de drie FC04-vensters met live gegevens (0x0000, 0x0400, 0x0800) en twee FC03-blokken: de apparaat-brede grenzen bij 0x0100 (laadplafond 0x0134 en ontlaadvloer 0x0135, die in elke modus gelden) en het instellingenblok per modus bij 0x10C0, waarvan 0x10CC de batterijmodus zelf is — die telt vanaf nul, dus register 4 is modus 5. Holding-registers krijgen het voorvoegsel FC03, omdat die adressen los staan van FC04. Registers die de app gebruikt worden gemarkeerd, en negatieve waarden staan tussen haakjes.',
         srcLocal: 'Lokaal via Modbus (unit-ID {unit})',
         srcCloud: 'Alleen via de cloud',
+        srcDevice: 'Apparaat',
+        srcCloudDevice: 'Alles via de cloud: dit apparaat staat op "Alleen cloud" en heeft geen lokale stick',
         srcReg: 'register',
         diagBusy: 'Bezig met ophalen…',
         diagErr: 'Diagnose mislukt: ',
@@ -387,6 +395,8 @@
         scanHint: 'Reads the three FC04 windows holding live data (0x0000, 0x0400, 0x0800) and two FC03 blocks: the device-wide limits at 0x0100 (charge ceiling 0x0134 and discharge floor 0x0135, which bind in every mode) and the per-mode settings block at 0x10C0, whose first word 0x10CC is the battery mode itself — zero-based, so register 4 means mode 5. Holding registers are prefixed FC03, because those addresses are separate from FC04. Registers the app uses are marked, and negative values are shown in brackets.',
         srcLocal: 'Local via Modbus (unit ID {unit})',
         srcCloud: 'Cloud only',
+        srcDevice: 'Device',
+        srcCloudDevice: 'Everything via the cloud: this device is set to "Cloud only" and has no local stick',
         srcReg: 'register',
         diagBusy: 'Fetching…',
         diagErr: 'Diagnostics failed: ',
@@ -475,6 +485,7 @@
       document.getElementById('t-diagBtn').textContent = t.diagBtn;
       document.getElementById('t-diagStation').textContent = t.diagStation;
       document.getElementById('t-srcTitle').textContent = t.srcTitle;
+      document.getElementById('t-srcDevice').textContent = t.srcDevice;
       document.getElementById('t-srcHelp').textContent = t.srcHelp;
       document.getElementById('t-tabAccount').textContent = t.tabAccount;
       document.getElementById('t-tabPrices').textContent = t.tabPrices;
@@ -871,15 +882,25 @@
       });
     }
 
-    function loadDataSources() {
+    function loadDataSources(deviceId) {
       var t = i18n[_lang] || i18n.en;
       var box = document.getElementById('src_out');
-      _homey.api('POST', '/datasources', {}, function (err, res) {
+      var select = document.getElementById('src_device');
+      // Reopening the tab keeps the device that was picked last.
+      if (!deviceId && select.value) deviceId = select.value;
+      _homey.api('POST', '/datasources', deviceId ? { deviceId: deviceId } : {}, function (err, res) {
         if (err || !res) {
           box.innerHTML = "<div style='color:#c00;font-size:12px'>"
             + ((err && err.message) || 'geen gegevens') + "</div>";
           return;
         }
+        // Only worth a picker with more than one device.
+        var devices = res.devices || [];
+        document.getElementById('src_device_row').style.display = devices.length > 1 ? 'block' : 'none';
+        select.innerHTML = devices.map(function (d) {
+          return "<option value='" + d.id + "'" + (d.id === res.deviceId ? ' selected' : '') + '>'
+            + d.name + (d.cloudOnly ? ' ☁' : '') + '</option>';
+        }).join('');
         var html = '';
         var row = function (name, detail, value) {
           return "<div style='display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid #eee'>"
@@ -889,6 +910,17 @@
             + "<span style='color:#888;font-size:11px;white-space:nowrap;min-width:96px;text-align:right'>"
             + detail + "</span></div>";
         };
+        // The register table, its explanation, the register scan and the cell
+        // readout are all about the local stick - meaningless for a cloud-only device.
+        var modbus = !res.cloudDevice;
+        document.getElementById('src_modbus_tools').style.display = modbus ? 'block' : 'none';
+        document.getElementById('t-srcHelp').style.display = modbus ? 'block' : 'none';
+        if (res.cloudDevice) {
+          html += "<div style='font-weight:600;margin:6px 0 4px'>" + t.srcCloudDevice + '</div>';
+          (res.cloud || []).forEach(function (r) { html += row(r.label, '☁', r.value); });
+          box.innerHTML = html;
+          return;
+        }
         html += "<div style='font-weight:600;margin:6px 0 4px'>"
           + t.srcLocal.replace('{unit}', res.unitId) + "</div>";
         if (res.error) {
@@ -900,7 +932,7 @@
           html += row(r.label, d, r.value);
         });
         html += "<div style='font-weight:600;margin:12px 0 4px'>" + t.srcCloud + "</div>";
-        (res.cloudOnly || []).forEach(function (r) { html += row(r.label, '☁'); });
+        (res.cloudOnly || []).forEach(function (r) { html += row(r.label, '☁', r.value); });
         box.innerHTML = html;
       });
     }

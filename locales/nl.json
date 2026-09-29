@@ -7,7 +7,9 @@
     "no_prices": "Geen prijzen beschikbaar — de flow is met rust gelaten in plaats van op een gok te handelen.",
     "no_target": "Nog geen laaddoel — het prijsplan of het huisverbruik ontbreekt.",
     "gateway_moved": "De DTS-stick is verhuisd naar {{ip}} en daar teruggevonden. De app praat weer lokaal. Zet een vaste DHCP-reservering op je router om dit te voorkomen.",
-    "set_failed": "HiOne: {{what}} kon niet worden ingesteld — {{reason}}"
+    "set_failed": "HiOne: {{what}} kon niet worden ingesteld — {{reason}}",
+    "cloud_only": "Dit apparaat staat op \"Alleen cloud\" en deze actie heeft de lokale stick nodig.",
+    "cloud_only_reserve": "Dit apparaat staat op \"Alleen cloud\": de cloud kan alleen de reserve van de modus wijzigen die nu actief is."
   },
   "pair": {
     "login_title": "Inloggen bij S-Miles Cloud",

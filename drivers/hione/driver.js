@@ -415,11 +415,15 @@ class HiOneDriver extends Driver {
       }
       // Pairing succeeded — remember the gateway IP for the next pairing
       if (_gatewayIp) this.homey.settings.set('saved_gateway_ip', _gatewayIp);
+      // "Cloud only" is pinned on the device. Without it the device falls back to
+      // the app-wide stick address, which belongs to whatever installation was
+      // paired locally first - so a second station read the first one's battery.
+      const connectionMode = _mode === 'cloud' ? 'cloud' : 'auto';
       return stations.map(s => ({
         name:     s.name,
         data:     { id: s.id, stationId: s.id },
         store:    { email: _email, password: _password, gatewayIp: _gatewayIp, localProtocol: _localProtocol },
-        settings: { gateway_ip: _gatewayIp || '' },
+        settings: { gateway_ip: _gatewayIp || '', connection_mode: connectionMode },
       }));
     });
   }

@@ -7,7 +7,9 @@
     "no_prices": "No prices available — the Flow was left alone rather than acting on a guess.",
     "no_target": "No charge target yet — the price plan or the house load is missing.",
     "gateway_moved": "The DTS stick moved to {{ip}} and was found again there. The app is talking locally once more. A fixed DHCP reservation on your router stops this recurring.",
-    "set_failed": "HiOne: {{what}} could not be set — {{reason}}"
+    "set_failed": "HiOne: {{what}} could not be set — {{reason}}",
+    "cloud_only": "This device is set to \"Cloud only\" and this action needs the local stick.",
+    "cloud_only_reserve": "This device is set to \"Cloud only\": the cloud can only change the reserve of the mode that is active right now."
   },
   "pair": {
     "login_title": "Log in to S-Miles Cloud",

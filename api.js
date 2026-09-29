@@ -34,11 +34,45 @@ const CLOUD_ONLY_FIELDS = [
   // The battery mode used to sit here. It is the first word of the EMS block and
   // is read and written locally since v1.1.2 — see the local table below.
   { field: 'maxSoc',        label: 'Max charge level (per mode, cloud only)' },
-  { field: 'dailyEnergy',   label: 'Energy today / month / year / total' },
-  { field: 'batteryInEnergy',  label: 'Battery charged / discharged energy' },
-  { field: 'co2Reduction',  label: 'CO2 reduction' },
-  { field: 'profitToday',   label: 'EPS savings' },
+  { field: 'dailyEnergy',   label: 'Energy today / month / year / total',
+    capabilities: ['hoymiles_daily_energy', 'hoymiles_monthly_energy', 'hoymiles_yearly_energy', 'hoymiles_total_energy'] },
+  { field: 'batteryInEnergy',  label: 'Battery charged / discharged energy',
+    capabilities: ['meter_power.charged', 'meter_power.discharged'] },
+  { field: 'co2Reduction',  label: 'CO2 reduction', capabilities: ['hoymiles_co2_reduction'] },
+  { field: 'profitToday',   label: 'EPS savings today / total',
+    capabilities: ['hoymiles_profit_today', 'hoymiles_profit_total'] },
 ];
+
+// Everything a "cloud only" device shows. Such a device has no stick, so the
+// register table says nothing about it: every value it has came from the cloud.
+const CLOUD_DEVICE_FIELDS = [
+  { label: 'Battery state of charge',   capabilities: ['measure_battery'] },
+  { label: 'Battery power',             capabilities: ['measure_power'] },
+  { label: 'Battery voltage',           capabilities: ['measure_voltage'] },
+  { label: 'Battery current',           capabilities: ['measure_current'] },
+  { label: 'Grid power',                capabilities: ['hoymiles_grid_power'] },
+  { label: 'Smart port power',          capabilities: ['hoymiles_smartport_power'] },
+  { label: 'Home load power',           capabilities: ['hoymiles_load_power'] },
+  { label: 'Battery mode',              capabilities: ['hoymiles_battery_mode_value'] },
+  { label: 'Reserved SOC: Self-Consumption', capabilities: ['hoymiles_reserve_soc_selfuse'] },
+  { label: 'Reserved SOC: Force Charge',     capabilities: ['hoymiles_reserve_soc_forcecharge'] },
+  { label: 'Reserved SOC: Force Discharge',  capabilities: ['hoymiles_reserve_soc_forcedischarge'] },
+  { label: 'Max charge power (Force Charge only)',       capabilities: ['hoymiles_max_charge_power'] },
+  { label: 'Max discharge power (Force Discharge only)', capabilities: ['hoymiles_max_discharge_power'] },
+  ...CLOUD_ONLY_FIELDS.filter((row) => row.capabilities),
+];
+
+/** The device's current values for a row, joined when a row covers several. */
+function rowValue(device, capabilities) {
+  if (!device || !capabilities) return null;
+  const values = capabilities
+    .filter((c) => device.hasCapability(c))
+    .map((c) => device.getCapabilityValue(c));
+  if (!values.length || values.every((v) => v === null || v === undefined)) return null;
+  // The mode tile carries its own cloud marker; the table already has a column for that.
+  return values.map((v) => (v === null || v === undefined ? '–' : String(v).replace(' ☁', '')))
+    .join(' / ');
+}
 
 // Which device capability holds each Modbus field, so the settings table can
 // show the values the running poll already fetched instead of querying the
@@ -119,10 +153,25 @@ function stickAddress(homey, body) {
 
   let working = null;
   try {
-    const device = homey.drivers.getDriver('hione').getDevices()[0];
+    const device = mainDevice(homey);
     if (device) working = device._gatewayHost || device.getStoreValue('gatewayIpVerified') || null;
   } catch (_) { /* no device yet */ }
   return String(working || typed || saved || '').trim();
+}
+
+/**
+ * The device the settings page speaks for: the first one that talks to the
+ * local stick. A "cloud only" device belongs to another installation, so its
+ * values must not stand in for this one's registers and prices - it is only
+ * used when there is nothing else.
+ */
+function mainDevice(homey) {
+  const devices = homey.drivers.getDriver('hione').getDevices();
+  return devices.find((d) => !isCloudOnly(d)) || devices[0] || null;
+}
+
+function isCloudOnly(device) {
+  return typeof device._isCloudOnly === 'function' && device._isCloudOnly();
 }
 
 module.exports = {
@@ -130,8 +179,27 @@ module.exports = {
   /**
    * Report which measurements are read locally over Modbus (with the register
    * they come from) and which are cloud-only. Used by the settings page.
+   * Body: { deviceId? } - which device to report on; defaults to the local one.
+   * A "cloud only" device gets a single list instead: it has no registers.
    */
-  async dataSources({ homey }) {
+  async dataSources({ homey, body }) {
+    let devices = [];
+    try { devices = homey.drivers.getDriver('hione').getDevices(); } catch (_) { /* none yet */ }
+    const wanted = body && body.deviceId;
+    const chosen = (wanted && devices.find((d) => String(d.getData().id) === String(wanted)))
+      || (devices.length ? mainDevice(homey) : null);
+    const deviceList = devices.map((d) => ({
+      id: String(d.getData().id), name: d.getName(), cloudOnly: isCloudOnly(d),
+    }));
+    const deviceId = chosen ? String(chosen.getData().id) : null;
+
+    if (chosen && isCloudOnly(chosen)) {
+      const cloud = CLOUD_DEVICE_FIELDS.map((row) => ({
+        label: row.label, value: rowValue(chosen, row.capabilities),
+      }));
+      return { cloudDevice: true, devices: deviceList, deviceId, cloud, local: [], cloudOnly: [], error: null };
+    }
+
     const map = HoymilesModbus.BATTERY_REGISTERS || {};
     const local = Object.entries(map).map(([field, def]) => ({
       field,
@@ -192,10 +260,11 @@ module.exports = {
     const ip = stickAddress(homey, null);
     const unitId = Number(homey.settings.get('modbus_unit_id')) || 1;
     let error = null;
-    const cloudOnly = CLOUD_ONLY_FIELDS.slice();
+    const cloudOnly = CLOUD_ONLY_FIELDS.map((row) => ({
+      field: row.field, label: row.label, value: rowValue(chosen, row.capabilities),
+    }));
     try {
-      const devices = homey.drivers.getDriver('hione').getDevices();
-      const device = devices[0];
+      const device = chosen;
       if (device) {
         // Every mode's reserved SOC, each next to the register it comes from.
         // This used to show one row for whichever mode was thought to be active,
@@ -227,7 +296,7 @@ module.exports = {
     } catch (err) {
       error = err.message;
     }
-    return { local, cloudOnly, unitId, ip: ip || null, error };
+    return { local, cloudOnly, unitId, ip: ip || null, error, devices: deviceList, deviceId };
   },
 
   /**
@@ -276,7 +345,7 @@ module.exports = {
     const day = body && body.day === 'tomorrow' ? 'tomorrow' : 'today';
     let device;
     try {
-      device = homey.drivers.getDriver('hione').getDevices()[0];
+      device = mainDevice(homey);
     } catch (err) {
       throw new Error('Could not reach the HiOne device: ' + err.message);
     }
@@ -297,7 +366,7 @@ module.exports = {
   async bmsDetail({ homey }) {
     let device;
     try {
-      device = homey.drivers.getDriver('hione').getDevices()[0];
+      device = mainDevice(homey);
     } catch (err) {
       throw new Error('Could not reach the HiOne device: ' + err.message);
     }

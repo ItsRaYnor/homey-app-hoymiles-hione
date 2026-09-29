@@ -156,6 +156,17 @@ const NEW_CAPABILITIES = [
   'hoymiles_cell_temp_max',
 ];
 
+// Tiles that only the stick can fill. A device set to "cloud only" does not get
+// them: it may belong to another installation, and a tile that can never show a
+// value is noise. Switching the device back to local adds them again.
+const LOCAL_ONLY_CAPABILITIES = [
+  'hoymiles_max_soc_local',
+  'hoymiles_max_soc_local_value',
+  'hoymiles_min_soc_local_value',
+  'hoymiles_cell_spread',
+  'hoymiles_cell_temp_max',
+];
+
 // Per-module BMS detail is local-only and slow-moving, so it gets its own slow
 // cadence rather than riding the 60s live poll. Reading four modules takes
 // about eight seconds; a quarter of an hour is plenty for a metric whose whole
@@ -398,7 +409,7 @@ class HiOneDevice extends Device {
     for (const [mode, slider] of Object.entries(RESERVE_SOC_SLIDERS)) {
       this.registerCapabilityListener(slider,
         this._settingListener(RESERVE_SOC_LABELS[mode] + ' reserve', async (value) => {
-          await this._hybrid.setReserveSocForMode(Number(mode), value);
+          await this._writeReserveSoc(Number(mode), value);
           await this._setCapabilitySafe(SETTING_VALUE_CAPABILITY[slider], value);
         }, RESERVE_SOC_LABEL_KEYS[mode]));
     }
@@ -415,11 +426,7 @@ class HiOneDevice extends Device {
         await this._setCapabilitySafe(SETTING_VALUE_CAPABILITY.hoymiles_max_discharge_power, value);
       }, 'labels.max_discharge_power'));
 
-    this.registerCapabilityListener('hoymiles_max_soc_local',
-      this._settingListener('Local charge ceiling', async (value) => {
-        await this._hybrid.setMaxSocLocal(value);
-        await this._setCapabilitySafe(SETTING_VALUE_CAPABILITY.hoymiles_max_soc_local, value);
-      }, 'labels.charge_ceiling'));
+    this._registerLocalOnlyListeners();
 
     this.registerCapabilityListener('hoymiles_meter_power',
       this._settingListener('Grid limit', (value) => this._hybrid.setGridLimit(value),
@@ -428,6 +435,21 @@ class HiOneDevice extends Device {
     this._startPolling();
     await this._poll();
     this.log('HiOne device ready');
+  }
+
+  /**
+   * The slider a cloud-only device does not have. Registered when the tile is
+   * there, and again after the device is switched back to local - listeners are
+   * otherwise only set up once, at start.
+   */
+  _registerLocalOnlyListeners() {
+    if (this._maxSocListener || !this.hasCapability('hoymiles_max_soc_local')) return;
+    this._maxSocListener = true;
+    this.registerCapabilityListener('hoymiles_max_soc_local',
+      this._settingListener('Local charge ceiling', async (value) => {
+        await this._hybrid.setMaxSocLocal(value);
+        await this._setCapabilitySafe(SETTING_VALUE_CAPABILITY.hoymiles_max_soc_local, value);
+      }, 'labels.charge_ceiling'));
   }
 
   async onDeleted() {
@@ -738,7 +760,9 @@ class HiOneDevice extends Device {
   }
 
   async _runGatewayCheck({ allowScan }) {
-    // A cloud-only install has no stick to find; never sweep on its behalf.
+    // A cloud-only device has no stick to find, and the stick this Homey can
+    // see belongs to another installation. Never probe or sweep on its behalf.
+    if (this._isCloudOnly()) return null;
     const known = this._gatewayHost
       || this.getSetting('gateway_ip')
       || this.getStoreValue('gatewayIp')
@@ -844,8 +868,14 @@ class HiOneDevice extends Device {
   }
 
   async onSettings({ newSettings, changedKeys }) {
+    if (changedKeys.includes('connection_mode')) {
+      // Add or drop the tiles only the stick can fill. newSettings, because
+      // getSettings() still returns the old values while this handler runs.
+      await this._migrateCapabilities(newSettings);
+      this._registerLocalOnlyListeners();
+    }
     if (changedKeys.includes('gateway_ip') || changedKeys.includes('cloud_api_url')
-      || changedKeys.includes('station_id')) {
+      || changedKeys.includes('station_id') || changedKeys.includes('connection_mode')) {
       this.log('Connection settings changed — reinitialising');
       // The user just named an address: drop the discovered one so their choice
       // is tried first. If it turns out to be dead, the recovery finds the stick
@@ -862,11 +892,14 @@ class HiOneDevice extends Device {
     }
   }
 
-  async _migrateCapabilities() {
+  async _migrateCapabilities(settingsOverride) {
+    const cloudOnly = this._isCloudOnly(settingsOverride);
+    const dropped = cloudOnly ? LOCAL_ONLY_CAPABILITIES : [];
+
     // Remove obsolete capabilities FIRST: a leftover capability that is no
     // longer defined in the manifest leaves the device in an invalid state and
     // makes subsequent addCapability calls fail.
-    for (const capability of REMOVED_CAPABILITIES) {
+    for (const capability of [...REMOVED_CAPABILITIES, ...dropped]) {
       if (this.hasCapability(capability)) {
         try {
           await this.removeCapability(capability);
@@ -877,6 +910,7 @@ class HiOneDevice extends Device {
       }
     }
     for (const capability of NEW_CAPABILITIES) {
+      if (dropped.includes(capability)) continue;
       if (!this.hasCapability(capability)) {
         try {
           await this.addCapability(capability);
@@ -1377,15 +1411,52 @@ class HiOneDevice extends Device {
     this._scheduleLivePollBurst();
   }
 
+  /**
+   * True for a device set to "cloud only": typically a second installation on
+   * the same S-Miles account whose stick is not on this network. Such a device
+   * must never borrow the app-wide stick address - that stick belongs to the
+   * other installation, and reading it put this Homey's battery on its tiles.
+   */
+  _isCloudOnly(settingsOverride) {
+    const settings = settingsOverride || this.getSettings() || {};
+    return settings.connection_mode === 'cloud';
+  }
+
+  /** Refuse a stick-only action on a cloud-only device, in words the user reads. */
+  _requireLocal() {
+    if (this._isCloudOnly()) throw new Error(this.homey.__('errors.cloud_only'));
+  }
+
+  /**
+   * A reserve SOC for a named mode. Locally that is any mode's own register.
+   * The cloud can only change the mode that is running, so a cloud-only device
+   * accepts exactly that case and refuses the rest instead of writing the value
+   * into whichever mode happens to be active.
+   */
+  async _writeReserveSoc(mode, percent) {
+    if (!this._isCloudOnly()) {
+      await this._hybrid.setReserveSocForMode(mode, percent);
+      return;
+    }
+    const active = this._hybrid.getKnownMode();
+    if (active === null || Number(active) !== Number(mode)) {
+      throw new Error(this.homey.__('errors.cloud_only_reserve'));
+    }
+    await this._hybrid.setReserveSoc(percent);
+    this._refreshBatterySettings().catch(() => {});
+  }
+
   // Clamp the battery without switching modes — see HoymilesHybrid for why the
   // mode is deliberately left alone.
   async setChargeLimitLocal(percent) {
+    this._requireLocal();
     await this._hybrid.setChargeLimitLocal(percent);
     this._refreshLocalSettings().catch(() => {});
     this._scheduleLivePollBurst();
   }
 
   async setDischargeLimitLocal(percent) {
+    this._requireLocal();
     await this._hybrid.setDischargeLimitLocal(percent);
     this._refreshLocalSettings().catch(() => {});
     this._scheduleLivePollBurst();
@@ -1414,7 +1485,7 @@ class HiOneDevice extends Device {
   // afterwards so the matching slider shows what the register now holds rather
   // than what we asked for — if the stick clamped it, the tile says so.
   async setReserveSocForMode(mode, percent) {
-    await this._hybrid.setReserveSocForMode(mode, percent);
+    await this._writeReserveSoc(mode, percent);
     this._refreshLocalSettings().catch(() => {});
     this._scheduleLivePollBurst();
   }
@@ -1447,7 +1518,7 @@ class HiOneDevice extends Device {
       return null;
     }
 
-    await this._hybrid.setReserveSocForMode(1, level);
+    await this._writeReserveSoc(1, level);
     this._refreshLocalSettings().catch(() => {});
     this._scheduleLivePollBurst();
     return level;
@@ -1466,6 +1537,9 @@ class HiOneDevice extends Device {
    * Every write is skipped when the register already holds the value.
    */
   async startCharging(soc, power) {
+    // Every step before the mode switch is a stick register. Over the cloud the
+    // target would land in whichever mode is running, not in Force Charge.
+    this._requireLocal();
     const target = Math.round(Math.max(0, Math.min(100, soc)));
     await this._hybrid.setReserveSocForMode(5, target);
     await this._hybrid.setMaxSocLocal(100);
@@ -1491,6 +1565,7 @@ class HiOneDevice extends Device {
    * rate; the mode last.
    */
   async startSelling(soc, power) {
+    this._requireLocal();
     const floor = Math.round(Math.max(0, Math.min(100, soc)));
     await this._hybrid.setReserveSocForMode(6, floor);
     await this._hybrid.setDischargeLimitLocal(power);
@@ -1735,12 +1810,15 @@ class HiOneDevice extends Device {
     // address that is not there is worse than useless: it costs a timeout per
     // read and locks out the one that works. Otherwise the device setting wins,
     // then the store, then the app-wide saved IP.
-    const gatewayIp = hostOverride
+    // A cloud-only device gets no address at all: the app-wide one is the stick
+    // of ANOTHER installation, and falling back to it is what made a second
+    // station show this Homey's battery.
+    const gatewayIp = this._isCloudOnly(settings) ? null : (hostOverride
       || this._gatewayOverride
       || (settings && settings.gateway_ip)
       || store.gatewayIp
       || this.homey.settings.get('saved_gateway_ip')
-      || null;
+      || null);
     this._gatewayHost = gatewayIp;
 
     const baseUrl = (settings && settings.cloud_api_url)
