@@ -32,6 +32,10 @@ const PRICE_REFRESH_MS = 60_000; // 1 min
 // EEPROM write every few minutes; small enough that little can leak out first.
 const HOLD_TOLERANCE_PCT = 3;
 
+// Battery power below which a hold counts as leaking: a discharge this size is
+// real energy going out, not measurement noise around zero.
+const HOLD_LEAK_W = 100;
+
 // Same idea for the charge target: a percent either way is not worth a write.
 const TARGET_TOLERANCE_PCT = 2;
 
@@ -1505,15 +1509,28 @@ class HiOneDevice extends Device {
 
     // Floor, never round: one percent above the real charge is still a buy order.
     const level = Math.max(5, Math.min(100, Math.floor(soc)));
-    const current = this.getCapabilityValue('hoymiles_reserve_soc_selfuse');
+    // The read-only tile, not the slider: the slider snaps to steps of five, so a
+    // register at 57 reads as 55 there and the gap below looks wider than it is.
+    const tile = this.getCapabilityValue(SETTING_VALUE_CAPABILITY.hoymiles_reserve_soc_selfuse);
+    const current = Number.isFinite(tile) ? tile : this.getCapabilityValue('hoymiles_reserve_soc_selfuse');
 
     // Every write lands in EEPROM, which wears out, so only write when it changes
     // something. A reserve already just under the charge is holding fine — chasing
     // the last percent as the reading drifts would write all day for nothing. A
     // reserve ABOVE the charge is corrected at once whatever the gap: that is not
     // a hold but a standing order to buy up to it.
+    // No slack while the battery is actually discharging, though: then the gap is
+    // energy leaving right now - measured 2026-10-03, 2.4 kW running into three
+    // charging Sessy's because a reserve 1% below the charge counted as holding.
+    const discharging = (this.getCapabilityValue('measure_power') || 0) < -HOLD_LEAK_W;
+    const slack = discharging ? 0 : HOLD_TOLERANCE_PCT;
+    // One percent above is tolerated too. The charge reads as a whole number, so
+    // 57.9% shows as 57 seconds after the reserve went to 58; correcting that
+    // "excess" lowered the reserve a percent per minute and let the battery
+    // walk down with it (seen the same day, within a minute of the fix above).
+    // A one-percent top-up is the price; an endless slide is not.
     if (Number.isFinite(current)
-        && current <= level && level - current <= HOLD_TOLERANCE_PCT) {
+        && current <= level + 1 && level - current <= slack) {
       this.log(`Hold: reserve ${current}% already holds ${soc}% - no write`);
       return null;
     }
