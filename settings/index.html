@@ -258,6 +258,7 @@
         priceToday: 'Vandaag',
         priceTomorrow: 'Morgen',
         priceNotYet: 'De prijzen van morgen zijn er nog niet. Frank publiceert ze meestal rond 13:00.',
+        priceFallback: 'Frank Energie was niet bereikbaar; deze prijzen komen van dynamisch-tarief.nl (zelfde marktprijs, all-in met de gemiddelde opslag).',
         priceTomorrowNote: 'Morgen zoals het er om middernacht voor staat: de kleuren gaan uit van het dal van morgen zelf en nog zonder de lading waarmee de accu begint.',
         priceRefLow: 'rekent met het dal van morgen',
         priceLow: 'Laagste',
@@ -367,6 +368,7 @@
         priceToday: 'Today',
         priceTomorrow: 'Tomorrow',
         priceNotYet: 'Tomorrow\'s prices are not out yet. Frank usually publishes them around 13:00.',
+        priceFallback: 'Frank Energie could not be reached; these prices come from dynamisch-tarief.nl (same market price, all-in with the average markup).',
         priceTomorrowNote: 'Tomorrow as it stands at midnight: the colours use tomorrow\'s own low and do not yet know the charge the battery starts with.',
         priceRefLow: 'uses tomorrow\'s low',
         priceLow: 'Lowest',
@@ -808,7 +810,8 @@
         + t.priceMarketPeak + ' <b>' + ct(data.marketHigh) + '</b> ct'
         + (data.hoursCovered ? ' · ' + t.priceCovered.replace('{n}',
           String(data.hoursCovered).replace('.', _lang === 'nl' ? ',' : '.')) : '')
-        + '<br>' + planText;
+        + '<br>' + planText
+        + (data.source === 'fallback' ? "<br><span style='color:#b26a00'>" + t.priceFallback + '</span>' : '');
 
       document.getElementById('price_legend').innerHTML =
         "<span><i style='background:#00A94F'></i>" + t.priceBuy + '</span>'

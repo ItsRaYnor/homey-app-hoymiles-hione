@@ -308,8 +308,8 @@
               },
               "value": true,
               "hint": {
-                "en": "Fetches Frank Energie's public all-in prices and works out the day plan. No account or key needed.",
-                "nl": "Haalt de publieke all-in prijzen van Frank Energie op en rekent het dagplan uit. Geen account of sleutel nodig."
+                "en": "Fetches Frank Energie's public all-in prices and works out the day plan. No account or key needed, and usable with any supplier: the market price is the same for all. When Frank cannot be reached, dynamisch-tarief.nl stands in automatically.",
+                "nl": "Haalt de publieke all-in prijzen van Frank Energie op en rekent het dagplan uit. Geen account of sleutel nodig, en bruikbaar bij elke leverancier: de marktprijs is voor iedereen gelijk. Is Frank niet bereikbaar, dan springt dynamisch-tarief.nl automatisch in."
               }
             },
             {
