@@ -1,71 +1,42 @@
-Monitor and control your Hoymiles HiOne all-in-one battery storage system from Homey.
+Monitor and control your Hoymiles HiOne home battery from Homey Pro - locally over Modbus via the DTS stick, with the S-Miles Cloud as fallback, and a day-ahead price plan that tells your Flows when to buy, hold and sell.
 
 FEATURES
-- Real-time monitoring: PV power, battery state-of-charge, battery charge/discharge power, grid import/export and home load
-- Energy totals: daily, monthly, yearly and lifetime yield, battery charged/discharged totals and CO2 reduction
-- Battery mode control via Flows: Self-Consumption, Economy, Backup, Off-Grid, Self-Consumption + Max Power, Backup + Max Power, Peak Shaving, Time of Use
-- Reserve SOC control: read and set the minimum battery state-of-charge (slider + Flow action)
-- Peak Shaving configuration via Flow: reserve SOC, max SOC and grid power limit
-- EPS savings: today's and total savings as sensors
-- Dry contact (relay) control via Flow (hardware dependent)
-- Flow conditions: battery is/is not charging, grid is/is not importing, battery mode is/is not, connection is/is not local
-- Three connection modes: Local (LAN), Local + Cloud (recommended), or Cloud only
+- Local first: live values and most settings go straight to the DTS stick on your network (Modbus TCP, port 502). The app finds the stick by itself, also after its address changes. Older sticks with the native Hoymiles protocol (port 10081) work too.
+- Keeps working without internet: everything local carries on during an outage, and the prices for today and tomorrow are stored.
+- Home battery in Homey Energy, with charged and discharged energy
+- Monitoring: state of charge, battery power, current and voltage, grid power, house load, smart port power, daily/monthly/yearly/lifetime energy, cell spread and highest cell temperature
+- Control: battery mode, reserve SOC per mode, a charge ceiling for all modes, and power limits for Force Charge and Force Discharge
+- One-step Flow cards: start charging to a level, start selling down to a level, stop back to Self-Consumption, hold the battery at its current charge
+- Day-ahead price plan (Netherlands, per quarter hour): buy, sell and peak conditions that move with the day's spread, a charge target based on what the expensive hours will need, and a price chart in the app settings
+- Works next to other batteries (e.g. Sessy): report what the other battery does, and the HiOne won't feed it while it charges
+- Cloud-only device for a second installation whose stick is not on your network
+- Diagnostics in the app settings: the source of every value, a register scan and cell data per battery module
+
+PRICES
+Prices come from Frank Energie's public API - no account or key needed, and usable with any Dutch supplier: the market price is the same for everyone. When Frank cannot be reached, dynamisch-tarief.nl stands in automatically. Check the price plan settings of the device (battery wear, efficiency, margin, capacity) before letting Flows trade with your battery.
 
 REQUIREMENTS
-- Homey Pro (2023) with firmware >= 12.4.5 (required for the home battery device type)
-- Hoymiles HiOne system: HiOne-(8-20)T-G3 hybrid inverter with the included
-  DTS-WL-G3 data transfer stick (WiFi or LAN mode) and one or more
-  HiOne-8B-G3 battery modules. The Backup Box (e.g. 63T-G3) is optional
-  and provides EPS/backup power switching.
-- For cloud/hybrid mode: an active S-Miles Cloud account
-- For local mode: the IP address of the DTS-WL-G3 stick on your LAN
+- Homey Pro with firmware 12.4.5 or newer
+- A Hoymiles HiOne system: a HiOne-(8-20)T-G3 hybrid inverter with its DTS-WL-G3 data transfer stick and one or more HiOne-8B-G3 battery modules. A Backup Box is optional.
+- An S-Miles Cloud account, needed to switch battery modes
+- The DTS stick on the same network as Homey for local control
 
 ADDING A DEVICE
-Tip: log in once via the app settings (Apps > Hoymiles HiOne > Configure).
-Adding a device via Cloud then logs in automatically.
+Tip: sign in once under Apps > Hoymiles HiOne > Configure. Adding a device then logs in by itself.
 
-1. Open the Homey app and go to Devices
-2. Tap + and search for "Hoymiles HiOne"
-3. Select HiOne Station
-4. Choose your connection mode:
-   - Local (LAN): enter the IP address of your HiBox gateway
-   - Local + Cloud: enter the gateway IP, then log in with your S-Miles Cloud credentials
-   - Cloud only: log in with your S-Miles Cloud email and password (skipped when an account is saved)
-5. Select your station from the list
-6. Data refreshes every 60 seconds
+1. Go to Devices, tap + and search for "Hoymiles HiOne"
+2. Select HiOne Station and choose how to connect:
+   - Local + Cloud (recommended): local first, the cloud for what the stick cannot do
+   - Local (LAN): no account; live values and local settings, no mode switching
+   - Cloud only: for an installation whose stick is not on your network
+3. Select your station
 
-FINDING YOUR GATEWAY/DTS IP ADDRESS
-Check your router's admin page under connected devices. Look for a device named DTS-..., DTUBI-... or HiBox.
-Tip: use Local + Cloud for the most reliable experience.
-Tip: give the gateway a fixed IP address (DHCP reservation in your router), so the local connection keeps working after a router restart.
+Tip: give the stick a fixed address in your router (DHCP reservation).
 
-LOCAL CONTROL (POWER LIMIT & INVERTER ON/OFF)
-The local connection talks directly to the gateway on your LAN (TCP port 10081), using the same protocol as the hoymiles-wifi project. Two Flow actions use this:
-
-- "Set power limit (local)": limits the inverter output to a percentage (2-100%).
-  WARNING: every change is written to the inverter's EEPROM memory. Frequent automated
-  changes (e.g. every few minutes) wear out this chip. Limit changes to a few per day.
-- "Turn inverter on/off (local)": switches an inverter on or off by its serial number
-  (found on the type plate or in the S-Miles app). A typical use case is turning the
-  inverter off during negative energy prices and back on afterwards.
-
-These actions require the gateway/DTS IP to be configured (Local or Local + Cloud mode).
-Note: this protocol is reverse-engineered from the hoymiles-wifi project (verified on
-DTU/HMS-W and HYS/HYT hybrid hardware); behaviour on the HiOne DTS-WL-G3 has not
-been hardware-verified yet.
-
-FLOW CARDS
-Actions:
-- Set battery mode (Self-Consumption, Economy, Backup, Off-Grid, Self-Consumption + Max Power, Backup + Max Power, Peak Shaving, Time of Use)
-- Set reserve SOC (minimum battery state-of-charge, cloud connection required)
-- Set Peak Shaving parameters (reserve SOC, max SOC, grid power limit)
-- Switch dry contact on/off (relay output, hardware dependent)
-
-Conditions:
-- Battery is/is not charging
-- Grid is/is not importing power
-- Battery mode is/is not a specific mode
-- Connection is/is not local (LAN)
+GOOD TO KNOW
+- Switching the battery mode always goes through the S-Miles Cloud; the stick has no register for it.
+- Settings are stored in the inverter's memory, which wears with every write. The app skips writes that change nothing, but avoid Flows that change settings back and forth every minute.
+- Tested on a HiOne-16T-G3 with 4x 8B-G3 battery modules and a DTS-WL-G3 stick. Other HiOne models should work but have not been tested.
 
 DISCLAIMER
-This is an unofficial, community-developed integration. Not affiliated with or endorsed by Hoymiles Power Electronics Inc. Uses the reverse-engineered S-Miles Cloud API and/or local DTU communication. Hoymiles may change these interfaces at any time. Use at your own risk.
+This is an unofficial, community-developed integration, not affiliated with or endorsed by Hoymiles Power Electronics Inc. It uses the S-Miles Cloud API and local communication with the DTS stick, neither of which is publicly documented; Hoymiles may change these at any time. Use at your own risk.

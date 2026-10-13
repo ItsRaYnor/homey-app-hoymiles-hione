@@ -1,6 +1,6 @@
 {
   "id": "com.hoymiles.hione",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "compatibility": ">=12.4.5",
   "sdk": 3,
   "brandColor": "#00A94F",
@@ -2473,8 +2473,8 @@
           "nl": "Het !{{is|is geen}} koopmoment"
         },
         "hint": {
-          "en": "True when the price is near today's low and the day's spread covers the round trip.",
-          "nl": "Waar als de prijs vlak bij het dagminimum ligt en de dagspreiding de heenreis en terugreis dekt."
+          "en": "True when buying now pays: no meaningfully cheaper slot comes before the next dear stretch, and that stretch - up to the next cheaper refill, across midnight if need be - holds a price that covers the round trip, wear and margin. Never true in a slot dear enough to discharge into.",
+          "nl": "Waar als nu inkopen loont: vóór de volgende dure periode komt geen noemenswaardig goedkoper kwartier, en die periode - tot de volgende goedkopere herlaadkans, zo nodig over middernacht heen - bevat een prijs die heen- en terugreis, slijtage en marge dekt. Nooit waar in een kwartier dat duur genoeg is om te ontladen."
         },
         "args": [
           {
@@ -2509,8 +2509,8 @@
           "nl": "Het !{{is|is geen}} verkoopmoment"
         },
         "hint": {
-          "en": "True when discharging pays and no meaningfully higher price is left today.",
-          "nl": "Waar als ontladen loont en er vandaag geen noemenswaardig hogere prijs meer komt."
+          "en": "True when exporting pays and this quarter is among the dearest the charge on board can fill before a cheaper refill takes over, so a long peak is sold whole when the charge is there. When the charge is not known: no meaningfully higher price is left before that refill.",
+          "nl": "Waar als terugleveren loont en dit kwartier hoort bij de duurste die de lading aan boord kan vullen voordat een goedkopere herlaadkans komt; zo wordt een lange piek helemaal verkocht als de lading er is. Is de lading onbekend: er komt vóór die herlaadkans geen noemenswaardig hogere prijs meer."
         },
         "args": [
           {
@@ -2563,8 +2563,8 @@
           "nl": "Dit kwartier !{{hoort|hoort niet}} bij de duurste momenten die de accu nog haalt"
         },
         "hint": {
-          "en": "Ranks the quarter hours left today by price and keeps as many as the charge on board can serve at the house load. A battery that cannot cover the whole expensive stretch should spend itself on the dearest part of it. A single quarter just outside a run is counted in, so the battery does not stop for fifteen minutes.",
-          "nl": "Rangschikt de resterende kwartieren van de dag op prijs en houdt er zoveel over als de lading aan boord bij het huisverbruik kan dekken. Een accu die de hele dure periode niet haalt, moet zich aan het duurste deel ervan uitgeven. Eén los kwartier net buiten een reeks telt mee, zodat de accu niet een kwartier stilvalt."
+          "en": "Ranks the quarter hours up to the next cheaper refill (across midnight if need be) by price and keeps as many as the charge on board can serve at the house load. A battery that cannot cover the whole expensive stretch should spend itself on the dearest part of it. A single quarter just outside a run is counted in, so the battery does not stop for fifteen minutes.",
+          "nl": "Rangschikt de kwartieren tot de volgende goedkopere herlaadkans (zo nodig over middernacht heen) op prijs en houdt er zoveel over als de lading aan boord bij het huisverbruik kan dekken. Een accu die de hele dure periode niet haalt, moet zich aan het duurste deel ervan uitgeven. Eén los kwartier net buiten een reeks telt mee, zodat de accu niet een kwartier stilvalt."
         },
         "args": [
           {
