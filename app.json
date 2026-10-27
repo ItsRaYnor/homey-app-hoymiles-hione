@@ -1,6 +1,6 @@
 {
   "id": "com.hoymiles.hione",
-  "version": "1.1.9",
+  "version": "1.1.10",
   "compatibility": ">=12.4.5",
   "sdk": 3,
   "brandColor": "#00A94F",
@@ -2043,8 +2043,8 @@
           "nl": "Houd de accu vast op het huidige niveau"
         },
         "hint": {
-          "en": "Sets the Self-Consumption reserve to the charge already on board, so the battery neither discharges nor charges. Use this to save energy for a dearer hour: parking the reserve at 100% would instead buy energy from the grid at the current price, because in Self-Consumption the inverter charges up to the reserve as well.",
-          "nl": "Zet de reserve voor Zelfconsumptie op de lading die er al in zit, zodat de accu niet ontlaadt en ook niet laadt. Gebruik dit om energie te bewaren voor een duurder uur: de reserve op 100% parkeren zou juist stroom uit het net kopen tegen de prijs van dit moment, omdat de omvormer in Zelfconsumptie ook naar de reserve toe laadt."
+          "en": "Sets the Self-Consumption reserve to the charge already on board, so the battery neither discharges nor charges. Use this to save energy for a dearer hour: parking the reserve at 100% would instead buy energy from the grid at the current price, because in Self-Consumption the inverter charges up to the reserve as well. Does nothing while Force Charge runs: that mode charges to its own target, so there is nothing to hold.",
+          "nl": "Zet de reserve voor Zelfconsumptie op de lading die er al in zit, zodat de accu niet ontlaadt en ook niet laadt. Gebruik dit om energie te bewaren voor een duurder uur: de reserve op 100% parkeren zou juist stroom uit het net kopen tegen de prijs van dit moment, omdat de omvormer in Zelfconsumptie ook naar de reserve toe laadt. Doet niets zolang Force Charge loopt: die laadt naar zijn eigen doel, dus er valt niets vast te houden."
         },
         "args": [
           {

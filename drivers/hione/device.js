@@ -1594,6 +1594,17 @@ class HiOneDevice extends Device {
    * battery still instead — nothing to discharge to, nothing to charge up to.
    */
   async holdBatteryHere() {
+    // Force Charge runs to its own target and never reads this register, so a
+    // hold there stops nothing - measured 2026-10-27: the Sessy guards held every
+    // minute through a 6.4 kW charge and the battery never slowed. All the hold
+    // did was chase the Self-Consumption reserve up behind the rising charge, 30
+    // to 50% in ninety minutes at an EEPROM write per step, and leave it parked
+    // high for when the charge ends.
+    if (String(this.getCapabilityValue('hoymiles_battery_mode')) === '5') {
+      this.log('Hold: Force Charge running - reserve left alone, no write');
+      return null;
+    }
+
     const soc = this.getCapabilityValue('measure_battery');
     if (!Number.isFinite(soc)) throw new Error(this.homey.__('errors.no_soc'));
 

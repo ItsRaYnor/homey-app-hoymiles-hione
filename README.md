@@ -129,7 +129,7 @@ The thresholds move with the day: on a day where every quarter is expensive the 
 
 ### Actions
 - **Start charging to a level**, **Start charging to what the dear hours will need**, **Start selling down to a level**, **Stop charging or selling, back to Self-Consumption**
-- **Hold the battery at its current charge** — writes only when something changed, to spare the inverter's memory
+- **Hold the battery at its current charge** — writes only when something changed, to spare the inverter's memory; does nothing while Force Charge runs, since that mode charges to its own target
 - **Report that another battery is charging / discharging** — call it every minute while that holds; the report expires by itself after 3 minutes
 - Set battery mode (Self-Consumption, Economy, Backup, Off-Grid, Force Charge, Force Discharge, Peak Shaving, Time of Use, AI Mode)
 - Set reserve SOC, or the reserve SOC of a specific mode
