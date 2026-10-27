@@ -183,8 +183,9 @@
         "meterPowerExportedCapability": "meter_power.discharged"
       },
       "images": {
-        "small": "/drivers/hione/assets/icon.png",
-        "large": "/drivers/hione/assets/icon_large.png"
+        "small": "/drivers/hione/assets/images/small.png",
+        "large": "/drivers/hione/assets/images/large.png",
+        "xlarge": "/drivers/hione/assets/images/xlarge.png"
       },
       "pair": [
         {
