@@ -1307,11 +1307,17 @@ class HiOneDevice extends Device {
     // and its SoC can confirm the estimate but never become the reference.
     const fromCloud = data.source === 'cloud' && !this._isCloudOnly();
     const powerUsable = power !== null && !fromCloud;
-    const state = this._soc || (this._soc = { anchor: null, at: 0, energyWh: 0, lastPower: null, lastAt: 0, reject: null });
+    const state = this._soc || (this._soc = { anchor: null, at: 0, energyWh: 0, lastPower: null, lastAt: 0, powerAt: 0, reject: null });
 
     // Bridge the time since the previous poll with the battery power (+ = charging).
     const gap = now - state.lastAt;
-    if (state.lastAt && gap > SOC_INTEGRATION_GAP_MS) state.anchor = null;
+    // The integration is broken once no usable power has come in for longer than
+    // a gap - whether the polls stopped or kept arriving from the cloud alone
+    // while the stick was down. Timing the polls alone missed the second case:
+    // the estimate froze for as long as the stick was away, and the stick's own
+    // value was refused when it came back (review 2026-10-27).
+    if (state.powerAt && now - state.powerAt > SOC_INTEGRATION_GAP_MS) state.anchor = null;
+    if (powerUsable) state.powerAt = now;
     if (state.anchor !== null && powerUsable && state.lastPower !== null) {
       state.energyWh += ((state.lastPower + power) / 2) * (gap / 3_600_000);
     }
@@ -1340,10 +1346,14 @@ class HiOneDevice extends Device {
     if (reported === null || fromCloud) return estimate;
     if (Math.abs(reported - expected) <= SOC_ENERGY_TOLERANCE_PCT) return trust(reported);
 
-    // Disagrees. A new or different wrong value starts its own clock; the same
-    // one sustained long enough is believed after all.
-    if (!state.reject || Math.abs(reported - state.reject.value) > 3) {
-      state.reject = { value: reported, since: now };
+    // Disagrees. A new or different disagreement starts its own clock; the same
+    // one sustained long enough is believed after all. "The same" is the offset
+    // from the estimate, not the reading: a pack that is charging moves its
+    // reading every few minutes, which restarted the clock on every move and
+    // kept a wrong estimate until the battery sat idle for an hour.
+    const offset = reported - expected;
+    if (!state.reject || Math.abs(offset - state.reject.offset) > 3) {
+      state.reject = { offset, since: now };
       this.log(`SoC ${reported}% ignored: the battery energy since ${state.anchor}% points to ~${estimate}%`);
     } else if (now - state.reject.since >= SOC_REANCHOR_MS) {
       this.log(`SoC ${reported}% accepted after ${Math.round(SOC_REANCHOR_MS / 60_000)} min of steady readings (estimate was ~${estimate}%)`);
