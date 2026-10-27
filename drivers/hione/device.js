@@ -1599,8 +1599,11 @@ class HiOneDevice extends Device {
     // minute through a 6.4 kW charge and the battery never slowed. All the hold
     // did was chase the Self-Consumption reserve up behind the rising charge, 30
     // to 50% in ninety minutes at an EEPROM write per step, and leave it parked
-    // high for when the charge ends.
-    if (String(this.getCapabilityValue('hoymiles_battery_mode')) === '5') {
+    // high for when the charge ends. The tile can lag a switch made outside this
+    // app, though, so a battery that is discharging is held whatever it says:
+    // Force Charge does not discharge.
+    const draining = (this.getCapabilityValue('measure_power') || 0) < -HOLD_LEAK_W;
+    if (String(this.getCapabilityValue('hoymiles_battery_mode')) === '5' && !draining) {
       this.log('Hold: Force Charge running - reserve left alone, no write');
       return null;
     }
