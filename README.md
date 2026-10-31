@@ -41,6 +41,8 @@ Monitor and control your **Hoymiles HiOne** home battery from Homey Pro — **lo
 - An **S-Miles Cloud** account (the one you use in the Hoymiles app) — needed to switch battery modes and for the cloud-only values
 - The DTS stick on the same network as Homey for local control
 
+> **Hoymiles microinverters with a DTU** (DTU-WLite, DTU-Pro, DTU-Pro-S)? This app does not support them. Use [Hoymiles Wi-Fi Solar Panel](https://homey.app/a/gpm.hoymiles.solarpanel) by Gabriel Pedrosa Machado instead. Both apps can run side by side.
+
 > **Tested on** a HiOne-16T-G3 with 4× 8B-G3 battery modules and a DTS-WL-G3 stick. Other HiOne models should work but have not been tested — reports are welcome. Other Hoymiles products (microinverters, HYT series) are not supported.
 
 ---
