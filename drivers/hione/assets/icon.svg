@@ -1,10 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- Cabinet -->
-  <path fill="#000000" fill-rule="evenodd" d="M32 4h36a4 4 0 0 1 4 4v84a4 4 0 0 1-4 4H32a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4zM33 8a1 1 0 0 0-1 1v82a1 1 0 0 0 1 1h34a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1z"/>
-  <!-- Glass display with a charge bolt cut out of it -->
-  <path fill="#000000" fill-rule="evenodd" d="M32 8h36v16H32zM51.8 10.4L45.4 17.3H49.6L48.2 21.6L54.6 14.7H50.4z"/>
-  <!-- Logo ring on the front band -->
-  <path fill="#000000" fill-rule="evenodd" d="M46.2 29.75a3.8 3.8 0 1 0 7.6 0a3.8 3.8 0 1 0-7.6 0zM47.8 29.75a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0-4.4 0z"/>
-  <!-- Seams between the band and the four battery modules -->
-  <path fill="#000000" d="M32 35.5h36V38H32zM32 49.5h36V52H32zM32 63.5h36V66H32zM32 77.5h36V80H32z"/>
+  <!-- Cabinet: a thick outline so it stays visible at 24 px. The heavy base
+       balances the solid display on top, so the icon looks centred. -->
+  <path fill="#000000" fill-rule="evenodd" d="M29 4h42a7 7 0 0 1 7 7v78a7 7 0 0 1-7 7H29a7 7 0 0 1-7-7V11a7 7 0 0 1 7-7zM31 11a2 2 0 0 0-2 2v62a2 2 0 0 0 2 2h38a2 2 0 0 0 2-2V13a2 2 0 0 0-2-2z"/>
+  <!-- Display with a charge bolt cut out of it -->
+  <path fill="#000000" fill-rule="evenodd" d="M29 11h42v22H29zM54 13.5L42.5 25H49.5L46 30.5L57.5 19H50.5z"/>
+  <!-- Seams between the battery modules -->
+  <path fill="#000000" d="M29 43.7h42v6H29zM29 60.3h42v6H29z"/>
 </svg>

@@ -109,6 +109,7 @@ The thresholds move with the day: on a day where every quarter is expensive the 
 - **Conditions:** *buy moment*, *discharging pays*, *sell moment*, *today's spread pays*, *still needs charging*, *one of the dearest quarters the battery can still cover*, *a cheaper refill is coming before the dearest moment*
 - **Actions:** *start charging to what the dear hours will need* — a charge target calculated from the coming expensive quarters and the house load, instead of a fixed 95 %
 - **Price chart** under *Configure → Prices*, for today and tomorrow, with the verdict per quarter
+- **Insights** logs the buy and sell moments as on/off, the discharge floor in ct/kWh and the battery mode as a number (1 = Self-Consumption, 5 = Force Charge, …), so a graph shows afterwards when the plan wanted to trade and why it did not
 
 **Prices come from Frank Energie's public API** (no account or key). It works with any Dutch supplier: the market price is the same for everyone, and a different supplier markup shifts every quarter by the same amount, which the decisions hardly notice. When Frank cannot be reached, **[dynamisch-tarief.nl](https://www.dynamisch-tarief.nl)** stands in automatically (same market price); Frank takes over again as soon as it is back.
 

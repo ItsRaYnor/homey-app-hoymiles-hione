@@ -134,6 +134,19 @@ const CLOUD_SOURCED_CAPABILITIES = [
 ];
 const CLOUD_MARKER = ' ☁';
 
+// Values kept for Insights, so the trading can be checked afterwards: the mode
+// as a number (an enum is not logged), the plan's buy and sell moments as
+// on/off, and the discharge floor the plan judged against. Only the floor gets
+// a tile; the other three already show on the mode and price plan tiles.
+// They go last in the tile order, so adding them does not reshuffle (and
+// briefly remove) the energy meters Homey Energy reads.
+const LOG_CAPABILITIES = [
+  'hoymiles_battery_mode_number',
+  'hoymiles_price_buy_moment',
+  'hoymiles_price_sell_moment',
+  'hoymiles_price_discharge_floor',
+];
+
 const NEW_CAPABILITIES = [
   'hoymiles_smartport_power',
   'hoymiles_battery_flow',
@@ -170,6 +183,7 @@ const NEW_CAPABILITIES = [
   'hoymiles_max_discharge_power_value',
   'hoymiles_cell_spread',
   'hoymiles_cell_temp_max',
+  ...LOG_CAPABILITIES,
 ];
 
 // Tiles that only the stick can fill. A device set to "cloud only" does not get
@@ -306,6 +320,7 @@ const CAPABILITY_ORDER = [
   'hoymiles_cell_spread',
   'hoymiles_cell_temp_max',
   'hoymiles_connection_source',
+  ...LOG_CAPABILITIES,
 ];
 
 const REMOVED_CAPABILITIES = [
@@ -1105,6 +1120,14 @@ class HiOneDevice extends Device {
     } catch (err) {
       this.error('setCapabilityValue(' + capability + ') failed: ' + err.message);
     }
+    // Mirror the mode as a number for Insights, from every place that sets it.
+    // "0" is the picker's "choose a mode" placeholder, not a mode.
+    if (capability === 'hoymiles_battery_mode') {
+      const mode = Number(value);
+      if (Number.isInteger(mode) && mode >= 1 && mode <= 9) {
+        await this._setCapabilitySafe('hoymiles_battery_mode_number', mode);
+      }
+    }
   }
 
   /**
@@ -1245,7 +1268,10 @@ class HiOneDevice extends Device {
       // Empty the price tiles rather than leave the last price standing: a
       // frozen number looks like a real one (it did, 00:00-02:00 every night
       // before 1.1.9), an empty tile and a gap in Insights do not.
-      for (const capability of ['hoymiles_price_now', 'hoymiles_price_market_now']) {
+      for (const capability of [
+        'hoymiles_price_now', 'hoymiles_price_market_now', 'hoymiles_price_discharge_floor',
+        'hoymiles_price_buy_moment', 'hoymiles_price_sell_moment',
+      ]) {
         if (!this.hasCapability(capability) || this.getCapabilityValue(capability) === null) continue;
         await this.setCapabilityValue(capability, null)
           .catch((err) => this.error(`Could not clear ${capability}: ${err.message}`));
@@ -1260,6 +1286,10 @@ class HiOneDevice extends Device {
     await this._setCapabilitySafe('hoymiles_price_low_today',  ct(plan.dayLow));
     await this._setCapabilitySafe('hoymiles_price_high_today', ct(plan.dayHigh));
     await this._setCapabilitySafe('hoymiles_price_plan',       this._pricePlanText(plan));
+    // For Insights: what the plan wanted, and the floor it judged against.
+    await this._setCapabilitySafe('hoymiles_price_discharge_floor', ct(plan.dischargeFloor));
+    await this._setCapabilitySafe('hoymiles_price_buy_moment',  Boolean(plan.buyNow));
+    await this._setCapabilitySafe('hoymiles_price_sell_moment', Boolean(plan.sellNow));
   }
 
   /** One line for the tile: what to do, and the price that decides it. */

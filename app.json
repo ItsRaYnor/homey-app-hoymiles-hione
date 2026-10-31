@@ -133,7 +133,11 @@
         "hoymiles_profit_total",
         "hoymiles_cell_spread",
         "hoymiles_cell_temp_max",
-        "hoymiles_connection_source"
+        "hoymiles_connection_source",
+        "hoymiles_battery_mode_number",
+        "hoymiles_price_buy_moment",
+        "hoymiles_price_sell_moment",
+        "hoymiles_price_discharge_floor"
       ],
       "capabilitiesOptions": {
         "measure_power": {
@@ -1241,6 +1245,83 @@
       "setable": false,
       "uiComponent": "sensor",
       "icon": "/assets/charge-target.svg"
+    },
+    "hoymiles_battery_mode_number": {
+      "type": "number",
+      "title": {
+        "en": "Battery mode (number)",
+        "nl": "Batterijmodus (nummer)"
+      },
+      "desc": {
+        "en": "The battery mode as a number, so Insights can log it: 1 Self-Consumption, 2 Economy, 3 Backup, 4 Off-Grid, 5 Force Charge, 6 Force Discharge, 7 Peak Shaving, 8 Time of Use, 9 AI Mode.",
+        "nl": "De batterijmodus als getal, zodat Insights hem kan loggen: 1 Zelfconsumptie, 2 Economie, 3 Noodstroom, 4 Off-Grid, 5 Force Charge, 6 Force Discharge, 7 Pieksturing, 8 Tijdafhankelijk, 9 AI-modus."
+      },
+      "decimals": 0,
+      "min": 0,
+      "max": 9,
+      "insights": true,
+      "getable": true,
+      "setable": false,
+      "uiComponent": null,
+      "icon": "/assets/battery.svg"
+    },
+    "hoymiles_price_buy_moment": {
+      "type": "boolean",
+      "title": {
+        "en": "Buy moment",
+        "nl": "Koopmoment"
+      },
+      "insights": true,
+      "insightsTitleTrue": {
+        "en": "Buy moment started",
+        "nl": "Koopmoment begonnen"
+      },
+      "insightsTitleFalse": {
+        "en": "Buy moment ended",
+        "nl": "Koopmoment afgelopen"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": null,
+      "icon": "/assets/price-low.svg"
+    },
+    "hoymiles_price_sell_moment": {
+      "type": "boolean",
+      "title": {
+        "en": "Sell moment",
+        "nl": "Verkoopmoment"
+      },
+      "insights": true,
+      "insightsTitleTrue": {
+        "en": "Sell moment started",
+        "nl": "Verkoopmoment begonnen"
+      },
+      "insightsTitleFalse": {
+        "en": "Sell moment ended",
+        "nl": "Verkoopmoment afgelopen"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": null,
+      "icon": "/assets/price-high.svg"
+    },
+    "hoymiles_price_discharge_floor": {
+      "type": "number",
+      "title": {
+        "en": "Discharge floor",
+        "nl": "Ontlaadvloer"
+      },
+      "desc": {
+        "en": "The price from which discharging pays: the day's lowest price (or tomorrow's, when lower) divided by the round-trip efficiency, plus wear and margin. Selling to the grid also has to clear the export penalty on top of this.",
+        "nl": "De prijs vanaf waar ontladen loont: de laagste prijs van vandaag (of morgen, als die lager is) gedeeld door het rendement, plus slijtage en marge. Verkopen aan het net moet daarbovenop ook de terugleverkorting goedmaken."
+      },
+      "units": "ct/kWh",
+      "insights": true,
+      "decimals": 1,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/price-plan.svg"
     }
   },
   "flow": {
