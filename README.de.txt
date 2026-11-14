@@ -1,0 +1,5 @@
+Hole deinen Hoymiles-HiOne-Heimspeicher in Homey und lass ihn mit dem Rest deines Zuhauses zusammenarbeiten. Verfolge den Ladestand, die Leistung vom und ins Netz und den Verbrauch deines Hauses, alles auch in Homey Energy. Ein Preisplan für die Day-Ahead-Preise deines Landes sagt deinen Flows, wann Strom günstig genug zum Speichern und teuer genug zum Verbrauchen oder Verkaufen ist. So kauft die Batterie günstig ein und versorgt dein Haus, wenn es zählt, auch neben anderen Heimspeichern.
+
+Die App spricht in deinem eigenen Netzwerk mit der Batterie und läuft weiter, wenn das Internet ausfällt. Dies ist eine inoffizielle App, nicht von Hoymiles entwickelt oder unterstützt.
+
+Diese App ist für den HiOne mit seinem DTS-WL-G3-Stick gedacht, und sie steuert die Batterie und zeigt sie nicht nur an. Hast du Hoymiles-Mikrowechselrichter mit einer DTU (DTU-WLite, DTU-Pro oder DTU-Pro-S)? Dann nimm die App Hoymiles Wi-Fi Solar Panel von Gabriel Pedrosa Machado, die diese Systeme lokal ausliest. Die beiden Apps funktionieren nebeneinander.

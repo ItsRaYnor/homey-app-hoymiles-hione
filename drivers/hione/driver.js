@@ -20,6 +20,15 @@ class HiOneDriver extends Driver {
       }
     };
 
+    // One card for all three price moments; the dropdown picks which one a
+    // Flow listens to, so the device names the moment and this compares.
+    for (const id of ['price_moment_started', 'price_moment_ended']) {
+      registerListener(
+        this.homey.flow.getDeviceTriggerCard(id),
+        async (args, state) => args.moment === state.moment
+      );
+    }
+
     registerListener(
       this.homey.flow.getActionCard('set_battery_mode'),
       async ({ device, mode }) => device.triggerCapabilityListener('hoymiles_battery_mode', mode)
@@ -163,7 +172,10 @@ class HiOneDriver extends Driver {
 
     registerListener(
       this.homey.flow.getConditionCard('battery_charging'),
-      async ({ device }) => (device.getCapabilityValue('measure_power') || 0) > 0
+      // A battery at rest reads +1 W now and then. Counting that as charging made
+      // an evening hold Flow pass every ten minutes on noise alone (2026-10-31),
+      // so this card uses the same 50 W margin the idle and discharging cards do.
+      async ({ device }) => (device.getCapabilityValue('measure_power') || 0) > 50
     );
 
     // measure_power: positive = charging, negative = discharging

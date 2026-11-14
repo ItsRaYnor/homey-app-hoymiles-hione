@@ -1,16 +1,18 @@
 {
   "id": "com.hoymiles.hione",
-  "version": "1.1.10",
+  "version": "1.1.11",
   "compatibility": ">=12.4.5",
   "sdk": 3,
   "brandColor": "#00A94F",
   "name": {
     "en": "Hoymiles HiOne",
-    "nl": "Hoymiles HiOne"
+    "nl": "Hoymiles HiOne",
+    "de": "Hoymiles HiOne"
   },
   "description": {
     "en": "Your home battery charges when energy is cheap and powers your home when it is dear",
-    "nl": "Je thuisbatterij laadt als stroom goedkoop is en voedt je huis als hij duur is"
+    "nl": "Je thuisbatterij laadt als stroom goedkoop is en voedt je huis als hij duur is",
+    "de": "Dein Heimspeicher lädt, wenn Strom günstig ist, und versorgt dein Haus, wenn er teuer ist"
   },
   "tags": {
     "en": [
@@ -27,6 +29,14 @@
       "hione",
       "zonnepanelen",
       "batterij",
+      "energie"
+    ],
+    "de": [
+      "hoymiles",
+      "hione",
+      "solar",
+      "batterie",
+      "heimspeicher",
       "energie"
     ]
   },
@@ -88,7 +98,8 @@
       "id": "hione",
       "name": {
         "en": "HiOne Station",
-        "nl": "HiOne Station"
+        "nl": "HiOne Station",
+        "de": "HiOne-Station"
       },
       "class": "battery",
       "capabilities": [
@@ -143,31 +154,36 @@
         "measure_power": {
           "title": {
             "en": "Battery Power (+ charge / − discharge)",
-            "nl": "Accuvermogen (+ laden / − ontladen)"
+            "nl": "Accuvermogen (+ laden / − ontladen)",
+            "de": "Batterieleistung (+ Laden / − Entladen)"
           }
         },
         "measure_battery": {
           "title": {
             "en": "Battery State of Charge (%)",
-            "nl": "Batterij laadniveau (%)"
+            "nl": "Batterij laadniveau (%)",
+            "de": "Ladezustand der Batterie (%)"
           }
         },
         "measure_voltage": {
           "title": {
             "en": "Battery Voltage",
-            "nl": "Accuspanning"
+            "nl": "Accuspanning",
+            "de": "Batteriespannung"
           }
         },
         "measure_current": {
           "title": {
             "en": "Battery Current (+ charge / − discharge)",
-            "nl": "Accustroom (+ laden / − ontladen)"
+            "nl": "Accustroom (+ laden / − ontladen)",
+            "de": "Batteriestrom (+ Laden / − Entladen)"
           }
         },
         "meter_power.charged": {
           "title": {
             "en": "Battery Charged",
-            "nl": "Accu geladen"
+            "nl": "Accu geladen",
+            "de": "Batterie geladen"
           },
           "insights": true,
           "decimals": 2
@@ -175,7 +191,8 @@
         "meter_power.discharged": {
           "title": {
             "en": "Battery Discharged",
-            "nl": "Accu ontladen"
+            "nl": "Accu ontladen",
+            "de": "Batterie entladen"
           },
           "insights": true,
           "decimals": 2
@@ -219,11 +236,13 @@
           "type": "dropdown",
           "label": {
             "en": "Connection",
-            "nl": "Verbinding"
+            "nl": "Verbinding",
+            "de": "Verbindung"
           },
           "hint": {
             "en": "Cloud only is for an installation whose DTS stick is NOT on this network, for example a second station on the same S-Miles account. The device then never talks to a local stick - not even the address from the app settings, which belongs to your own installation - and shows only what the cloud supplies. Actions that need the stick (start charging or selling, per-mode reserve of a mode that is not active, local power limits) refuse with a message. Switching changes the tiles on the device card.",
-            "nl": "Alleen cloud is voor een installatie waarvan de DTS-stick NIET op dit netwerk zit, bijvoorbeeld een tweede station op hetzelfde S-Miles-account. Het apparaat praat dan nooit met een lokale stick - ook niet met het adres uit de app-instellingen, want dat is van je eigen installatie - en toont alleen wat de cloud levert. Acties die de stick nodig hebben (laden of verkopen starten, de reserve van een modus die niet actief is, lokale vermogensgrenzen) weigeren met een melding. Omschakelen past de tegels op de apparaatkaart aan."
+            "nl": "Alleen cloud is voor een installatie waarvan de DTS-stick NIET op dit netwerk zit, bijvoorbeeld een tweede station op hetzelfde S-Miles-account. Het apparaat praat dan nooit met een lokale stick - ook niet met het adres uit de app-instellingen, want dat is van je eigen installatie - en toont alleen wat de cloud levert. Acties die de stick nodig hebben (laden of verkopen starten, de reserve van een modus die niet actief is, lokale vermogensgrenzen) weigeren met een melding. Omschakelen past de tegels op de apparaatkaart aan.",
+            "de": "Nur Cloud ist für eine Anlage gedacht, deren DTS-Stick NICHT in diesem Netzwerk hängt, zum Beispiel eine zweite Station im selben S-Miles-Konto. Das Gerät spricht dann nie mit einem lokalen Stick - auch nicht mit der Adresse aus den App-Einstellungen, die zu deiner eigenen Anlage gehört - und zeigt nur, was die Cloud liefert. Aktionen, die den Stick brauchen (Laden oder Verkaufen starten, Reserve eines nicht aktiven Modus, lokale Leistungsgrenzen), lehnen mit einer Meldung ab. Beim Umschalten ändern sich die Kacheln auf der Gerätekarte."
           },
           "value": "auto",
           "values": [
@@ -231,14 +250,16 @@
               "id": "auto",
               "label": {
                 "en": "Local (Modbus) with cloud top-up",
-                "nl": "Lokaal (Modbus) met cloud als aanvulling"
+                "nl": "Lokaal (Modbus) met cloud als aanvulling",
+                "de": "Lokal (Modbus) mit Ergänzung aus der Cloud"
               }
             },
             {
               "id": "cloud",
               "label": {
                 "en": "Cloud only (no local stick)",
-                "nl": "Alleen cloud (geen lokale stick)"
+                "nl": "Alleen cloud (geen lokale stick)",
+                "de": "Nur Cloud (kein lokaler Stick)"
               }
             }
           ]
@@ -248,11 +269,13 @@
           "type": "text",
           "label": {
             "en": "Gateway/DTS IP Address (optional)",
-            "nl": "Gateway/DTS IP-adres (optioneel)"
+            "nl": "Gateway/DTS IP-adres (optioneel)",
+            "de": "IP-Adresse des Gateways/DTS (optional)"
           },
           "hint": {
             "en": "Local LAN IP of the DTS-WL-G3 stick or HiBox gateway (e.g. 192.168.1.100). Leave empty to use the address on the app settings page; only when no address is known anywhere does the app fall back to cloud only. If the address here does not answer, the app finds the stick again by itself and carries on with the one that works — this field is NOT updated then, so it can show an address that is not in use.",
-            "nl": "Lokaal LAN IP-adres van de DTS-WL-G3 stick of HiBox gateway (bijv. 192.168.1.100). Leeg laten om het adres van de app-instellingenpagina te gebruiken; pas als er nergens een adres bekend is, valt de app terug op alleen de cloud. Antwoordt het adres hier niet, dan zoekt de app de stick zelf terug en praat verder op het adres dat wél werkt — dit veld wordt dan NIET bijgewerkt en kan dus een adres tonen dat niet in gebruik is."
+            "nl": "Lokaal LAN IP-adres van de DTS-WL-G3 stick of HiBox gateway (bijv. 192.168.1.100). Leeg laten om het adres van de app-instellingenpagina te gebruiken; pas als er nergens een adres bekend is, valt de app terug op alleen de cloud. Antwoordt het adres hier niet, dan zoekt de app de stick zelf terug en praat verder op het adres dat wél werkt — dit veld wordt dan NIET bijgewerkt en kan dus een adres tonen dat niet in gebruik is.",
+            "de": "Lokale LAN-IP des DTS-WL-G3-Sticks oder HiBox-Gateways (z. B. 192.168.1.100). Leer lassen, um die Adresse von der Seite mit den App-Einstellungen zu verwenden; nur wenn nirgends eine Adresse bekannt ist, weicht die App auf reinen Cloud-Betrieb aus. Antwortet die Adresse hier nicht, findet die App den Stick selbst wieder und arbeitet mit der funktionierenden weiter — dieses Feld wird dann NICHT aktualisiert und kann also eine Adresse zeigen, die nicht verwendet wird."
           },
           "value": ""
         },
@@ -261,11 +284,13 @@
           "type": "text",
           "label": {
             "en": "Cloud API URL",
-            "nl": "Cloud API URL"
+            "nl": "Cloud API URL",
+            "de": "Cloud-API-URL"
           },
           "hint": {
             "en": "Base URL of the S-Miles Cloud API (default: https://neapi.hoymiles.com). Only change this if Hoymiles migrates to a different endpoint.",
-            "nl": "Basis-URL van de S-Miles Cloud API (standaard: https://neapi.hoymiles.com). Wijzig dit alleen als Hoymiles naar een ander endpoint migreert."
+            "nl": "Basis-URL van de S-Miles Cloud API (standaard: https://neapi.hoymiles.com). Wijzig dit alleen als Hoymiles naar een ander endpoint migreert.",
+            "de": "Basis-URL der S-Miles-Cloud-API (Standard: https://neapi.hoymiles.com). Nur ändern, wenn Hoymiles auf einen anderen Endpunkt umzieht."
           },
           "value": "https://neapi.hoymiles.com"
         },
@@ -274,11 +299,13 @@
           "type": "text",
           "label": {
             "en": "Station ID (optional)",
-            "nl": "Station-ID (optioneel)"
+            "nl": "Station-ID (optioneel)",
+            "de": "Stations-ID (optional)"
           },
           "hint": {
             "en": "Only needed for devices added with the local-only option: those have no station linked, so cloud data (grid, load, smart port, energy totals, battery mode) stays empty. Enter the station ID from the S-Miles portal URL to enable it, together with the cloud login on the app settings page.",
-            "nl": "Alleen nodig voor apparaten die lokaal-only zijn toegevoegd: die hebben geen station gekoppeld, waardoor cloudgegevens (net, verbruik, smartport, energietotalen, batterijmodus) leeg blijven. Vul hier het station-ID uit de S-Miles portal-URL in, samen met de cloud-login op de app-instellingenpagina."
+            "nl": "Alleen nodig voor apparaten die lokaal-only zijn toegevoegd: die hebben geen station gekoppeld, waardoor cloudgegevens (net, verbruik, smartport, energietotalen, batterijmodus) leeg blijven. Vul hier het station-ID uit de S-Miles portal-URL in, samen met de cloud-login op de app-instellingenpagina.",
+            "de": "Nur nötig für Geräte, die mit der Option \"nur lokal\" hinzugefügt wurden: Sie haben keine verknüpfte Station, daher bleiben Cloud-Daten (Netz, Verbrauch, Smart Port, Energiesummen, Batteriemodus) leer. Trage die Stations-ID aus der URL des S-Miles-Portals ein, um sie zu aktivieren, zusammen mit dem Cloud-Login auf der Seite mit den App-Einstellungen."
           },
           "value": ""
         },
@@ -287,11 +314,13 @@
           "type": "number",
           "label": {
             "en": "Poll interval (seconds)",
-            "nl": "Poll-interval (seconden)"
+            "nl": "Poll-interval (seconden)",
+            "de": "Abfrageintervall (Sekunden)"
           },
           "hint": {
             "en": "How often to fetch data (30–300 seconds). Default: 60.",
-            "nl": "Hoe vaak data ophalen (30–300 seconden). Standaard: 60."
+            "nl": "Hoe vaak data ophalen (30–300 seconden). Standaard: 60.",
+            "de": "Wie oft Daten abgerufen werden (30–300 Sekunden). Standard: 60."
           },
           "value": 60,
           "min": 30,
@@ -300,8 +329,9 @@
         {
           "type": "group",
           "label": {
-            "en": "Price plan (Frank Energie)",
-            "nl": "Prijsplan (Frank Energie)"
+            "en": "Price plan (day-ahead prices)",
+            "nl": "Prijsplan (dagprijzen)",
+            "de": "Preisplan (Day-Ahead-Preise)"
           },
           "children": [
             {
@@ -309,12 +339,193 @@
               "type": "checkbox",
               "label": {
                 "en": "Follow day-ahead prices",
-                "nl": "Dagprijzen volgen"
+                "nl": "Dagprijzen volgen",
+                "de": "Day-Ahead-Preisen folgen"
               },
               "value": true,
               "hint": {
-                "en": "Fetches Frank Energie's public all-in prices and works out the day plan. No account or key needed, and usable with any supplier: the market price is the same for all. When Frank cannot be reached, dynamisch-tarief.nl stands in automatically.",
-                "nl": "Haalt de publieke all-in prijzen van Frank Energie op en rekent het dagplan uit. Geen account of sleutel nodig, en bruikbaar bij elke leverancier: de marktprijs is voor iedereen gelijk. Is Frank niet bereikbaar, dan springt dynamisch-tarief.nl automatisch in."
+                "en": "Fetches the day-ahead prices for your country and works out the day plan. No account or key needed. In the Netherlands these are Frank Energie's public all-in prices, usable with any supplier because the market price is the same for all; when Frank cannot be reached, dynamisch-tarief.nl stands in automatically. Elsewhere it is the market price from Energy-Charts plus the surcharge and VAT you enter below.",
+                "nl": "Haalt de dagprijzen voor jouw land op en rekent het dagplan uit. Geen account of sleutel nodig. In Nederland zijn dat de publieke all-in prijzen van Frank Energie, bruikbaar bij elke leverancier omdat de marktprijs voor iedereen gelijk is; is Frank niet bereikbaar, dan springt dynamisch-tarief.nl automatisch in. Elders is het de marktprijs van Energy-Charts plus de opslag en btw die je hieronder invult.",
+                "de": "Ruft die Day-Ahead-Preise für dein Land ab und berechnet den Tagesplan. Kein Konto oder Schlüssel nötig. In den Niederlanden sind das die öffentlichen All-in-Preise von Frank Energie, nutzbar bei jedem Anbieter, weil der Marktpreis für alle gleich ist; ist Frank nicht erreichbar, springt automatisch dynamisch-tarief.nl ein. Anderswo ist es der Marktpreis von Energy-Charts plus Aufschlag und Mehrwertsteuer, die du unten einträgst."
+              }
+            },
+            {
+              "id": "price_zone",
+              "type": "dropdown",
+              "label": {
+                "en": "Country / price zone",
+                "nl": "Land / prijszone",
+                "de": "Land / Preiszone"
+              },
+              "value": "auto",
+              "values": [
+                {
+                  "id": "auto",
+                  "label": {
+                    "en": "Automatic (from Homey's time zone)",
+                    "nl": "Automatisch (uit de tijdzone van Homey)",
+                    "de": "Automatisch (aus Homeys Zeitzone)"
+                  }
+                },
+                {
+                  "id": "NL",
+                  "label": {
+                    "en": "Netherlands (Frank Energie)",
+                    "nl": "Nederland (Frank Energie)",
+                    "de": "Niederlande (Frank Energie)"
+                  }
+                },
+                {
+                  "id": "DE-LU",
+                  "label": {
+                    "en": "Germany / Luxembourg",
+                    "nl": "Duitsland / Luxemburg",
+                    "de": "Deutschland / Luxemburg"
+                  }
+                },
+                {
+                  "id": "AT",
+                  "label": {
+                    "en": "Austria",
+                    "nl": "Oostenrijk",
+                    "de": "Österreich"
+                  }
+                },
+                {
+                  "id": "BE",
+                  "label": {
+                    "en": "Belgium",
+                    "nl": "België",
+                    "de": "Belgien"
+                  }
+                },
+                {
+                  "id": "FR",
+                  "label": {
+                    "en": "France",
+                    "nl": "Frankrijk",
+                    "de": "Frankreich"
+                  }
+                },
+                {
+                  "id": "CH",
+                  "label": {
+                    "en": "Switzerland",
+                    "nl": "Zwitserland",
+                    "de": "Schweiz"
+                  }
+                },
+                {
+                  "id": "PL",
+                  "label": {
+                    "en": "Poland",
+                    "nl": "Polen",
+                    "de": "Polen"
+                  }
+                },
+                {
+                  "id": "CZ",
+                  "label": {
+                    "en": "Czechia",
+                    "nl": "Tsjechië",
+                    "de": "Tschechien"
+                  }
+                },
+                {
+                  "id": "HU",
+                  "label": {
+                    "en": "Hungary",
+                    "nl": "Hongarije",
+                    "de": "Ungarn"
+                  }
+                },
+                {
+                  "id": "SI",
+                  "label": {
+                    "en": "Slovenia",
+                    "nl": "Slovenië",
+                    "de": "Slowenien"
+                  }
+                },
+                {
+                  "id": "DK1",
+                  "label": {
+                    "en": "Denmark West (DK1)",
+                    "nl": "Denemarken West (DK1)",
+                    "de": "Dänemark West (DK1)"
+                  }
+                },
+                {
+                  "id": "DK2",
+                  "label": {
+                    "en": "Denmark East (DK2)",
+                    "nl": "Denemarken Oost (DK2)",
+                    "de": "Dänemark Ost (DK2)"
+                  }
+                },
+                {
+                  "id": "NO2",
+                  "label": {
+                    "en": "Norway South (NO2)",
+                    "nl": "Noorwegen Zuid (NO2)",
+                    "de": "Norwegen Süd (NO2)"
+                  }
+                },
+                {
+                  "id": "SE4",
+                  "label": {
+                    "en": "Sweden South (SE4)",
+                    "nl": "Zweden Zuid (SE4)",
+                    "de": "Schweden Süd (SE4)"
+                  }
+                },
+                {
+                  "id": "IT-North",
+                  "label": {
+                    "en": "Italy North",
+                    "nl": "Italië Noord",
+                    "de": "Italien Nord"
+                  }
+                }
+              ],
+              "hint": {
+                "en": "Which day-ahead prices the plan uses. Automatic takes the country from Homey's time zone: a Dutch Homey gets Frank Energie, a German one the German market price, and so on. Countries with several price zones (Denmark, Norway, Sweden, Italy) cannot be told apart that way - pick the zone yourself, or the price tile asks you to.",
+                "nl": "Welke dagprijzen het plan gebruikt. Automatisch haalt het land uit de tijdzone van Homey: een Nederlandse Homey krijgt Frank Energie, een Duitse de Duitse marktprijs, enzovoort. Landen met meerdere prijszones (Denemarken, Noorwegen, Zweden, Italië) zijn zo niet te onderscheiden - kies de zone dan zelf, anders vraagt de prijstegel erom.",
+                "de": "Welche Day-Ahead-Preise der Plan verwendet. Automatisch nimmt das Land aus Homeys Zeitzone: Ein niederländischer Homey bekommt Frank Energie, ein deutscher den deutschen Marktpreis und so weiter. Länder mit mehreren Preiszonen (Dänemark, Norwegen, Schweden, Italien) lassen sich so nicht unterscheiden - wähle die Zone dann selbst, sonst bittet die Preiskachel darum."
+              }
+            },
+            {
+              "id": "price_surcharge",
+              "type": "number",
+              "label": {
+                "en": "Surcharge on the market price (ct/kWh, not for NL)",
+                "nl": "Opslag op de marktprijs (ct/kWh, niet voor NL)",
+                "de": "Aufschlag auf den Marktpreis (ct/kWh, nicht für NL)"
+              },
+              "value": 0,
+              "min": 0,
+              "max": 100,
+              "hint": {
+                "en": "Outside the Netherlands the app only gets the bare market price. Enter what your contract adds per kWh before VAT: energy taxes, grid fees and the supplier markup. It is added to every quarter, and the plan also counts it as lost on every exported kWh, because feeding in does not earn taxes and fees back. Not used with Frank Energie, whose prices already include everything.",
+                "nl": "Buiten Nederland krijgt de app alleen de kale marktprijs. Vul in wat je contract daar per kWh bovenop zet vóór btw: energiebelasting, netkosten en de opslag van de leverancier. Dit komt bij elk kwartier, en het plan rekent het ook als verlies op elke teruggeleverde kWh, want terugleveren verdient belasting en netkosten niet terug. Niet gebruikt bij Frank Energie, daar zit alles al in de prijs.",
+                "de": "Außerhalb der Niederlande bekommt die App nur den reinen Marktpreis. Trage ein, was dein Vertrag pro kWh vor Mehrwertsteuer aufschlägt: Stromsteuer, Abgaben, Netzentgelte und den Aufschlag des Anbieters. Das kommt auf jede Viertelstunde, und der Plan rechnet es auch bei jeder eingespeisten kWh als Verlust, weil Einspeisen Steuern und Entgelte nicht zurückbringt. Bei Frank Energie nicht verwendet, dort ist alles schon im Preis enthalten."
+              }
+            },
+            {
+              "id": "price_vat",
+              "type": "number",
+              "label": {
+                "en": "VAT (%, not for NL)",
+                "nl": "Btw (%, niet voor NL)",
+                "de": "Mehrwertsteuer (%, nicht für NL)"
+              },
+              "value": 0,
+              "min": 0,
+              "max": 30,
+              "hint": {
+                "en": "VAT on electricity in your country, applied to the market price plus the surcharge above. Not used with Frank Energie.",
+                "nl": "De btw op stroom in jouw land, gerekend over de marktprijs plus de opslag hierboven. Niet gebruikt bij Frank Energie.",
+                "de": "Die Mehrwertsteuer auf Strom in deinem Land, gerechnet auf den Marktpreis plus den Aufschlag oben. Bei Frank Energie nicht verwendet."
               }
             },
             {
@@ -322,14 +533,16 @@
               "type": "number",
               "label": {
                 "en": "Battery wear (ct/kWh)",
-                "nl": "Accuslijtage (ct/kWh)"
+                "nl": "Accuslijtage (ct/kWh)",
+                "de": "Batterieverschleiß (ct/kWh)"
               },
               "value": 6,
               "min": 0,
               "max": 50,
               "hint": {
                 "en": "System cost divided by the warranted throughput. Every stored kWh has to earn this back first.",
-                "nl": "Systeemkosten gedeeld door de gegarandeerde doorzet. Elke opgeslagen kWh moet dit eerst terugverdienen."
+                "nl": "Systeemkosten gedeeld door de gegarandeerde doorzet. Elke opgeslagen kWh moet dit eerst terugverdienen.",
+                "de": "Systemkosten geteilt durch den garantierten Energiedurchsatz. Jede gespeicherte kWh muss das zuerst wieder einspielen."
               }
             },
             {
@@ -337,14 +550,16 @@
               "type": "number",
               "label": {
                 "en": "Round trip efficiency (%)",
-                "nl": "Retourrendement (%)"
+                "nl": "Retourrendement (%)",
+                "de": "Wirkungsgrad hin und zurück (%)"
               },
               "value": 90,
               "min": 50,
               "max": 100,
               "hint": {
                 "en": "What comes back out of every kWh you put in.",
-                "nl": "Wat er van elke ingeladen kWh weer uit komt."
+                "nl": "Wat er van elke ingeladen kWh weer uit komt.",
+                "de": "Was von jeder eingeladenen kWh wieder herauskommt."
               }
             },
             {
@@ -352,14 +567,16 @@
               "type": "number",
               "label": {
                 "en": "Required margin (ct/kWh)",
-                "nl": "Gevraagde marge (ct/kWh)"
+                "nl": "Gevraagde marge (ct/kWh)",
+                "de": "Geforderte Marge (ct/kWh)"
               },
               "value": 5,
               "min": 0,
               "max": 50,
               "hint": {
                 "en": "What has to be left over on top of break-even before the battery moves at all.",
-                "nl": "Wat er bovenop de break-even moet overblijven voordat de accu uberhaupt in beweging komt."
+                "nl": "Wat er bovenop de break-even moet overblijven voordat de accu uberhaupt in beweging komt.",
+                "de": "Was über die Gewinnschwelle hinaus übrig bleiben muss, bevor sich die Batterie überhaupt bewegt."
               }
             },
             {
@@ -367,14 +584,16 @@
               "type": "number",
               "label": {
                 "en": "Buy band (ct/kWh)",
-                "nl": "Koopband (ct/kWh)"
+                "nl": "Koopband (ct/kWh)",
+                "de": "Kaufband (ct/kWh)"
               },
               "value": 2,
               "min": 0,
               "max": 50,
               "hint": {
                 "en": "How far above the day's cheapest hour still counts as a buy moment. Widen it when the battery does not fill up in time.",
-                "nl": "Hoever boven het goedkoopste uur van de dag nog als koopmoment telt. Verruim dit als de accu niet op tijd vol komt."
+                "nl": "Hoever boven het goedkoopste uur van de dag nog als koopmoment telt. Verruim dit als de accu niet op tijd vol komt.",
+                "de": "Wie weit über der günstigsten Stunde des Tages noch als Kaufmoment zählt. Erweitere es, wenn die Batterie nicht rechtzeitig voll wird."
               }
             },
             {
@@ -382,14 +601,16 @@
               "type": "number",
               "label": {
                 "en": "Sell band (ct/kWh)",
-                "nl": "Verkoopband (ct/kWh)"
+                "nl": "Verkoopband (ct/kWh)",
+                "de": "Verkaufsband (ct/kWh)"
               },
               "value": 2,
               "min": 0,
               "max": 50,
               "hint": {
                 "en": "How far below the highest price still to come still counts as a sell moment.",
-                "nl": "Hoever onder de hoogste prijs die nog komt nog als verkoopmoment telt."
+                "nl": "Hoever onder de hoogste prijs die nog komt nog als verkoopmoment telt.",
+                "de": "Wie weit unter dem höchsten noch kommenden Preis noch als Verkaufsmoment zählt."
               }
             },
             {
@@ -397,14 +618,16 @@
               "type": "number",
               "label": {
                 "en": "Usable battery capacity (kWh)",
-                "nl": "Bruikbare accucapaciteit (kWh)"
+                "nl": "Bruikbare accucapaciteit (kWh)",
+                "de": "Nutzbare Batteriekapazität (kWh)"
               },
               "value": 31.2,
               "min": 1,
               "max": 200,
               "hint": {
                 "en": "The energy across the full 0-100% span. Used to work out how many of the dearest hours the battery can still cover.",
-                "nl": "De energie over het volle bereik van 0 tot 100%. Hiermee wordt bepaald hoeveel van de duurste uren de accu nog kan dekken."
+                "nl": "De energie over het volle bereik van 0 tot 100%. Hiermee wordt bepaald hoeveel van de duurste uren de accu nog kan dekken.",
+                "de": "Die Energie über den vollen Bereich von 0 bis 100 %. Damit wird berechnet, wie viele der teuersten Stunden die Batterie noch abdecken kann."
               }
             },
             {
@@ -412,14 +635,16 @@
               "type": "number",
               "label": {
                 "en": "Planning discharge floor (%)",
-                "nl": "Ontlaadgrens voor de planning (%)"
+                "nl": "Ontlaadgrens voor de planning (%)",
+                "de": "Entladegrenze für die Planung (%)"
               },
               "value": 30,
               "min": 0,
               "max": 100,
               "hint": {
                 "en": "How deep the battery is allowed to go when it does deliver. Used only to work out how much energy there is to spend, so it must be the level you release it to — not the reserve it is sitting at right now.",
-                "nl": "Hoe diep de accu mag gaan wanneer hij wél levert. Wordt alleen gebruikt om uit te rekenen hoeveel energie er te besteden is, dus dit moet het niveau zijn waar je hem naartoe laat gaan — niet de reserve waar hij nu op staat."
+                "nl": "Hoe diep de accu mag gaan wanneer hij wél levert. Wordt alleen gebruikt om uit te rekenen hoeveel energie er te besteden is, dus dit moet het niveau zijn waar je hem naartoe laat gaan — niet de reserve waar hij nu op staat.",
+                "de": "Wie tief die Batterie gehen darf, wenn sie liefert. Wird nur verwendet, um zu berechnen, wie viel Energie zur Verfügung steht, muss also das Niveau sein, bis zu dem du sie freigibst — nicht die Reserve, auf der sie gerade steht."
               }
             },
             {
@@ -427,14 +652,16 @@
               "type": "number",
               "label": {
                 "en": "Assumed house load (kW, 0 = measure)",
-                "nl": "Aangenomen huisverbruik (kW, 0 = meten)"
+                "nl": "Aangenomen huisverbruik (kW, 0 = meten)",
+                "de": "Angenommener Hausverbrauch (kW, 0 = messen)"
               },
               "value": 0,
               "min": 0,
               "max": 25,
               "hint": {
                 "en": "How much the battery has to supply per hour during the dear hours. It decides how many of those hours it can still cover, and how far to charge in the dip. At 0 the app uses the house load measured at that moment - but that is a snapshot used to plan a whole evening: at three in the afternoon it is your fridge, not your hob. And if anything else shares the meter, such as home batteries your supplier trades, that reading swings wildly in both directions. Enter your real draw during the expensive hours instead, and revise it when the season changes.",
-                "nl": "Hoeveel de accu per uur moet leveren tijdens de dure uren. Daarmee wordt bepaald hoeveel van die uren hij nog kan dekken, en hoe ver hij in het dal moet laden. Op 0 gebruikt de app het belastingsvermogen van dat moment - maar dat is een momentopname waarmee een hele avond wordt gepland: om drie uur 's middags meet hij je koelkast, niet je kookplaat. Zit er bovendien iets anders op dezelfde meter, zoals thuisaccu's die je leverancier verhandelt, dan slaat die meting alle kanten op. Vul dan je werkelijke verbruik tijdens de dure uren in, en pas het aan als het seizoen verandert."
+                "nl": "Hoeveel de accu per uur moet leveren tijdens de dure uren. Daarmee wordt bepaald hoeveel van die uren hij nog kan dekken, en hoe ver hij in het dal moet laden. Op 0 gebruikt de app het belastingsvermogen van dat moment - maar dat is een momentopname waarmee een hele avond wordt gepland: om drie uur 's middags meet hij je koelkast, niet je kookplaat. Zit er bovendien iets anders op dezelfde meter, zoals thuisaccu's die je leverancier verhandelt, dan slaat die meting alle kanten op. Vul dan je werkelijke verbruik tijdens de dure uren in, en pas het aan als het seizoen verandert.",
+                "de": "Wie viel die Batterie in den teuren Stunden pro Stunde liefern muss. Das entscheidet, wie viele dieser Stunden sie noch abdecken kann und wie weit sie im Preistal laden soll. Bei 0 nimmt die App den in dem Moment gemessenen Hausverbrauch - aber das ist eine Momentaufnahme, mit der ein ganzer Abend geplant wird: Um drei Uhr nachmittags ist es dein Kühlschrank, nicht dein Herd. Und hängt noch etwas anderes am Zähler, etwa Heimspeicher, mit denen dein Anbieter handelt, schwankt dieser Wert stark in beide Richtungen. Trage stattdessen deinen tatsächlichen Verbrauch in den teuren Stunden ein und passe ihn an, wenn die Jahreszeit wechselt."
               }
             },
             {
@@ -442,14 +669,16 @@
               "type": "number",
               "label": {
                 "en": "Selling power (kW, 0 = do not plan to sell)",
-                "nl": "Verkoopvermogen (kW, 0 = niet inplannen)"
+                "nl": "Verkoopvermogen (kW, 0 = niet inplannen)",
+                "de": "Verkaufsleistung (kW, 0 = keinen Verkauf einplanen)"
               },
               "value": 5,
               "min": 0,
               "max": 16,
               "hint": {
                 "en": "What the battery delivers while it sells: the discharge limit your selling Flow uses, times 16 kW (32% is about 5.1 kW). The charge target counts it for every quarter hour where exporting clears the floor, so on a day with an expensive evening the battery is filled for selling too, not just for the house. At 0 the target only covers the house, as before.",
-                "nl": "Wat de accu levert tijdens het verkopen: de ontlaadgrens die je verkoopflow gebruikt, maal 16 kW (32% is ongeveer 5,1 kW). Het laaddoel telt dit mee voor elk kwartier waarin terugleveren boven de drempel uitkomt, zodat de accu op een dag met een dure avond ook voor de verkoop wordt gevuld, niet alleen voor het huis. Op 0 dekt het doel alleen het huis, zoals voorheen."
+                "nl": "Wat de accu levert tijdens het verkopen: de ontlaadgrens die je verkoopflow gebruikt, maal 16 kW (32% is ongeveer 5,1 kW). Het laaddoel telt dit mee voor elk kwartier waarin terugleveren boven de drempel uitkomt, zodat de accu op een dag met een dure avond ook voor de verkoop wordt gevuld, niet alleen voor het huis. Op 0 dekt het doel alleen het huis, zoals voorheen.",
+                "de": "Was die Batterie beim Verkaufen liefert: die Entladegrenze, die dein Verkaufs-Flow verwendet, mal 16 kW (32 % sind etwa 5,1 kW). Das Ladeziel zählt das für jede Viertelstunde mit, in der sich Einspeisen lohnt, sodass die Batterie an einem Tag mit teurem Abend auch für den Verkauf gefüllt wird, nicht nur für das Haus. Bei 0 deckt das Ziel nur das Haus, wie zuvor."
               }
             },
             {
@@ -457,14 +686,16 @@
               "type": "number",
               "label": {
                 "en": "Export earns less than self-use (ct/kWh)",
-                "nl": "Terugleveren levert minder op dan zelf gebruiken (ct/kWh)"
+                "nl": "Terugleveren levert minder op dan zelf gebruiken (ct/kWh)",
+                "de": "Einspeisen bringt weniger als Eigenverbrauch (ct/kWh)"
               },
               "value": 5.3,
               "min": 0,
               "max": 60,
               "hint": {
-                "en": "Read it off your invoice: the supply fee per imported kWh plus the feed-in fee per exported kWh. Where energy tax is levied on the year's net import, that is the whole difference, because an exported kWh removes a taxed one just as a self-consumed one does. Once net metering ends the gap becomes the tax as well, and grows with the price.",
-                "nl": "Lees het van je factuur: de inkoopvergoeding per ingekochte kWh plus de terugleverkosten per teruggeleverde kWh. Zolang de energiebelasting over het netto jaarverbruik gaat, is dat het hele verschil, want een teruggeleverde kWh haalt net zo goed een belaste kWh van de rekening als een zelf verbruikte. Zodra het salderen stopt komt de belasting er bovenop en groeit het gat mee met de prijs."
+                "en": "Read it off your invoice: the supply fee per imported kWh plus the feed-in fee per exported kWh. Where energy tax is levied on the year's net import, that is the whole difference, because an exported kWh removes a taxed one just as a self-consumed one does. Once net metering ends the gap becomes the tax as well, and grows with the price. Outside the Netherlands the surcharge above is counted on top of this automatically, so enter only what exporting costs you beyond that (often 0).",
+                "nl": "Lees het van je factuur: de inkoopvergoeding per ingekochte kWh plus de terugleverkosten per teruggeleverde kWh. Zolang de energiebelasting over het netto jaarverbruik gaat, is dat het hele verschil, want een teruggeleverde kWh haalt net zo goed een belaste kWh van de rekening als een zelf verbruikte. Zodra het salderen stopt komt de belasting er bovenop en groeit het gat mee met de prijs. Buiten Nederland telt de opslag hierboven hier automatisch bij op; vul dan alleen in wat terugleveren je daarbovenop kost (vaak 0).",
+                "de": "Lies es von deiner Rechnung ab: das Bezugsentgelt pro bezogener kWh plus das Einspeiseentgelt pro eingespeister kWh. Wo die Energiesteuer auf den Netto-Jahresbezug erhoben wird, ist das der ganze Unterschied, weil eine eingespeiste kWh genauso eine besteuerte kWh von der Rechnung nimmt wie eine selbst verbrauchte. Endet die Saldierung, kommt die Steuer dazu, und die Lücke wächst mit dem Preis. Außerhalb der Niederlande wird der Aufschlag oben hier automatisch dazugerechnet; trage dann nur ein, was dich das Einspeisen darüber hinaus kostet (oft 0)."
               }
             }
           ]
@@ -473,7 +704,8 @@
           "type": "group",
           "label": {
             "en": "System info",
-            "nl": "Systeeminfo"
+            "nl": "Systeeminfo",
+            "de": "Systeminfo"
           },
           "children": [
             {
@@ -481,7 +713,8 @@
               "type": "label",
               "label": {
                 "en": "Model",
-                "nl": "Model"
+                "nl": "Model",
+                "de": "Modell"
               },
               "value": "-"
             },
@@ -490,7 +723,8 @@
               "type": "label",
               "label": {
                 "en": "Serial number",
-                "nl": "Serienummer"
+                "nl": "Serienummer",
+                "de": "Seriennummer"
               },
               "value": "-"
             },
@@ -499,7 +733,8 @@
               "type": "label",
               "label": {
                 "en": "Firmware version",
-                "nl": "Firmwareversie"
+                "nl": "Firmwareversie",
+                "de": "Firmware-Version"
               },
               "value": "-"
             },
@@ -508,7 +743,8 @@
               "type": "label",
               "label": {
                 "en": "Hardware version",
-                "nl": "Hardwareversie"
+                "nl": "Hardwareversie",
+                "de": "Hardware-Version"
               },
               "value": "-"
             },
@@ -517,7 +753,8 @@
               "type": "textarea",
               "label": {
                 "en": "Connected devices",
-                "nl": "Gekoppelde apparaten"
+                "nl": "Gekoppelde apparaten",
+                "de": "Verbundene Geräte"
               },
               "value": "-"
             }
@@ -531,7 +768,8 @@
       "type": "number",
       "title": {
         "en": "Grid Power",
-        "nl": "Netvermogen"
+        "nl": "Netvermogen",
+        "de": "Netzleistung"
       },
       "units": "W",
       "insights": true,
@@ -545,7 +783,8 @@
       "type": "number",
       "title": {
         "en": "Load Power",
-        "nl": "Belastingsvermogen"
+        "nl": "Belastingsvermogen",
+        "de": "Verbrauchsleistung"
       },
       "units": "W",
       "insights": true,
@@ -559,7 +798,8 @@
       "type": "number",
       "title": {
         "en": "Smart Port Power",
-        "nl": "Smartportvermogen"
+        "nl": "Smartportvermogen",
+        "de": "Smart-Port-Leistung"
       },
       "units": "W",
       "insights": true,
@@ -573,7 +813,8 @@
       "type": "string",
       "title": {
         "en": "Battery Flow",
-        "nl": "Accustroom"
+        "nl": "Accustroom",
+        "de": "Batteriefluss"
       },
       "getable": true,
       "setable": false,
@@ -584,77 +825,88 @@
       "type": "enum",
       "title": {
         "en": "Battery Mode",
-        "nl": "Batterijmodus"
+        "nl": "Batterijmodus",
+        "de": "Batteriemodus"
       },
       "values": [
         {
           "id": "0",
           "title": {
             "en": "— choose a mode —",
-            "nl": "— kies een modus —"
+            "nl": "— kies een modus —",
+            "de": "— Modus wählen —"
           }
         },
         {
           "id": "1",
           "title": {
             "en": "Self-Consumption",
-            "nl": "Eigen verbruik"
+            "nl": "Eigen verbruik",
+            "de": "Eigenverbrauch"
           }
         },
         {
           "id": "2",
           "title": {
             "en": "Economy",
-            "nl": "Economie"
+            "nl": "Economie",
+            "de": "Sparmodus"
           }
         },
         {
           "id": "3",
           "title": {
             "en": "Backup",
-            "nl": "Noodstroom"
+            "nl": "Noodstroom",
+            "de": "Backup"
           }
         },
         {
           "id": "4",
           "title": {
             "en": "Off-Grid",
-            "nl": "Off-Grid"
+            "nl": "Off-Grid",
+            "de": "Inselbetrieb"
           }
         },
         {
           "id": "5",
           "title": {
             "en": "Force Charge",
-            "nl": "Force Charge (geforceerd laden)"
+            "nl": "Force Charge (geforceerd laden)",
+            "de": "Zwangsladung"
           }
         },
         {
           "id": "6",
           "title": {
             "en": "Force Discharge",
-            "nl": "Force Discharge (geforceerd ontladen)"
+            "nl": "Force Discharge (geforceerd ontladen)",
+            "de": "Zwangsentladung"
           }
         },
         {
           "id": "7",
           "title": {
             "en": "Peak Shaving",
-            "nl": "Pieksturing"
+            "nl": "Pieksturing",
+            "de": "Lastspitzenkappung"
           }
         },
         {
           "id": "8",
           "title": {
             "en": "Time of Use",
-            "nl": "Tijdafhankelijk"
+            "nl": "Tijdafhankelijk",
+            "de": "Zeitsteuerung"
           }
         },
         {
           "id": "9",
           "title": {
             "en": "AI Mode",
-            "nl": "AI-modus"
+            "nl": "AI-modus",
+            "de": "KI-Modus"
           }
         }
       ],
@@ -668,7 +920,8 @@
       "type": "number",
       "title": {
         "en": "Max SOC % (per mode, cloud - replaced by the charge ceiling)",
-        "nl": "Max laadniveau % (per modus, cloud - vervangen door het laadplafond)"
+        "nl": "Max laadniveau % (per modus, cloud - vervangen door het laadplafond)",
+        "de": "Max. SOC % (je Modus, Cloud - ersetzt durch die Ladeobergrenze)"
       },
       "min": 0,
       "max": 100,
@@ -684,7 +937,8 @@
       "type": "number",
       "title": {
         "en": "Max Charge Power % (Force Charge)",
-        "nl": "Max laadvermogen % (Force Charge)"
+        "nl": "Max laadvermogen % (Force Charge)",
+        "de": "Max. Ladeleistung % (Zwangsladung)"
       },
       "min": 0,
       "max": 100,
@@ -700,7 +954,8 @@
       "type": "number",
       "title": {
         "en": "Max Discharge Power % (Force Discharge)",
-        "nl": "Max ontlaadvermogen % (Force Discharge)"
+        "nl": "Max ontlaadvermogen % (Force Discharge)",
+        "de": "Max. Entladeleistung % (Zwangsentladung)"
       },
       "min": 0,
       "max": 100,
@@ -716,7 +971,8 @@
       "type": "number",
       "title": {
         "en": "Cell spread",
-        "nl": "Celspreiding"
+        "nl": "Celspreiding",
+        "de": "Zellspreizung"
       },
       "units": "mV",
       "insights": true,
@@ -730,7 +986,8 @@
       "type": "number",
       "title": {
         "en": "Highest cell temperature",
-        "nl": "Hoogste celtemperatuur"
+        "nl": "Hoogste celtemperatuur",
+        "de": "Höchste Zelltemperatur"
       },
       "units": "°C",
       "insights": true,
@@ -744,7 +1001,8 @@
       "type": "number",
       "title": {
         "en": "Max charge power",
-        "nl": "Max laadvermogen"
+        "nl": "Max laadvermogen",
+        "de": "Max. Ladeleistung"
       },
       "units": "%",
       "insights": false,
@@ -758,7 +1016,8 @@
       "type": "number",
       "title": {
         "en": "Max discharge power",
-        "nl": "Max ontlaadvermogen"
+        "nl": "Max ontlaadvermogen",
+        "de": "Max. Entladeleistung"
       },
       "units": "%",
       "insights": false,
@@ -772,7 +1031,8 @@
       "type": "number",
       "title": {
         "en": "Grid Power Limit (peak shaving)",
-        "nl": "Netvermogensgrens (pieksturing)"
+        "nl": "Netvermogensgrens (pieksturing)",
+        "de": "Netzleistungsgrenze (Lastspitzenkappung)"
       },
       "units": "W",
       "min": 0,
@@ -789,7 +1049,8 @@
       "type": "number",
       "title": {
         "en": "Daily Energy",
-        "nl": "Dagelijkse energie"
+        "nl": "Dagelijkse energie",
+        "de": "Energie heute"
       },
       "units": "kWh",
       "insights": true,
@@ -803,7 +1064,8 @@
       "type": "number",
       "title": {
         "en": "Monthly Energy",
-        "nl": "Maandelijkse energie"
+        "nl": "Maandelijkse energie",
+        "de": "Energie diesen Monat"
       },
       "units": "kWh",
       "insights": true,
@@ -817,7 +1079,8 @@
       "type": "number",
       "title": {
         "en": "Yearly Energy",
-        "nl": "Jaarlijkse energie"
+        "nl": "Jaarlijkse energie",
+        "de": "Energie dieses Jahr"
       },
       "units": "kWh",
       "insights": true,
@@ -831,7 +1094,8 @@
       "type": "number",
       "title": {
         "en": "CO₂ Reduction",
-        "nl": "CO₂-besparing"
+        "nl": "CO₂-besparing",
+        "de": "CO₂-Einsparung"
       },
       "units": "kg",
       "insights": true,
@@ -845,7 +1109,8 @@
       "type": "number",
       "title": {
         "en": "Total Energy",
-        "nl": "Totale energie"
+        "nl": "Totale energie",
+        "de": "Energie gesamt"
       },
       "units": "kWh",
       "insights": true,
@@ -859,7 +1124,8 @@
       "type": "number",
       "title": {
         "en": "Savings Today",
-        "nl": "Besparing vandaag"
+        "nl": "Besparing vandaag",
+        "de": "Ersparnis heute"
       },
       "insights": true,
       "decimals": 2,
@@ -872,7 +1138,8 @@
       "type": "number",
       "title": {
         "en": "Savings Total",
-        "nl": "Besparing totaal"
+        "nl": "Besparing totaal",
+        "de": "Ersparnis gesamt"
       },
       "insights": true,
       "decimals": 2,
@@ -885,49 +1152,56 @@
       "type": "enum",
       "title": {
         "en": "Connection Source",
-        "nl": "Verbindingsbron"
+        "nl": "Verbindingsbron",
+        "de": "Verbindungsquelle"
       },
       "values": [
         {
           "id": "modbus_cloud",
           "title": {
             "en": "Modbus + cloud",
-            "nl": "Modbus + cloud"
+            "nl": "Modbus + cloud",
+            "de": "Modbus + Cloud"
           }
         },
         {
           "id": "modbus",
           "title": {
             "en": "Modbus",
-            "nl": "Modbus"
+            "nl": "Modbus",
+            "de": "Modbus"
           }
         },
         {
           "id": "native",
           "title": {
             "en": "Local (10081)",
-            "nl": "Lokaal (10081)"
+            "nl": "Lokaal (10081)",
+            "de": "Lokal (10081)"
           }
         },
         {
           "id": "local",
           "title": {
             "en": "Local (LAN)",
-            "nl": "Lokaal (LAN)"
+            "nl": "Lokaal (LAN)",
+            "de": "Lokal (LAN)"
           }
         },
         {
           "id": "cloud",
           "title": {
             "en": "Cloud",
-            "nl": "Cloud"
+            "nl": "Cloud",
+            "de": "Cloud"
           }
         },
         {
           "id": "unknown",
           "title": {
             "en": "Unknown",
-            "nl": "Onbekend"
+            "nl": "Onbekend",
+            "de": "Unbekannt"
           }
         }
       ],
@@ -941,7 +1215,8 @@
       "type": "number",
       "title": {
         "en": "Reserved SOC % - Self-Consumption (floor; also charges up to it)",
-        "nl": "Gereserveerde SOC % - Zelfconsumptie (ondergrens; laadt hier ook naartoe)"
+        "nl": "Gereserveerde SOC % - Zelfconsumptie (ondergrens; laadt hier ook naartoe)",
+        "de": "Reservierter SOC % - Eigenverbrauch (Untergrenze; lädt auch bis dorthin)"
       },
       "min": 0,
       "max": 100,
@@ -957,7 +1232,8 @@
       "type": "number",
       "title": {
         "en": "Reserve Self-Consumption",
-        "nl": "Reserve zelfconsumptie"
+        "nl": "Reserve zelfconsumptie",
+        "de": "Reserve Eigenverbrauch"
       },
       "units": "%",
       "insights": false,
@@ -971,7 +1247,8 @@
       "type": "number",
       "title": {
         "en": "Reserved SOC % - Force Charge (charge target)",
-        "nl": "Gereserveerde SOC % - Force Charge (laaddoel)"
+        "nl": "Gereserveerde SOC % - Force Charge (laaddoel)",
+        "de": "Reservierter SOC % - Zwangsladung (Ladeziel)"
       },
       "min": 0,
       "max": 100,
@@ -987,7 +1264,8 @@
       "type": "number",
       "title": {
         "en": "Reserve Force Charge",
-        "nl": "Reserve Force Charge"
+        "nl": "Reserve Force Charge",
+        "de": "Reserve Zwangsladung"
       },
       "units": "%",
       "insights": false,
@@ -1001,7 +1279,8 @@
       "type": "number",
       "title": {
         "en": "Reserved SOC % - Force Discharge (floor it sells down to)",
-        "nl": "Gereserveerde SOC % - Force Discharge (ondergrens bij verkopen)"
+        "nl": "Gereserveerde SOC % - Force Discharge (ondergrens bij verkopen)",
+        "de": "Reservierter SOC % - Zwangsentladung (Untergrenze beim Verkaufen)"
       },
       "min": 0,
       "max": 100,
@@ -1017,7 +1296,8 @@
       "type": "number",
       "title": {
         "en": "Reserve Force Discharge",
-        "nl": "Reserve Force Discharge"
+        "nl": "Reserve Force Discharge",
+        "de": "Reserve Zwangsentladung"
       },
       "units": "%",
       "insights": false,
@@ -1031,7 +1311,8 @@
       "type": "number",
       "title": {
         "en": "Reserved SOC % (replaced by the per-mode sliders)",
-        "nl": "Gereserveerde SOC % (vervangen door de schuiven per modus)"
+        "nl": "Gereserveerde SOC % (vervangen door de schuiven per modus)",
+        "de": "Reservierter SOC % (ersetzt durch die Regler je Modus)"
       },
       "min": 0,
       "max": 100,
@@ -1047,7 +1328,8 @@
       "type": "number",
       "title": {
         "en": "Reserved SOC (replaced by the per-mode tiles)",
-        "nl": "Gereserveerde SOC (vervangen door de tegels per modus)"
+        "nl": "Gereserveerde SOC (vervangen door de tegels per modus)",
+        "de": "Reservierter SOC (ersetzt durch die Kacheln je Modus)"
       },
       "units": "%",
       "insights": false,
@@ -1061,7 +1343,8 @@
       "type": "number",
       "title": {
         "en": "Battery power (retired)",
-        "nl": "Accuvermogen (vervallen)"
+        "nl": "Accuvermogen (vervallen)",
+        "de": "Batterieleistung (abgelöst)"
       },
       "units": "W",
       "insights": false,
@@ -1074,7 +1357,8 @@
       "type": "number",
       "title": {
         "en": "Max power (retired)",
-        "nl": "Max vermogen (vervallen)"
+        "nl": "Max vermogen (vervallen)",
+        "de": "Max. Leistung (abgelöst)"
       },
       "units": "W",
       "insights": false,
@@ -1087,7 +1371,8 @@
       "type": "number",
       "title": {
         "en": "Battery charged (retired)",
-        "nl": "Accu geladen (vervallen)"
+        "nl": "Accu geladen (vervallen)",
+        "de": "Batterie geladen (abgelöst)"
       },
       "units": "kWh",
       "insights": false,
@@ -1100,7 +1385,8 @@
       "type": "number",
       "title": {
         "en": "Battery discharged (retired)",
-        "nl": "Accu ontladen (vervallen)"
+        "nl": "Accu ontladen (vervallen)",
+        "de": "Batterie entladen (abgelöst)"
       },
       "units": "kWh",
       "insights": false,
@@ -1113,7 +1399,8 @@
       "type": "number",
       "title": {
         "en": "Max charge level % (all modes)",
-        "nl": "Max laadniveau % (alle modi)"
+        "nl": "Max laadniveau % (alle modi)",
+        "de": "Max. Ladestand % (alle Modi)"
       },
       "min": 0,
       "max": 100,
@@ -1129,7 +1416,8 @@
       "type": "number",
       "title": {
         "en": "Max charge level",
-        "nl": "Max laadniveau"
+        "nl": "Max laadniveau",
+        "de": "Max. Ladestand"
       },
       "units": "%",
       "insights": false,
@@ -1143,7 +1431,8 @@
       "type": "number",
       "title": {
         "en": "Min discharge level",
-        "nl": "Min ontlaadniveau"
+        "nl": "Min ontlaadniveau",
+        "de": "Min. Entladestand"
       },
       "units": "%",
       "insights": false,
@@ -1157,7 +1446,8 @@
       "type": "string",
       "title": {
         "en": "Mode & power",
-        "nl": "Modus & vermogen"
+        "nl": "Modus & vermogen",
+        "de": "Modus & Leistung"
       },
       "insights": false,
       "getable": true,
@@ -1169,7 +1459,8 @@
       "type": "number",
       "title": {
         "en": "Price now",
-        "nl": "Prijs nu"
+        "nl": "Prijs nu",
+        "de": "Preis jetzt"
       },
       "units": "ct/kWh",
       "insights": true,
@@ -1183,7 +1474,8 @@
       "type": "number",
       "title": {
         "en": "Lowest today",
-        "nl": "Laagste vandaag"
+        "nl": "Laagste vandaag",
+        "de": "Niedrigster heute"
       },
       "units": "ct/kWh",
       "insights": true,
@@ -1197,7 +1489,8 @@
       "type": "number",
       "title": {
         "en": "Highest today",
-        "nl": "Hoogste vandaag"
+        "nl": "Hoogste vandaag",
+        "de": "Höchster heute"
       },
       "units": "ct/kWh",
       "insights": true,
@@ -1211,7 +1504,8 @@
       "type": "string",
       "title": {
         "en": "Price plan",
-        "nl": "Prijsplan"
+        "nl": "Prijsplan",
+        "de": "Preisplan"
       },
       "getable": true,
       "setable": false,
@@ -1222,7 +1516,8 @@
       "type": "number",
       "title": {
         "en": "Feed-in price now",
-        "nl": "Terugleverprijs nu"
+        "nl": "Terugleverprijs nu",
+        "de": "Einspeisepreis jetzt"
       },
       "units": "ct/kWh",
       "insights": true,
@@ -1236,7 +1531,8 @@
       "type": "number",
       "title": {
         "en": "Charge target",
-        "nl": "Laaddoel"
+        "nl": "Laaddoel",
+        "de": "Ladeziel"
       },
       "units": "%",
       "insights": true,
@@ -1250,11 +1546,13 @@
       "type": "number",
       "title": {
         "en": "Battery mode (number)",
-        "nl": "Batterijmodus (nummer)"
+        "nl": "Batterijmodus (nummer)",
+        "de": "Batteriemodus (Zahl)"
       },
       "desc": {
         "en": "The battery mode as a number, so Insights can log it: 1 Self-Consumption, 2 Economy, 3 Backup, 4 Off-Grid, 5 Force Charge, 6 Force Discharge, 7 Peak Shaving, 8 Time of Use, 9 AI Mode.",
-        "nl": "De batterijmodus als getal, zodat Insights hem kan loggen: 1 Zelfconsumptie, 2 Economie, 3 Noodstroom, 4 Off-Grid, 5 Force Charge, 6 Force Discharge, 7 Pieksturing, 8 Tijdafhankelijk, 9 AI-modus."
+        "nl": "De batterijmodus als getal, zodat Insights hem kan loggen: 1 Zelfconsumptie, 2 Economie, 3 Noodstroom, 4 Off-Grid, 5 Force Charge, 6 Force Discharge, 7 Pieksturing, 8 Tijdafhankelijk, 9 AI-modus.",
+        "de": "Der Batteriemodus als Zahl, damit Insights ihn aufzeichnen kann: 1 Eigenverbrauch, 2 Sparmodus, 3 Backup, 4 Inselbetrieb, 5 Zwangsladung, 6 Zwangsentladung, 7 Lastspitzenkappung, 8 Zeitsteuerung, 9 KI-Modus."
       },
       "decimals": 0,
       "min": 0,
@@ -1269,16 +1567,19 @@
       "type": "boolean",
       "title": {
         "en": "Buy moment",
-        "nl": "Koopmoment"
+        "nl": "Koopmoment",
+        "de": "Kaufmoment"
       },
       "insights": true,
       "insightsTitleTrue": {
         "en": "Buy moment started",
-        "nl": "Koopmoment begonnen"
+        "nl": "Koopmoment begonnen",
+        "de": "Kaufmoment begonnen"
       },
       "insightsTitleFalse": {
         "en": "Buy moment ended",
-        "nl": "Koopmoment afgelopen"
+        "nl": "Koopmoment afgelopen",
+        "de": "Kaufmoment beendet"
       },
       "getable": true,
       "setable": false,
@@ -1289,16 +1590,19 @@
       "type": "boolean",
       "title": {
         "en": "Sell moment",
-        "nl": "Verkoopmoment"
+        "nl": "Verkoopmoment",
+        "de": "Verkaufsmoment"
       },
       "insights": true,
       "insightsTitleTrue": {
         "en": "Sell moment started",
-        "nl": "Verkoopmoment begonnen"
+        "nl": "Verkoopmoment begonnen",
+        "de": "Verkaufsmoment begonnen"
       },
       "insightsTitleFalse": {
         "en": "Sell moment ended",
-        "nl": "Verkoopmoment afgelopen"
+        "nl": "Verkoopmoment afgelopen",
+        "de": "Verkaufsmoment beendet"
       },
       "getable": true,
       "setable": false,
@@ -1309,11 +1613,13 @@
       "type": "number",
       "title": {
         "en": "Discharge floor",
-        "nl": "Ontlaadvloer"
+        "nl": "Ontlaadvloer",
+        "de": "Entladeschwelle"
       },
       "desc": {
         "en": "The price from which discharging pays: the day's lowest price (or tomorrow's, when lower) divided by the round-trip efficiency, plus wear and margin. Selling to the grid also has to clear the export penalty on top of this.",
-        "nl": "De prijs vanaf waar ontladen loont: de laagste prijs van vandaag (of morgen, als die lager is) gedeeld door het rendement, plus slijtage en marge. Verkopen aan het net moet daarbovenop ook de terugleverkorting goedmaken."
+        "nl": "De prijs vanaf waar ontladen loont: de laagste prijs van vandaag (of morgen, als die lager is) gedeeld door het rendement, plus slijtage en marge. Verkopen aan het net moet daarbovenop ook de terugleverkorting goedmaken.",
+        "de": "Der Preis, ab dem sich Entladen lohnt: der niedrigste Preis des Tages (oder der von morgen, wenn er niedriger ist) geteilt durch den Wirkungsgrad, plus Verschleiß und Marge. Beim Verkauf ins Netz muss zusätzlich der Einspeiseabschlag gedeckt sein."
       },
       "units": "ct/kWh",
       "insights": true,
@@ -1330,7 +1636,8 @@
         "id": "battery_mode_changed",
         "title": {
           "en": "Battery mode changed",
-          "nl": "Batterijmodus is veranderd"
+          "nl": "Batterijmodus is veranderd",
+          "de": "Batteriemodus hat sich geändert"
         },
         "tokens": [
           {
@@ -1338,11 +1645,13 @@
             "type": "string",
             "title": {
               "en": "Mode",
-              "nl": "Modus"
+              "nl": "Modus",
+              "de": "Modus"
             },
             "example": {
               "en": "Self-Consumption",
-              "nl": "Eigen verbruik"
+              "nl": "Eigen verbruik",
+              "de": "Eigenverbrauch"
             }
           }
         ],
@@ -1353,6 +1662,202 @@
             "filter": "driver_id=hione"
           }
         ]
+      },
+      {
+        "id": "battery_held",
+        "title": {
+          "en": "The battery was held at its current charge",
+          "nl": "De accu is vastgezet op het huidige niveau",
+          "de": "Die Batterie wurde auf dem aktuellen Ladestand gehalten"
+        },
+        "hint": {
+          "en": "Fires when the action \"Hold the battery at its current charge\" actually moved the Self-Consumption reserve. A hold that finds the reserve already holding writes nothing and does not fire this, so a notification hung on this card only arrives when something changed.",
+          "nl": "Gaat af als de actie \"Houd de accu vast op het huidige niveau\" de reserve voor Zelfconsumptie echt heeft verzet. Vindt het vasthouden de reserve al goed staan, dan schrijft het niets en gaat deze kaart niet af. Een melding aan deze kaart komt dus alleen als er iets veranderd is.",
+          "de": "Wird ausgelöst, wenn die Aktion \"Batterie auf dem aktuellen Ladestand halten\" die Eigenverbrauchs-Reserve tatsächlich verstellt hat. Findet das Halten die Reserve bereits passend vor, schreibt es nichts und löst diese Karte nicht aus. Eine Benachrichtigung an dieser Karte kommt also nur, wenn sich etwas geändert hat."
+        },
+        "tokens": [
+          {
+            "name": "reserve",
+            "type": "number",
+            "title": {
+              "en": "New reserve (%)",
+              "nl": "Nieuwe reserve (%)",
+              "de": "Neue Reserve (%)"
+            },
+            "example": 32
+          },
+          {
+            "name": "previous",
+            "type": "number",
+            "title": {
+              "en": "Previous reserve (%)",
+              "nl": "Vorige reserve (%)",
+              "de": "Vorherige Reserve (%)"
+            },
+            "example": 30
+          },
+          {
+            "name": "soc",
+            "type": "number",
+            "title": {
+              "en": "Charge (%)",
+              "nl": "Laadniveau (%)",
+              "de": "Ladestand (%)"
+            },
+            "example": 32
+          }
+        ],
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          }
+        ]
+      },
+      {
+        "id": "price_moment_started",
+        "title": {
+          "en": "A price moment started",
+          "nl": "Een prijsmoment is begonnen",
+          "de": "Ein Preismoment hat begonnen"
+        },
+        "titleFormatted": {
+          "en": "A [[moment]] started",
+          "nl": "Een [[moment]] is begonnen",
+          "de": "Ein [[moment]] hat begonnen"
+        },
+        "hint": {
+          "en": "Fires in the minute the price plan turns a buy moment, a sell moment or a peak the battery can cover on. Use it to start charging or selling right then, instead of a Flow that asks every five minutes. The moments are the same ones the price conditions answer.",
+          "nl": "Gaat af in de minuut waarin het prijsplan een koopmoment, een verkoopmoment of een piek die de accu haalt aanzet. Start daarmee direct het laden of verkopen, in plaats van een Flow die het elke vijf minuten vraagt. Het zijn dezelfde momenten als waar de prijscondities op antwoorden.",
+          "de": "Wird in der Minute ausgelöst, in der der Preisplan einen Kaufmoment, einen Verkaufsmoment oder eine Preisspitze, die die Batterie abdecken kann, einschaltet. Starte damit das Laden oder Verkaufen sofort, statt mit einem Flow, der alle fünf Minuten nachfragt. Es sind dieselben Momente, auf die die Preisbedingungen antworten."
+        },
+        "tokens": [
+          {
+            "name": "price",
+            "type": "number",
+            "title": {
+              "en": "Price now (ct/kWh)",
+              "nl": "Prijs nu (ct/kWh)",
+              "de": "Preis jetzt (ct/kWh)"
+            },
+            "example": 31.4
+          }
+        ],
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "moment",
+            "type": "dropdown",
+            "title": {
+              "en": "Moment",
+              "nl": "Moment",
+              "de": "Moment"
+            },
+            "values": [
+              {
+                "id": "buy",
+                "label": {
+                  "en": "buy moment",
+                  "nl": "koopmoment",
+                  "de": "Kaufmoment"
+                }
+              },
+              {
+                "id": "sell",
+                "label": {
+                  "en": "sell moment",
+                  "nl": "verkoopmoment",
+                  "de": "Verkaufsmoment"
+                }
+              },
+              {
+                "id": "peak",
+                "label": {
+                  "en": "peak the battery can cover",
+                  "nl": "piek die de accu haalt",
+                  "de": "Preisspitze, die die Batterie abdeckt"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "price_moment_ended",
+        "title": {
+          "en": "A price moment ended",
+          "nl": "Een prijsmoment is afgelopen",
+          "de": "Ein Preismoment ist vorbei"
+        },
+        "titleFormatted": {
+          "en": "A [[moment]] ended",
+          "nl": "Een [[moment]] is afgelopen",
+          "de": "Ein [[moment]] ist vorbei"
+        },
+        "hint": {
+          "en": "Fires in the minute a buy moment, a sell moment or a peak the battery can cover is over. A sell moment also ends when the charge on board no longer reaches this quarter. Does not fire when the prices are merely missing: no prices is not the same as the moment being over.",
+          "nl": "Gaat af in de minuut waarin een koopmoment, een verkoopmoment of een piek die de accu haalt voorbij is. Een verkoopmoment eindigt ook als de lading aan boord dit kwartier niet meer haalt. Gaat niet af als de prijzen alleen maar ontbreken: geen prijzen is iets anders dan dat het moment voorbij is.",
+          "de": "Wird in der Minute ausgelöst, in der ein Kaufmoment, ein Verkaufsmoment oder eine Preisspitze, die die Batterie abdecken kann, vorbei ist. Ein Verkaufsmoment endet auch, wenn die Ladung an Bord diese Viertelstunde nicht mehr erreicht. Wird nicht ausgelöst, wenn nur die Preise fehlen: Keine Preise heißt nicht, dass der Moment vorbei ist."
+        },
+        "tokens": [
+          {
+            "name": "price",
+            "type": "number",
+            "title": {
+              "en": "Price now (ct/kWh)",
+              "nl": "Prijs nu (ct/kWh)",
+              "de": "Preis jetzt (ct/kWh)"
+            },
+            "example": 31.4
+          }
+        ],
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "moment",
+            "type": "dropdown",
+            "title": {
+              "en": "Moment",
+              "nl": "Moment",
+              "de": "Moment"
+            },
+            "values": [
+              {
+                "id": "buy",
+                "label": {
+                  "en": "buy moment",
+                  "nl": "koopmoment",
+                  "de": "Kaufmoment"
+                }
+              },
+              {
+                "id": "sell",
+                "label": {
+                  "en": "sell moment",
+                  "nl": "verkoopmoment",
+                  "de": "Verkaufsmoment"
+                }
+              },
+              {
+                "id": "peak",
+                "label": {
+                  "en": "peak the battery can cover",
+                  "nl": "piek die de accu haalt",
+                  "de": "Preisspitze, die die Batterie abdeckt"
+                }
+              }
+            ]
+          }
+        ]
       }
     ],
     "actions": [
@@ -1360,15 +1865,18 @@
         "id": "set_battery_mode",
         "title": {
           "en": "Set battery mode",
-          "nl": "Stel batterijmodus in"
+          "nl": "Stel batterijmodus in",
+          "de": "Batteriemodus einstellen"
         },
         "titleFormatted": {
           "en": "Set battery mode to [[mode]]",
-          "nl": "Stel batterijmodus in op [[mode]]"
+          "nl": "Stel batterijmodus in op [[mode]]",
+          "de": "Batteriemodus auf [[mode]] stellen"
         },
         "hint": {
           "en": "Battery working mode. Self-Consumption: solar first, then battery, then grid. Economy: time-of-use schedule to avoid peak tariffs. Backup: only discharge during a grid outage. Off-Grid: no grid connection. Force Charge: forcibly charge to the set SoC — set Max Power to 0% to stop charging entirely, so the battery won't absorb power other sources feed back to the grid (e.g. other batteries discharging on high dynamic tariffs). Force Discharge: forcibly discharge to the set SoC. Peak Shaving: cap grid import at a set power. Time of Use: scheduled charge/discharge windows. AI Mode: cloud-managed optimization using prices, forecasts and consumption. Cloud connection required.",
-          "nl": "Batterij-werkmodus. Eigen verbruik: eerst zon, dan batterij, dan net. Economie: tijdschema om piektarieven te vermijden. Noodstroom: ontlaadt alleen bij stroomuitval. Off-Grid: geen netaansluiting. Force Charge: laadt geforceerd tot de ingestelde SoC — zet Max vermogen op 0% om laden volledig te stoppen, zodat de Hoymiles geen stroom opneemt die andere bronnen terugleveren (bv. andere batterijen die ontladen bij hoge dynamische tarieven). Force Discharge: ontlaadt geforceerd tot de ingestelde SoC. Peak Shaving: begrenst netafname op een ingesteld vermogen. Time of Use: geplande laad-/ontlaadvensters. AI-modus: cloudgestuurde optimalisatie op basis van prijzen, prognoses en verbruik. Cloudverbinding vereist."
+          "nl": "Batterij-werkmodus. Eigen verbruik: eerst zon, dan batterij, dan net. Economie: tijdschema om piektarieven te vermijden. Noodstroom: ontlaadt alleen bij stroomuitval. Off-Grid: geen netaansluiting. Force Charge: laadt geforceerd tot de ingestelde SoC — zet Max vermogen op 0% om laden volledig te stoppen, zodat de Hoymiles geen stroom opneemt die andere bronnen terugleveren (bv. andere batterijen die ontladen bij hoge dynamische tarieven). Force Discharge: ontlaadt geforceerd tot de ingestelde SoC. Peak Shaving: begrenst netafname op een ingesteld vermogen. Time of Use: geplande laad-/ontlaadvensters. AI-modus: cloudgestuurde optimalisatie op basis van prijzen, prognoses en verbruik. Cloudverbinding vereist.",
+          "de": "Betriebsmodus der Batterie. Eigenverbrauch: erst Solar, dann Batterie, dann Netz. Sparmodus: Zeitplan nach Tarifzeiten, um Spitzentarife zu vermeiden. Backup: entlädt nur bei Netzausfall. Inselbetrieb: keine Netzverbindung. Zwangsladung: lädt zwangsweise bis zum eingestellten SOC — stelle die max. Leistung auf 0 %, um das Laden ganz zu stoppen, damit die Batterie keinen Strom aufnimmt, den andere Quellen ins Netz einspeisen (z. B. andere Batterien, die bei hohen dynamischen Tarifen entladen). Zwangsentladung: entlädt zwangsweise bis zum eingestellten SOC. Lastspitzenkappung: begrenzt den Netzbezug auf eine eingestellte Leistung. Zeitsteuerung: geplante Lade- und Entladefenster. KI-Modus: Optimierung durch die Cloud anhand von Preisen, Prognosen und Verbrauch. Cloud-Verbindung erforderlich."
         },
         "args": [
           {
@@ -1381,70 +1889,80 @@
             "type": "dropdown",
             "title": {
               "en": "Mode",
-              "nl": "Modus"
+              "nl": "Modus",
+              "de": "Modus"
             },
             "values": [
               {
                 "id": "1",
                 "label": {
                   "en": "Self-Consumption",
-                  "nl": "Eigen verbruik"
+                  "nl": "Eigen verbruik",
+                  "de": "Eigenverbrauch"
                 }
               },
               {
                 "id": "2",
                 "label": {
                   "en": "Economy",
-                  "nl": "Economie"
+                  "nl": "Economie",
+                  "de": "Sparmodus"
                 }
               },
               {
                 "id": "3",
                 "label": {
                   "en": "Backup",
-                  "nl": "Noodstroom"
+                  "nl": "Noodstroom",
+                  "de": "Backup"
                 }
               },
               {
                 "id": "4",
                 "label": {
                   "en": "Off-Grid",
-                  "nl": "Off-Grid"
+                  "nl": "Off-Grid",
+                  "de": "Inselbetrieb"
                 }
               },
               {
                 "id": "5",
                 "label": {
                   "en": "Force Charge",
-                  "nl": "Force Charge (geforceerd laden)"
+                  "nl": "Force Charge (geforceerd laden)",
+                  "de": "Zwangsladung"
                 }
               },
               {
                 "id": "6",
                 "label": {
                   "en": "Force Discharge",
-                  "nl": "Force Discharge (geforceerd ontladen)"
+                  "nl": "Force Discharge (geforceerd ontladen)",
+                  "de": "Zwangsentladung"
                 }
               },
               {
                 "id": "7",
                 "label": {
                   "en": "Peak Shaving",
-                  "nl": "Pieksturing"
+                  "nl": "Pieksturing",
+                  "de": "Lastspitzenkappung"
                 }
               },
               {
                 "id": "8",
                 "label": {
                   "en": "Time of Use",
-                  "nl": "Tijdafhankelijk"
+                  "nl": "Tijdafhankelijk",
+                  "de": "Zeitsteuerung"
                 }
               },
               {
                 "id": "9",
                 "label": {
                   "en": "AI Mode",
-                  "nl": "AI-modus"
+                  "nl": "AI-modus",
+                  "de": "KI-Modus"
                 }
               }
             ]
@@ -1455,15 +1973,18 @@
         "id": "set_reserve_soc",
         "title": {
           "en": "Set reserve SOC",
-          "nl": "Stel reserve laadniveau in"
+          "nl": "Stel reserve laadniveau in",
+          "de": "Reserve-SOC einstellen"
         },
         "titleFormatted": {
           "en": "Set reserve SOC to [[soc]]%",
-          "nl": "Stel reserve laadniveau in op [[soc]]%"
+          "nl": "Stel reserve laadniveau in op [[soc]]%",
+          "de": "Reserve-SOC auf [[soc]] % stellen"
         },
         "hint": {
           "en": "Relevant for: every mode except Off-Grid (4). Sets the reserved SOC of the ACTIVE battery mode. Written over Modbus when the mode has a known register, otherwise through the cloud. Beware that it means opposite things per mode: a floor the battery discharges to in Self-Consumption, but the ceiling it charges up to in Force Charge. Measured warning: it is not a dependable floor - a battery set to 40 was seen discharging straight through it to 37. The device now also has a slider per mode, each writing its own register locally; those let you set a mode's reserve without that mode being active, and cannot target the wrong one. Be aware that in Self-Consumption this is not only a floor: the inverter also charges the battery UP to this level, from the grid when there is no sun. Setting it above the current state of charge therefore costs money at a high tariff, rather than merely holding energy back.",
-          "nl": "Relevant voor: alle modi behalve Off-Grid (4). Stelt de gereserveerde SOC in van de ACTIEVE batterijmodus. Via Modbus als die modus een bekend register heeft, anders via de cloud. Let op dat het per modus het tegenovergestelde betekent: in Zelfconsumptie de ondergrens waartoe hij ontlaadt, in Force Charge juist de bovengrens waartoe hij laadt. Gemeten waarschuwing: als ondergrens is hij niet betrouwbaar - een accu met 40 ingesteld liep er dwars doorheen tot 37. Het apparaat heeft nu ook een schuif per modus, die elk hun eigen register lokaal wegschrijven; daarmee stel je de reserve van een modus in zonder dat die modus actief is, en kan de verkeerde niet geraakt worden. Let op dat dit in Zelfconsumptie niet alleen een ondergrens is: de omvormer laadt de accu ook TOT dit niveau op, uit het net als er geen zon is. Zet je hem boven de huidige laadtoestand, dan kost dat dus geld bij een hoog tarief, in plaats van alleen energie achterhouden."
+          "nl": "Relevant voor: alle modi behalve Off-Grid (4). Stelt de gereserveerde SOC in van de ACTIEVE batterijmodus. Via Modbus als die modus een bekend register heeft, anders via de cloud. Let op dat het per modus het tegenovergestelde betekent: in Zelfconsumptie de ondergrens waartoe hij ontlaadt, in Force Charge juist de bovengrens waartoe hij laadt. Gemeten waarschuwing: als ondergrens is hij niet betrouwbaar - een accu met 40 ingesteld liep er dwars doorheen tot 37. Het apparaat heeft nu ook een schuif per modus, die elk hun eigen register lokaal wegschrijven; daarmee stel je de reserve van een modus in zonder dat die modus actief is, en kan de verkeerde niet geraakt worden. Let op dat dit in Zelfconsumptie niet alleen een ondergrens is: de omvormer laadt de accu ook TOT dit niveau op, uit het net als er geen zon is. Zet je hem boven de huidige laadtoestand, dan kost dat dus geld bij een hoog tarief, in plaats van alleen energie achterhouden.",
+          "de": "Relevant für: jeden Modus außer Inselbetrieb (4). Stellt den reservierten SOC des AKTIVEN Batteriemodus ein. Wird über Modbus geschrieben, wenn der Modus ein bekanntes Register hat, sonst über die Cloud. Achtung, je Modus bedeutet er das Gegenteil: im Eigenverbrauch eine Untergrenze, bis zu der die Batterie entlädt, in der Zwangsladung aber die Obergrenze, bis zu der sie lädt. Gemessene Warnung: Als Untergrenze ist er nicht verlässlich - eine auf 40 gestellte Batterie entlud einfach hindurch bis 37. Das Gerät hat jetzt auch einen Regler je Modus, der jeweils lokal sein eigenes Register schreibt; damit stellst du die Reserve eines Modus ein, ohne dass dieser aktiv ist, und kannst nicht den falschen treffen. Beachte, dass dies im Eigenverbrauch nicht nur eine Untergrenze ist: Der Wechselrichter lädt die Batterie auch BIS zu diesem Stand auf, aus dem Netz, wenn keine Sonne scheint. Ein Wert über dem aktuellen Ladezustand kostet bei hohem Tarif also Geld, statt nur Energie zurückzuhalten."
         },
         "args": [
           {
@@ -1479,7 +2000,8 @@
             "step": 1,
             "title": {
               "en": "Reserve SOC (%)",
-              "nl": "Reserve laadniveau (%)"
+              "nl": "Reserve laadniveau (%)",
+              "de": "Reserve-SOC (%)"
             }
           }
         ]
@@ -1488,15 +2010,18 @@
         "id": "set_reserve_soc_for_mode",
         "title": {
           "en": "Set reserve SOC of a specific mode",
-          "nl": "Stel reserve laadniveau van een specifieke modus in"
+          "nl": "Stel reserve laadniveau van een specifieke modus in",
+          "de": "Reserve-SOC eines bestimmten Modus einstellen"
         },
         "titleFormatted": {
           "en": "Set the [[mode]] reserve SOC to [[soc]]%",
-          "nl": "Zet de reserve van [[mode]] op [[soc]]%"
+          "nl": "Zet de reserve van [[mode]] op [[soc]]%",
+          "de": "Reserve-SOC von [[mode]] auf [[soc]] % stellen"
         },
         "hint": {
           "en": "Writes the reserved SOC of the mode you name, whether or not that mode is active. Local Modbus only: each mode keeps this value in its own register, so naming the mode addresses that register directly - the cloud can only ever write whichever mode is running. Use this to prepare a mode before switching to it, for example setting the Force Charge target while the station is still in Self-Consumption. Self-Consumption, Force Charge and Force Discharge have a known register; other modes are refused rather than redirected. Remember the value means opposite things: a discharge floor in Self-Consumption, a charge target in Force Charge - and as a floor it is not dependable (a battery set to 40 was seen discharging through it to 37). Be aware that in Self-Consumption this is not only a floor: the inverter also charges the battery UP to this level, from the grid when there is no sun. Setting it above the current state of charge therefore costs money at a high tariff, rather than merely holding energy back.",
-          "nl": "Schrijft de gereserveerde SOC van de modus die je noemt, of die modus nu actief is of niet. Alleen lokaal via Modbus: elke modus bewaart deze waarde in een eigen register, dus door de modus te noemen adresseer je dat register rechtstreeks - de cloud kan altijd alleen de draaiende modus wegschrijven. Handig om een modus voor te bereiden voordat je erheen schakelt, bijvoorbeeld het Force Charge-doel zetten terwijl je nog in Zelfconsumptie staat. Zelfconsumptie, Force Charge en Force Discharge hebben een bekend register; andere modi worden geweigerd in plaats van omgeleid. Let op dat de waarde per modus het tegenovergestelde betekent: een ondergrens voor ontladen in Zelfconsumptie, een laaddoel in Force Charge - en als ondergrens is hij niet betrouwbaar (een accu met 40 ingesteld liep er dwars doorheen tot 37). Let op dat dit in Zelfconsumptie niet alleen een ondergrens is: de omvormer laadt de accu ook TOT dit niveau op, uit het net als er geen zon is. Zet je hem boven de huidige laadtoestand, dan kost dat dus geld bij een hoog tarief, in plaats van alleen energie achterhouden."
+          "nl": "Schrijft de gereserveerde SOC van de modus die je noemt, of die modus nu actief is of niet. Alleen lokaal via Modbus: elke modus bewaart deze waarde in een eigen register, dus door de modus te noemen adresseer je dat register rechtstreeks - de cloud kan altijd alleen de draaiende modus wegschrijven. Handig om een modus voor te bereiden voordat je erheen schakelt, bijvoorbeeld het Force Charge-doel zetten terwijl je nog in Zelfconsumptie staat. Zelfconsumptie, Force Charge en Force Discharge hebben een bekend register; andere modi worden geweigerd in plaats van omgeleid. Let op dat de waarde per modus het tegenovergestelde betekent: een ondergrens voor ontladen in Zelfconsumptie, een laaddoel in Force Charge - en als ondergrens is hij niet betrouwbaar (een accu met 40 ingesteld liep er dwars doorheen tot 37). Let op dat dit in Zelfconsumptie niet alleen een ondergrens is: de omvormer laadt de accu ook TOT dit niveau op, uit het net als er geen zon is. Zet je hem boven de huidige laadtoestand, dan kost dat dus geld bij een hoog tarief, in plaats van alleen energie achterhouden.",
+          "de": "Schreibt den reservierten SOC des genannten Modus, egal ob dieser aktiv ist. Nur lokal über Modbus: Jeder Modus hält diesen Wert in einem eigenen Register, das Nennen des Modus spricht also genau dieses Register an - die Cloud kann immer nur den gerade laufenden Modus schreiben. Nutze das, um einen Modus vor dem Umschalten vorzubereiten, etwa das Ziel der Zwangsladung einzustellen, während die Station noch im Eigenverbrauch läuft. Eigenverbrauch, Zwangsladung und Zwangsentladung haben ein bekanntes Register; andere Modi werden abgelehnt statt umgeleitet. Denk daran, dass der Wert Gegensätzliches bedeutet: eine Entladeuntergrenze im Eigenverbrauch, ein Ladeziel in der Zwangsladung - und als Untergrenze ist er nicht verlässlich (eine auf 40 gestellte Batterie entlud hindurch bis 37). Beachte, dass dies im Eigenverbrauch nicht nur eine Untergrenze ist: Der Wechselrichter lädt die Batterie auch BIS zu diesem Stand auf, aus dem Netz, wenn keine Sonne scheint. Ein Wert über dem aktuellen Ladezustand kostet bei hohem Tarif also Geld, statt nur Energie zurückzuhalten."
         },
         "args": [
           {
@@ -1509,28 +2034,32 @@
             "type": "dropdown",
             "title": {
               "en": "Mode",
-              "nl": "Modus"
+              "nl": "Modus",
+              "de": "Modus"
             },
             "values": [
               {
                 "id": "1",
                 "label": {
                   "en": "Self-Consumption",
-                  "nl": "Eigen verbruik"
+                  "nl": "Eigen verbruik",
+                  "de": "Eigenverbrauch"
                 }
               },
               {
                 "id": "5",
                 "label": {
                   "en": "Force Charge",
-                  "nl": "Force Charge (geforceerd laden)"
+                  "nl": "Force Charge (geforceerd laden)",
+                  "de": "Zwangsladung"
                 }
               },
               {
                 "id": "6",
                 "label": {
                   "en": "Force Discharge",
-                  "nl": "Force Discharge (geforceerd ontladen)"
+                  "nl": "Force Discharge (geforceerd ontladen)",
+                  "de": "Zwangsentladung"
                 }
               }
             ]
@@ -1543,7 +2072,8 @@
             "step": 1,
             "title": {
               "en": "Reserve SOC (%)",
-              "nl": "Reserve laadniveau (%)"
+              "nl": "Reserve laadniveau (%)",
+              "de": "Reserve-SOC (%)"
             }
           }
         ]
@@ -1552,15 +2082,18 @@
         "id": "set_peak_shaving",
         "title": {
           "en": "Set Peak Shaving parameters",
-          "nl": "Stel Pieksturing-parameters in"
+          "nl": "Stel Pieksturing-parameters in",
+          "de": "Parameter für Lastspitzenkappung einstellen"
         },
         "titleFormatted": {
           "en": "Set Peak Shaving: reserve [[reserve_soc]]%, max [[max_soc]]%, grid limit [[meter_power]]W",
-          "nl": "Stel Pieksturing in: reserve [[reserve_soc]]%, max [[max_soc]]%, netgrens [[meter_power]]W"
+          "nl": "Stel Pieksturing in: reserve [[reserve_soc]]%, max [[max_soc]]%, netgrens [[meter_power]]W",
+          "de": "Lastspitzenkappung einstellen: Reserve [[reserve_soc]] %, max. [[max_soc]] %, Netzgrenze [[meter_power]] W"
         },
         "hint": {
           "en": "Relevant for: Peak Shaving (mode 7). Configures and activates Peak Shaving mode. Cloud connection required.",
-          "nl": "Relevant voor: Pieksturing (modus 7). Configureert en activeert de Pieksturing-modus. Cloudverbinding vereist."
+          "nl": "Relevant voor: Pieksturing (modus 7). Configureert en activeert de Pieksturing-modus. Cloudverbinding vereist.",
+          "de": "Relevant für: Lastspitzenkappung (Modus 7). Konfiguriert und aktiviert die Lastspitzenkappung. Cloud-Verbindung erforderlich."
         },
         "args": [
           {
@@ -1576,7 +2109,8 @@
             "step": 1,
             "title": {
               "en": "Reserve SOC (%)",
-              "nl": "Reserve laadniveau (%)"
+              "nl": "Reserve laadniveau (%)",
+              "de": "Reserve-SOC (%)"
             }
           },
           {
@@ -1587,7 +2121,8 @@
             "step": 1,
             "title": {
               "en": "Max SOC (%)",
-              "nl": "Max laadniveau (%)"
+              "nl": "Max laadniveau (%)",
+              "de": "Max. SOC (%)"
             }
           },
           {
@@ -1598,7 +2133,8 @@
             "step": 100,
             "title": {
               "en": "Grid power limit (W)",
-              "nl": "Netvermogensgrens (W)"
+              "nl": "Netvermogensgrens (W)",
+              "de": "Netzleistungsgrenze (W)"
             }
           }
         ]
@@ -1607,15 +2143,18 @@
         "id": "set_relay",
         "title": {
           "en": "Switch dry contact",
-          "nl": "Schakel droogcontact"
+          "nl": "Schakel droogcontact",
+          "de": "Potentialfreien Kontakt schalten"
         },
         "titleFormatted": {
           "en": "Switch dry contact [[state]]",
-          "nl": "Schakel droogcontact [[state]]"
+          "nl": "Schakel droogcontact [[state]]",
+          "de": "Potentialfreien Kontakt [[state]] schalten"
         },
         "hint": {
           "en": "Enables or disables the relay / dry contact output (cloud connection and compatible hardware required).",
-          "nl": "Schakelt de relais-/droogcontactuitgang in of uit (cloudverbinding en geschikte hardware vereist)."
+          "nl": "Schakelt de relais-/droogcontactuitgang in of uit (cloudverbinding en geschikte hardware vereist).",
+          "de": "Schaltet das Relais / den potentialfreien Kontakt ein oder aus (Cloud-Verbindung und passende Hardware erforderlich)."
         },
         "args": [
           {
@@ -1628,21 +2167,24 @@
             "type": "dropdown",
             "title": {
               "en": "State",
-              "nl": "Stand"
+              "nl": "Stand",
+              "de": "Zustand"
             },
             "values": [
               {
                 "id": "on",
                 "label": {
                   "en": "On",
-                  "nl": "Aan"
+                  "nl": "Aan",
+                  "de": "Ein"
                 }
               },
               {
                 "id": "off",
                 "label": {
                   "en": "Off",
-                  "nl": "Uit"
+                  "nl": "Uit",
+                  "de": "Aus"
                 }
               }
             ]
@@ -1653,15 +2195,18 @@
         "id": "set_max_power",
         "title": {
           "en": "Set max power",
-          "nl": "Stel max vermogen in"
+          "nl": "Stel max vermogen in",
+          "de": "Max. Leistung einstellen"
         },
         "titleFormatted": {
           "en": "Set max charge/discharge power to [[power]]%",
-          "nl": "Stel max laad/ontlaadvermogen in op [[power]]%"
+          "nl": "Stel max laad/ontlaadvermogen in op [[power]]%",
+          "de": "Max. Lade-/Entladeleistung auf [[power]] % stellen"
         },
         "hint": {
           "en": "Relevant for: Force Charge (mode 5) and Force Discharge (mode 6). Applies to the active mode if it is one of these, otherwise activates Force Charge. For an explicit direction use 'Set max charge power' or 'Set max discharge power' instead. Tip: 0% in Force Charge stops the battery charging — useful to prevent it absorbing power that other sources feed back to the grid (e.g. other batteries discharging during high dynamic tariffs). Cloud connection required.",
-          "nl": "Relevant voor: Force Charge (modus 5) en Force Discharge (modus 6). Past de actieve modus aan als dat een van deze is, anders wordt Force Charge geactiveerd. Voor een expliciete richting gebruik je 'Stel max laadvermogen in' of 'Stel max ontlaadvermogen in'. Tip: 0% in Force Charge stopt het laden — handig om te voorkomen dat de Hoymiles stroom opneemt die andere bronnen terugleveren (bv. andere batterijen die ontladen bij hoge dynamische tarieven). Cloudverbinding vereist."
+          "nl": "Relevant voor: Force Charge (modus 5) en Force Discharge (modus 6). Past de actieve modus aan als dat een van deze is, anders wordt Force Charge geactiveerd. Voor een expliciete richting gebruik je 'Stel max laadvermogen in' of 'Stel max ontlaadvermogen in'. Tip: 0% in Force Charge stopt het laden — handig om te voorkomen dat de Hoymiles stroom opneemt die andere bronnen terugleveren (bv. andere batterijen die ontladen bij hoge dynamische tarieven). Cloudverbinding vereist.",
+          "de": "Relevant für: Zwangsladung (Modus 5) und Zwangsentladung (Modus 6). Gilt für den aktiven Modus, wenn es einer dieser beiden ist, sonst wird die Zwangsladung aktiviert. Für eine ausdrückliche Richtung nimm stattdessen \"Max. Ladeleistung einstellen\" oder \"Max. Entladeleistung einstellen\". Tipp: 0 % in der Zwangsladung stoppt das Laden der Batterie — nützlich, damit sie keinen Strom aufnimmt, den andere Quellen ins Netz einspeisen (z. B. andere Batterien, die bei hohen dynamischen Tarifen entladen). Cloud-Verbindung erforderlich."
         },
         "args": [
           {
@@ -1677,7 +2222,8 @@
             "step": 1,
             "title": {
               "en": "Max power (%)",
-              "nl": "Max vermogen (%)"
+              "nl": "Max vermogen (%)",
+              "de": "Max. Leistung (%)"
             }
           }
         ]
@@ -1686,15 +2232,18 @@
         "id": "set_max_charge_power",
         "title": {
           "en": "Set max charge power",
-          "nl": "Stel max laadvermogen in"
+          "nl": "Stel max laadvermogen in",
+          "de": "Max. Ladeleistung einstellen"
         },
         "titleFormatted": {
           "en": "Set max charge power (Force Charge) to [[power]]%",
-          "nl": "Stel max laadvermogen (Force Charge) in op [[power]]%"
+          "nl": "Stel max laadvermogen (Force Charge) in op [[power]]%",
+          "de": "Max. Ladeleistung (Zwangsladung) auf [[power]] % stellen"
         },
         "hint": {
           "en": "Relevant for: Force Charge (mode 5). Sets the charge power limit and switches to that mode. Tip: 0% stops the battery charging — useful to prevent it absorbing power other sources feed back to the grid. Cloud connection required.",
-          "nl": "Relevant voor: Force Charge (modus 5). Stelt de laadvermogenslimiet in en schakelt naar die modus. Tip: 0% stopt het laden — handig om te voorkomen dat de Hoymiles stroom opneemt die andere bronnen terugleveren. Cloudverbinding vereist."
+          "nl": "Relevant voor: Force Charge (modus 5). Stelt de laadvermogenslimiet in en schakelt naar die modus. Tip: 0% stopt het laden — handig om te voorkomen dat de Hoymiles stroom opneemt die andere bronnen terugleveren. Cloudverbinding vereist.",
+          "de": "Relevant für: Zwangsladung (Modus 5). Stellt die Ladeleistungsgrenze ein und schaltet in diesen Modus. Tipp: 0 % stoppt das Laden der Batterie — nützlich, damit sie keinen Strom aufnimmt, den andere Quellen ins Netz einspeisen. Cloud-Verbindung erforderlich."
         },
         "args": [
           {
@@ -1710,7 +2259,8 @@
             "step": 1,
             "title": {
               "en": "Max charge power (%)",
-              "nl": "Max laadvermogen (%)"
+              "nl": "Max laadvermogen (%)",
+              "de": "Max. Ladeleistung (%)"
             }
           }
         ]
@@ -1719,15 +2269,18 @@
         "id": "set_max_discharge_power",
         "title": {
           "en": "Set max discharge power",
-          "nl": "Stel max ontlaadvermogen in"
+          "nl": "Stel max ontlaadvermogen in",
+          "de": "Max. Entladeleistung einstellen"
         },
         "titleFormatted": {
           "en": "Set max discharge power (Force Discharge) to [[power]]%",
-          "nl": "Stel max ontlaadvermogen (Force Discharge) in op [[power]]%"
+          "nl": "Stel max ontlaadvermogen (Force Discharge) in op [[power]]%",
+          "de": "Max. Entladeleistung (Zwangsentladung) auf [[power]] % stellen"
         },
         "hint": {
           "en": "Relevant for: Force Discharge (mode 6). Sets the discharge power limit and switches to that mode. Cloud connection required.",
-          "nl": "Relevant voor: Force Discharge (modus 6). Stelt de ontlaadvermogenslimiet in en schakelt naar die modus. Cloudverbinding vereist."
+          "nl": "Relevant voor: Force Discharge (modus 6). Stelt de ontlaadvermogenslimiet in en schakelt naar die modus. Cloudverbinding vereist.",
+          "de": "Relevant für: Zwangsentladung (Modus 6). Stellt die Entladeleistungsgrenze ein und schaltet in diesen Modus. Cloud-Verbindung erforderlich."
         },
         "args": [
           {
@@ -1743,7 +2296,8 @@
             "step": 1,
             "title": {
               "en": "Max discharge power (%)",
-              "nl": "Max ontlaadvermogen (%)"
+              "nl": "Max ontlaadvermogen (%)",
+              "de": "Max. Entladeleistung (%)"
             }
           }
         ]
@@ -1752,15 +2306,18 @@
         "id": "set_charge_limit_local",
         "title": {
           "en": "Limit charge power (local, keeps mode)",
-          "nl": "Begrens laadvermogen (lokaal, modus blijft)"
+          "nl": "Begrens laadvermogen (lokaal, modus blijft)",
+          "de": "Ladeleistung begrenzen (lokal, Modus bleibt)"
         },
         "titleFormatted": {
           "en": "Limit charge power to [[limit]]% without changing the battery mode",
-          "nl": "Begrens laadvermogen tot [[limit]]% zonder de batterijmodus te wijzigen"
+          "nl": "Begrens laadvermogen tot [[limit]]% zonder de batterijmodus te wijzigen",
+          "de": "Ladeleistung auf [[limit]] % begrenzen, ohne den Batteriemodus zu ändern"
         },
         "hint": {
           "en": "Sets the Force Charge power limit without switching to that mode. NOTE: this register only governs while the station is in Force Charge — with the limit at 0 in Self-Consumption an inverter was still measured charging 5.5 kW from a neighbouring battery. To stop it absorbing someone else's export, switch the battery mode instead. Written straight to the stick over Modbus, so it lands in about ten seconds and keeps working without internet. Requires a local connection to the gateway.",
-          "nl": "Stelt de laadvermogensgrens van Force Charge in zonder naar die modus te schakelen. LET OP: dit register geldt alleen zolang de omvormer in Force Charge staat — met de grens op 0 in Zelfconsumptie is een omvormer gemeten die toch 5,5 kW opnam uit een naburige accu. Wil je voorkomen dat hij andermans teruglevering opzuigt, wissel dan de batterijmodus. Wordt rechtstreeks over Modbus geschreven, dus binnen ongeveer tien seconden actief, en blijft werken zonder internet. Vereist een lokale verbinding met de gateway."
+          "nl": "Stelt de laadvermogensgrens van Force Charge in zonder naar die modus te schakelen. LET OP: dit register geldt alleen zolang de omvormer in Force Charge staat — met de grens op 0 in Zelfconsumptie is een omvormer gemeten die toch 5,5 kW opnam uit een naburige accu. Wil je voorkomen dat hij andermans teruglevering opzuigt, wissel dan de batterijmodus. Wordt rechtstreeks over Modbus geschreven, dus binnen ongeveer tien seconden actief, en blijft werken zonder internet. Vereist een lokale verbinding met de gateway.",
+          "de": "Stellt die Leistungsgrenze der Zwangsladung ein, ohne in diesen Modus zu schalten. HINWEIS: Dieses Register gilt nur, solange die Station in der Zwangsladung ist — mit der Grenze auf 0 im Eigenverbrauch wurde gemessen, dass ein Wechselrichter trotzdem 5,5 kW aus einer benachbarten Batterie lud. Um zu verhindern, dass sie fremde Einspeisung aufnimmt, schalte stattdessen den Batteriemodus um. Wird direkt über Modbus auf den Stick geschrieben, kommt also in etwa zehn Sekunden an und funktioniert auch ohne Internet. Erfordert eine lokale Verbindung zum Gateway."
         },
         "args": [
           {
@@ -1776,7 +2333,8 @@
             "step": 1,
             "title": {
               "en": "Charge limit (%)",
-              "nl": "Laadgrens (%)"
+              "nl": "Laadgrens (%)",
+              "de": "Ladegrenze (%)"
             }
           }
         ]
@@ -1785,15 +2343,18 @@
         "id": "set_max_soc_local",
         "title": {
           "en": "Set the local charge ceiling",
-          "nl": "Stel het lokale laadplafond in"
+          "nl": "Stel het lokale laadplafond in",
+          "de": "Lokale Ladeobergrenze einstellen"
         },
         "titleFormatted": {
           "en": "Set the local charge ceiling to [[limit]]%",
-          "nl": "Zet het lokale laadplafond op [[limit]]%"
+          "nl": "Zet het lokale laadplafond op [[limit]]%",
+          "de": "Lokale Ladeobergrenze auf [[limit]] % stellen"
         },
         "hint": {
           "en": "Relevant for: EVERY battery mode. Writes the station's own maximum SOC straight to the stick over Modbus, so it binds whatever mode is running - unlike the max charge power action, which only governs inside Force Charge. Set it below the current state of charge to stop a charge: measured on live hardware, a battery taking 2028 W fell to zero within twenty seconds, and the surplus went to the grid instead. It does not discharge the battery and does not change the operating mode, so the inverter keeps covering the house. Set 100 to release it again. Use this rather than a mode switch when speed matters: a mode change travels through the cloud and takes about four minutes. Local only - without a Modbus connection it fails with a clear message instead of falling back.",
-          "nl": "Relevant voor: ELKE batterijmodus. Schrijft de maximale SOC van de omvormer rechtstreeks naar de stick via Modbus, en geldt dus in welke modus hij ook draait - anders dan de actie voor max laadvermogen, die alleen binnen Force Charge werkt. Zet hem onder de huidige laadtoestand om het laden te stoppen: op draaiende hardware gemeten viel een accu die 2028 W opnam binnen twintig seconden terug naar nul, en ging het overschot naar het net. Hij ontlaadt de accu niet en wijzigt de bedrijfsmodus niet, dus de omvormer blijft je huis dekken. Zet 100 om hem weer vrij te geven. Gebruik dit in plaats van een moduswissel als snelheid telt: een moduswissel gaat via de cloud en duurt ongeveer vier minuten. Alleen lokaal - zonder Modbus-verbinding faalt hij met een duidelijke melding."
+          "nl": "Relevant voor: ELKE batterijmodus. Schrijft de maximale SOC van de omvormer rechtstreeks naar de stick via Modbus, en geldt dus in welke modus hij ook draait - anders dan de actie voor max laadvermogen, die alleen binnen Force Charge werkt. Zet hem onder de huidige laadtoestand om het laden te stoppen: op draaiende hardware gemeten viel een accu die 2028 W opnam binnen twintig seconden terug naar nul, en ging het overschot naar het net. Hij ontlaadt de accu niet en wijzigt de bedrijfsmodus niet, dus de omvormer blijft je huis dekken. Zet 100 om hem weer vrij te geven. Gebruik dit in plaats van een moduswissel als snelheid telt: een moduswissel gaat via de cloud en duurt ongeveer vier minuten. Alleen lokaal - zonder Modbus-verbinding faalt hij met een duidelijke melding.",
+          "de": "Relevant für: JEDEN Batteriemodus. Schreibt den maximalen SOC der Station direkt über Modbus auf den Stick, er gilt also in jedem laufenden Modus - anders als die Aktion für die max. Ladeleistung, die nur in der Zwangsladung wirkt. Stelle ihn unter den aktuellen Ladezustand, um ein Laden zu stoppen: An echter Hardware gemessen fiel eine Batterie, die 2028 W aufnahm, binnen zwanzig Sekunden auf null, und der Überschuss ging stattdessen ins Netz. Die Batterie wird dadurch nicht entladen und der Betriebsmodus nicht geändert, der Wechselrichter versorgt das Haus also weiter. Stelle 100 ein, um wieder freizugeben. Nimm dies statt eines Moduswechsels, wenn es schnell gehen muss: Ein Moduswechsel läuft über die Cloud und dauert etwa vier Minuten. Nur lokal - ohne Modbus-Verbindung schlägt es mit einer klaren Meldung fehl, statt auszuweichen."
         },
         "args": [
           {
@@ -1809,7 +2370,8 @@
             "step": 1,
             "title": {
               "en": "Charge ceiling (%)",
-              "nl": "Laadplafond (%)"
+              "nl": "Laadplafond (%)",
+              "de": "Ladeobergrenze (%)"
             }
           }
         ]
@@ -1818,15 +2380,18 @@
         "id": "set_discharge_limit_local",
         "title": {
           "en": "Limit discharge power (local, keeps mode)",
-          "nl": "Begrens ontlaadvermogen (lokaal, modus blijft)"
+          "nl": "Begrens ontlaadvermogen (lokaal, modus blijft)",
+          "de": "Entladeleistung begrenzen (lokal, Modus bleibt)"
         },
         "titleFormatted": {
           "en": "Limit discharge power to [[limit]]% without changing the battery mode",
-          "nl": "Begrens ontlaadvermogen tot [[limit]]% zonder de batterijmodus te wijzigen"
+          "nl": "Begrens ontlaadvermogen tot [[limit]]% zonder de batterijmodus te wijzigen",
+          "de": "Entladeleistung auf [[limit]] % begrenzen, ohne den Batteriemodus zu ändern"
         },
         "hint": {
           "en": "Stops the battery discharging at 0%, without switching to Force Discharge. Use it to keep the battery from emptying into another load. Written straight to the stick over Modbus, so it takes about ten seconds instead of the minutes a cloud mode switch needs, and it keeps working without internet. Requires a local connection to the gateway.",
-          "nl": "Zet het ontladen stil op 0%, zonder naar Force Discharge te schakelen. Handig om te voorkomen dat de accu leegloopt in een andere verbruiker. Wordt rechtstreeks over Modbus naar de stick geschreven, dus dit werkt binnen ongeveer tien seconden in plaats van de minuten die een moduswissel via de cloud kost, en het blijft werken zonder internet. Vereist een lokale verbinding met de gateway."
+          "nl": "Zet het ontladen stil op 0%, zonder naar Force Discharge te schakelen. Handig om te voorkomen dat de accu leegloopt in een andere verbruiker. Wordt rechtstreeks over Modbus naar de stick geschreven, dus dit werkt binnen ongeveer tien seconden in plaats van de minuten die een moduswissel via de cloud kost, en het blijft werken zonder internet. Vereist een lokale verbinding met de gateway.",
+          "de": "Stoppt bei 0 % das Entladen der Batterie, ohne in die Zwangsentladung zu schalten. Damit verhinderst du, dass sich die Batterie in einen anderen Verbraucher entleert. Wird direkt über Modbus auf den Stick geschrieben, dauert also etwa zehn Sekunden statt der Minuten eines Moduswechsels über die Cloud und funktioniert auch ohne Internet. Erfordert eine lokale Verbindung zum Gateway."
         },
         "args": [
           {
@@ -1842,7 +2407,8 @@
             "step": 1,
             "title": {
               "en": "Discharge limit (%)",
-              "nl": "Ontlaadgrens (%)"
+              "nl": "Ontlaadgrens (%)",
+              "de": "Entladegrenze (%)"
             }
           }
         ]
@@ -1851,15 +2417,18 @@
         "id": "set_max_soc",
         "title": {
           "en": "Set max SOC",
-          "nl": "Stel max laadniveau in"
+          "nl": "Stel max laadniveau in",
+          "de": "Max. SOC einstellen"
         },
         "titleFormatted": {
           "en": "Set max SOC to [[soc]]%",
-          "nl": "Stel max laadniveau in op [[soc]]%"
+          "nl": "Stel max laadniveau in op [[soc]]%",
+          "de": "Max. SOC auf [[soc]] % stellen"
         },
         "hint": {
           "en": "Relevant for: Peak Shaving (mode 7) — the only mode with a max SOC. Activates Peak Shaving if it is not already active. Cloud connection required.",
-          "nl": "Relevant voor: Pieksturing (modus 7) — de enige modus met een max laadniveau. Activeert Pieksturing als die nog niet actief is. Cloudverbinding vereist."
+          "nl": "Relevant voor: Pieksturing (modus 7) — de enige modus met een max laadniveau. Activeert Pieksturing als die nog niet actief is. Cloudverbinding vereist.",
+          "de": "Relevant für: Lastspitzenkappung (Modus 7) — der einzige Modus mit einem max. SOC. Aktiviert die Lastspitzenkappung, falls sie noch nicht aktiv ist. Cloud-Verbindung erforderlich."
         },
         "args": [
           {
@@ -1875,7 +2444,8 @@
             "step": 1,
             "title": {
               "en": "Max SOC (%)",
-              "nl": "Max laadniveau (%)"
+              "nl": "Max laadniveau (%)",
+              "de": "Max. SOC (%)"
             }
           }
         ]
@@ -1884,15 +2454,18 @@
         "id": "set_grid_limit",
         "title": {
           "en": "Set grid power limit",
-          "nl": "Stel netvermogensgrens in"
+          "nl": "Stel netvermogensgrens in",
+          "de": "Netzleistungsgrenze einstellen"
         },
         "titleFormatted": {
           "en": "Set grid power limit to [[watts]]W",
-          "nl": "Stel netvermogensgrens in op [[watts]]W"
+          "nl": "Stel netvermogensgrens in op [[watts]]W",
+          "de": "Netzleistungsgrenze auf [[watts]] W stellen"
         },
         "hint": {
           "en": "Relevant for: Peak Shaving (mode 7). Sets the grid power limit for Peak Shaving mode and activates it. Cloud connection required.",
-          "nl": "Relevant voor: Pieksturing (modus 7). Stelt de netvermogensgrens in voor de Pieksturing-modus en activeert die. Cloudverbinding vereist."
+          "nl": "Relevant voor: Pieksturing (modus 7). Stelt de netvermogensgrens in voor de Pieksturing-modus en activeert die. Cloudverbinding vereist.",
+          "de": "Relevant für: Lastspitzenkappung (Modus 7). Stellt die Netzleistungsgrenze für die Lastspitzenkappung ein und aktiviert sie. Cloud-Verbindung erforderlich."
         },
         "args": [
           {
@@ -1908,7 +2481,8 @@
             "step": 100,
             "title": {
               "en": "Grid power limit (W)",
-              "nl": "Netvermogensgrens (W)"
+              "nl": "Netvermogensgrens (W)",
+              "de": "Netzleistungsgrenze (W)"
             }
           }
         ]
@@ -1917,15 +2491,18 @@
         "id": "set_tou_period",
         "title": {
           "en": "Set Time of Use period",
-          "nl": "Stel Time of Use periode in"
+          "nl": "Stel Time of Use periode in",
+          "de": "Zeitfenster für die Zeitsteuerung einstellen"
         },
         "titleFormatted": {
           "en": "Time of Use: charge [[charge_from]]–[[charge_to]] at [[charge_power]]% to [[charge_soc]]%, discharge [[discharge_from]]–[[discharge_to]] at [[discharge_power]]% to [[discharge_soc]]%",
-          "nl": "Time of Use: laden [[charge_from]]–[[charge_to]] op [[charge_power]]% tot [[charge_soc]]%, ontladen [[discharge_from]]–[[discharge_to]] op [[discharge_power]]% tot [[discharge_soc]]%"
+          "nl": "Time of Use: laden [[charge_from]]–[[charge_to]] op [[charge_power]]% tot [[charge_soc]]%, ontladen [[discharge_from]]–[[discharge_to]] op [[discharge_power]]% tot [[discharge_soc]]%",
+          "de": "Zeitsteuerung: laden [[charge_from]]–[[charge_to]] mit [[charge_power]] % bis [[charge_soc]] %, entladen [[discharge_from]]–[[discharge_to]] mit [[discharge_power]] % bis [[discharge_soc]] %"
         },
         "hint": {
           "en": "Relevant for: Time of Use (mode 8). Sets a single Time of Use charge/discharge period and activates Time of Use mode. Times in HH:MM. For multi-period schedules use the S-Miles app. Cloud connection required.",
-          "nl": "Relevant voor: Time of Use (modus 8). Stelt één Time of Use laad/ontlaadperiode in en activeert de Time of Use-modus. Tijden in UU:MM. Voor schema's met meerdere periodes gebruik je de S-Miles app. Cloudverbinding vereist."
+          "nl": "Relevant voor: Time of Use (modus 8). Stelt één Time of Use laad/ontlaadperiode in en activeert de Time of Use-modus. Tijden in UU:MM. Voor schema's met meerdere periodes gebruik je de S-Miles app. Cloudverbinding vereist.",
+          "de": "Relevant für: Zeitsteuerung (Modus 8). Stellt ein einzelnes Lade-/Entladefenster ein und aktiviert die Zeitsteuerung. Zeiten in HH:MM. Für Pläne mit mehreren Fenstern nimm die S-Miles-App. Cloud-Verbindung erforderlich."
         },
         "args": [
           {
@@ -1938,11 +2515,13 @@
             "type": "text",
             "title": {
               "en": "Charge from (HH:MM)",
-              "nl": "Laden vanaf (UU:MM)"
+              "nl": "Laden vanaf (UU:MM)",
+              "de": "Laden ab (HH:MM)"
             },
             "placeholder": {
               "en": "10:00",
-              "nl": "10:00"
+              "nl": "10:00",
+              "de": "10:00"
             }
           },
           {
@@ -1950,11 +2529,13 @@
             "type": "text",
             "title": {
               "en": "Charge until (HH:MM)",
-              "nl": "Laden tot (UU:MM)"
+              "nl": "Laden tot (UU:MM)",
+              "de": "Laden bis (HH:MM)"
             },
             "placeholder": {
               "en": "17:00",
-              "nl": "17:00"
+              "nl": "17:00",
+              "de": "17:00"
             }
           },
           {
@@ -1965,7 +2546,8 @@
             "step": 1,
             "title": {
               "en": "Charge power (%)",
-              "nl": "Laadvermogen (%)"
+              "nl": "Laadvermogen (%)",
+              "de": "Ladeleistung (%)"
             }
           },
           {
@@ -1976,7 +2558,8 @@
             "step": 1,
             "title": {
               "en": "Charge up to SOC (%)",
-              "nl": "Laden tot SOC (%)"
+              "nl": "Laden tot SOC (%)",
+              "de": "Laden bis SOC (%)"
             }
           },
           {
@@ -1984,11 +2567,13 @@
             "type": "text",
             "title": {
               "en": "Discharge from (HH:MM)",
-              "nl": "Ontladen vanaf (UU:MM)"
+              "nl": "Ontladen vanaf (UU:MM)",
+              "de": "Entladen ab (HH:MM)"
             },
             "placeholder": {
               "en": "17:01",
-              "nl": "17:01"
+              "nl": "17:01",
+              "de": "17:01"
             }
           },
           {
@@ -1996,11 +2581,13 @@
             "type": "text",
             "title": {
               "en": "Discharge until (HH:MM)",
-              "nl": "Ontladen tot (UU:MM)"
+              "nl": "Ontladen tot (UU:MM)",
+              "de": "Entladen bis (HH:MM)"
             },
             "placeholder": {
               "en": "22:00",
-              "nl": "22:00"
+              "nl": "22:00",
+              "de": "22:00"
             }
           },
           {
@@ -2011,7 +2598,8 @@
             "step": 1,
             "title": {
               "en": "Discharge power (%)",
-              "nl": "Ontlaadvermogen (%)"
+              "nl": "Ontlaadvermogen (%)",
+              "de": "Entladeleistung (%)"
             }
           },
           {
@@ -2022,7 +2610,8 @@
             "step": 1,
             "title": {
               "en": "Discharge down to SOC (%)",
-              "nl": "Ontladen tot SOC (%)"
+              "nl": "Ontladen tot SOC (%)",
+              "de": "Entladen bis SOC (%)"
             }
           }
         ]
@@ -2031,15 +2620,18 @@
         "id": "set_power_limit",
         "title": {
           "en": "Set power limit (local)",
-          "nl": "Stel vermogenslimiet in (lokaal)"
+          "nl": "Stel vermogenslimiet in (lokaal)",
+          "de": "Leistungsgrenze einstellen (lokal)"
         },
         "titleFormatted": {
           "en": "Limit inverter output to [[limit]]%",
-          "nl": "Beperk omvormervermogen tot [[limit]]%"
+          "nl": "Beperk omvormervermogen tot [[limit]]%",
+          "de": "Wechselrichterleistung auf [[limit]] % begrenzen"
         },
         "hint": {
           "en": "Limits the inverter output via the local gateway connection (LAN, port 10081). Warning: every change writes to the inverter's EEPROM — avoid changing it more than a few times per day to prevent wear.",
-          "nl": "Beperkt het omvormervermogen via de lokale gateway-verbinding (LAN, poort 10081). Waarschuwing: elke wijziging schrijft naar het EEPROM-geheugen van de omvormer — wijzig dit hooguit een paar keer per dag om slijtage te voorkomen."
+          "nl": "Beperkt het omvormervermogen via de lokale gateway-verbinding (LAN, poort 10081). Waarschuwing: elke wijziging schrijft naar het EEPROM-geheugen van de omvormer — wijzig dit hooguit een paar keer per dag om slijtage te voorkomen.",
+          "de": "Begrenzt die Wechselrichterleistung über die lokale Gateway-Verbindung (LAN, Port 10081). Warnung: Jede Änderung schreibt ins EEPROM des Wechselrichters — ändere sie nicht öfter als ein paar Mal am Tag, um Verschleiß zu vermeiden."
         },
         "args": [
           {
@@ -2055,7 +2647,8 @@
             "step": 1,
             "title": {
               "en": "Power limit (%)",
-              "nl": "Vermogenslimiet (%)"
+              "nl": "Vermogenslimiet (%)",
+              "de": "Leistungsgrenze (%)"
             }
           }
         ]
@@ -2064,15 +2657,18 @@
         "id": "set_inverter_state",
         "title": {
           "en": "Turn inverter on/off (local)",
-          "nl": "Zet omvormer aan/uit (lokaal)"
+          "nl": "Zet omvormer aan/uit (lokaal)",
+          "de": "Wechselrichter ein-/ausschalten (lokal)"
         },
         "titleFormatted": {
           "en": "Turn inverter [[serial]] [[state]]",
-          "nl": "Zet omvormer [[serial]] [[state]]"
+          "nl": "Zet omvormer [[serial]] [[state]]",
+          "de": "Wechselrichter [[serial]] [[state]] schalten"
         },
         "hint": {
           "en": "Turns an inverter on or off via the local gateway connection. Enter the inverter serial number (from the type plate or the S-Miles app). Useful at negative energy prices.",
-          "nl": "Zet een omvormer aan of uit via de lokale gateway-verbinding. Vul het serienummer van de omvormer in (zie typeplaatje of de S-Miles app). Handig bij negatieve stroomprijzen."
+          "nl": "Zet een omvormer aan of uit via de lokale gateway-verbinding. Vul het serienummer van de omvormer in (zie typeplaatje of de S-Miles app). Handig bij negatieve stroomprijzen.",
+          "de": "Schaltet einen Wechselrichter über die lokale Gateway-Verbindung ein oder aus. Trage die Seriennummer des Wechselrichters ein (vom Typenschild oder aus der S-Miles-App). Nützlich bei negativen Strompreisen."
         },
         "args": [
           {
@@ -2085,11 +2681,13 @@
             "type": "text",
             "title": {
               "en": "Inverter serial number",
-              "nl": "Serienummer omvormer"
+              "nl": "Serienummer omvormer",
+              "de": "Seriennummer des Wechselrichters"
             },
             "placeholder": {
               "en": "e.g. 1164aabbccdd",
-              "nl": "bijv. 1164aabbccdd"
+              "nl": "bijv. 1164aabbccdd",
+              "de": "z. B. 1164aabbccdd"
             }
           },
           {
@@ -2097,21 +2695,24 @@
             "type": "dropdown",
             "title": {
               "en": "State",
-              "nl": "Stand"
+              "nl": "Stand",
+              "de": "Zustand"
             },
             "values": [
               {
                 "id": "on",
                 "label": {
                   "en": "On",
-                  "nl": "Aan"
+                  "nl": "Aan",
+                  "de": "Ein"
                 }
               },
               {
                 "id": "off",
                 "label": {
                   "en": "Off",
-                  "nl": "Uit"
+                  "nl": "Uit",
+                  "de": "Aus"
                 }
               }
             ]
@@ -2122,11 +2723,13 @@
         "id": "hold_battery",
         "title": {
           "en": "Hold the battery at its current charge",
-          "nl": "Houd de accu vast op het huidige niveau"
+          "nl": "Houd de accu vast op het huidige niveau",
+          "de": "Batterie auf dem aktuellen Ladestand halten"
         },
         "hint": {
           "en": "Sets the Self-Consumption reserve to the charge already on board, so the battery neither discharges nor charges. Use this to save energy for a dearer hour: parking the reserve at 100% would instead buy energy from the grid at the current price, because in Self-Consumption the inverter charges up to the reserve as well. Does nothing while Force Charge runs: that mode charges to its own target, so there is nothing to hold.",
-          "nl": "Zet de reserve voor Zelfconsumptie op de lading die er al in zit, zodat de accu niet ontlaadt en ook niet laadt. Gebruik dit om energie te bewaren voor een duurder uur: de reserve op 100% parkeren zou juist stroom uit het net kopen tegen de prijs van dit moment, omdat de omvormer in Zelfconsumptie ook naar de reserve toe laadt. Doet niets zolang Force Charge loopt: die laadt naar zijn eigen doel, dus er valt niets vast te houden."
+          "nl": "Zet de reserve voor Zelfconsumptie op de lading die er al in zit, zodat de accu niet ontlaadt en ook niet laadt. Gebruik dit om energie te bewaren voor een duurder uur: de reserve op 100% parkeren zou juist stroom uit het net kopen tegen de prijs van dit moment, omdat de omvormer in Zelfconsumptie ook naar de reserve toe laadt. Doet niets zolang Force Charge loopt: die laadt naar zijn eigen doel, dus er valt niets vast te houden.",
+          "de": "Stellt die Eigenverbrauchs-Reserve auf die Ladung, die schon an Bord ist, sodass die Batterie weder entlädt noch lädt. Damit sparst du Energie für eine teurere Stunde auf: Die Reserve auf 100 % zu parken würde stattdessen Energie zum aktuellen Preis aus dem Netz kaufen, weil der Wechselrichter im Eigenverbrauch auch bis zur Reserve auflädt. Tut nichts, solange die Zwangsladung läuft: Dieser Modus lädt bis zu seinem eigenen Ziel, es gibt also nichts zu halten."
         },
         "args": [
           {
@@ -2140,15 +2743,18 @@
         "id": "start_charging",
         "title": {
           "en": "Start charging to a level",
-          "nl": "Start laden tot een niveau"
+          "nl": "Start laden tot een niveau",
+          "de": "Laden bis zu einem Stand starten"
         },
         "titleFormatted": {
           "en": "Start charging to [[soc]]% at [[power]]% power",
-          "nl": "Start laden tot [[soc]]% op [[power]]% vermogen"
+          "nl": "Start laden tot [[soc]]% op [[power]]% vermogen",
+          "de": "Laden bis [[soc]] % mit [[power]] % Leistung starten"
         },
         "hint": {
           "en": "Force Charge from the grid up to the level you name, at the power you name. One card for what used to take four setting cards with delays between them: the app writes the Force Charge target, opens the charge ceiling, sets the power and only then switches the mode, waiting for each step, so the battery never charges towards an old target or at an old rate. Written locally over Modbus; needs a connection to the stick. 40% is 6.4 kW, about 9.3 A per phase.",
-          "nl": "Force Charge uit het net tot het niveau dat je noemt, op het vermogen dat je noemt. Eén kaart voor wat eerst vier instelkaarten met wachttijden ertussen kostte: de app zet het Force Charge-doel, opent het laadplafond, zet het vermogen en schakelt pas dan de modus, en wacht telkens tot de stap gelukt is. Zo laadt de accu nooit naar een oud doel of op een oud vermogen. Wordt lokaal via Modbus geschreven; vereist een verbinding met de stick. 40% is 6,4 kW, ongeveer 9,3 A per fase."
+          "nl": "Force Charge uit het net tot het niveau dat je noemt, op het vermogen dat je noemt. Eén kaart voor wat eerst vier instelkaarten met wachttijden ertussen kostte: de app zet het Force Charge-doel, opent het laadplafond, zet het vermogen en schakelt pas dan de modus, en wacht telkens tot de stap gelukt is. Zo laadt de accu nooit naar een oud doel of op een oud vermogen. Wordt lokaal via Modbus geschreven; vereist een verbinding met de stick. 40% is 6,4 kW, ongeveer 9,3 A per fase.",
+          "de": "Zwangsladung aus dem Netz bis zum genannten Stand, mit der genannten Leistung. Eine Karte für das, wofür früher vier Einstellkarten mit Verzögerungen dazwischen nötig waren: Die App schreibt das Ziel der Zwangsladung, öffnet die Ladeobergrenze, stellt die Leistung ein und schaltet erst dann den Modus um, wobei sie auf jeden Schritt wartet. So lädt die Batterie nie auf ein altes Ziel zu oder mit einer alten Leistung. Wird lokal über Modbus geschrieben; braucht eine Verbindung zum Stick. 40 % sind 6,4 kW, etwa 9,3 A pro Phase."
         },
         "args": [
           {
@@ -2164,7 +2770,8 @@
             "step": 1,
             "title": {
               "en": "Charge to (%)",
-              "nl": "Laden tot (%)"
+              "nl": "Laden tot (%)",
+              "de": "Laden bis (%)"
             }
           },
           {
@@ -2175,7 +2782,8 @@
             "step": 1,
             "title": {
               "en": "Power (% of 16 kW)",
-              "nl": "Vermogen (% van 16 kW)"
+              "nl": "Vermogen (% van 16 kW)",
+              "de": "Leistung (% von 16 kW)"
             }
           }
         ]
@@ -2184,15 +2792,18 @@
         "id": "start_charging_to_plan",
         "title": {
           "en": "Start charging to what the dear hours will need",
-          "nl": "Start laden tot wat de dure uren vragen"
+          "nl": "Start laden tot wat de dure uren vragen",
+          "de": "Laden starten bis zu dem, was die teuren Stunden brauchen"
         },
         "titleFormatted": {
           "en": "Start charging to what the dear hours will need, at [[power]]% power",
-          "nl": "Start laden tot wat de dure uren vragen, op [[power]]% vermogen"
+          "nl": "Start laden tot wat de dure uren vragen, op [[power]]% vermogen",
+          "de": "Laden starten bis zu dem, was die teuren Stunden brauchen, mit [[power]] % Leistung"
         },
         "hint": {
           "en": "As \"Start charging to a level\", with the level taken from the price plan: the floor plus what the coming dear slots will draw from the house, plus what the slots where selling pays can export (see the \"selling power\" setting), capped at 95%. The target is shown on the Charge target tile.",
-          "nl": "Als \"Start laden tot een niveau\", met het niveau uit het prijsplan: de ontlaadgrens plus wat de komende dure kwartieren van het huis vragen, plus wat de kwartieren waarin verkopen loont kunnen terugleveren (zie de instelling \"Verkoopvermogen\"), met 95% als plafond. Het doel staat op de tegel Laaddoel."
+          "nl": "Als \"Start laden tot een niveau\", met het niveau uit het prijsplan: de ontlaadgrens plus wat de komende dure kwartieren van het huis vragen, plus wat de kwartieren waarin verkopen loont kunnen terugleveren (zie de instelling \"Verkoopvermogen\"), met 95% als plafond. Het doel staat op de tegel Laaddoel.",
+          "de": "Wie \"Laden bis zu einem Stand starten\", mit dem Stand aus dem Preisplan: die Untergrenze plus das, was die kommenden teuren Viertelstunden aus dem Haus ziehen, plus das, was die Viertelstunden, in denen sich Verkaufen lohnt, einspeisen können (siehe Einstellung \"Verkaufsleistung\"), begrenzt auf 95 %. Das Ziel steht auf der Kachel Ladeziel."
         },
         "args": [
           {
@@ -2208,7 +2819,8 @@
             "step": 1,
             "title": {
               "en": "Power (% of 16 kW)",
-              "nl": "Vermogen (% van 16 kW)"
+              "nl": "Vermogen (% van 16 kW)",
+              "de": "Leistung (% von 16 kW)"
             }
           }
         ]
@@ -2217,15 +2829,18 @@
         "id": "start_selling",
         "title": {
           "en": "Start selling down to a level",
-          "nl": "Start verkopen tot een niveau"
+          "nl": "Start verkopen tot een niveau",
+          "de": "Verkaufen bis zu einem Stand starten"
         },
         "titleFormatted": {
           "en": "Start selling down to [[soc]]% at [[power]]% power",
-          "nl": "Start verkopen tot [[soc]]% op [[power]]% vermogen"
+          "nl": "Start verkopen tot [[soc]]% op [[power]]% vermogen",
+          "de": "Verkaufen bis [[soc]] % mit [[power]] % Leistung starten"
         },
         "hint": {
           "en": "Force Discharge down to the level you name, at the power you name. The app sets the Force Discharge floor first, then the power, and only then switches the mode, waiting for each step - so a sale never runs past an older, lower floor or starts at an old rate. Written locally over Modbus; needs a connection to the stick. 32% is about 5.1 kW, 20% about 3.2 kW.",
-          "nl": "Force Discharge tot het niveau dat je noemt, op het vermogen dat je noemt. De app zet eerst de ondergrens voor Force Discharge, dan het vermogen en pas dan de modus, en wacht telkens tot de stap gelukt is - zo loopt een verkoop nooit door tot een oudere, lagere grens en begint hij nooit op een oud vermogen. Wordt lokaal via Modbus geschreven; vereist een verbinding met de stick. 32% is ongeveer 5,1 kW, 20% ongeveer 3,2 kW."
+          "nl": "Force Discharge tot het niveau dat je noemt, op het vermogen dat je noemt. De app zet eerst de ondergrens voor Force Discharge, dan het vermogen en pas dan de modus, en wacht telkens tot de stap gelukt is - zo loopt een verkoop nooit door tot een oudere, lagere grens en begint hij nooit op een oud vermogen. Wordt lokaal via Modbus geschreven; vereist een verbinding met de stick. 32% is ongeveer 5,1 kW, 20% ongeveer 3,2 kW.",
+          "de": "Zwangsentladung bis zum genannten Stand, mit der genannten Leistung. Die App stellt zuerst die Untergrenze der Zwangsentladung ein, dann die Leistung und schaltet erst dann den Modus um, wobei sie auf jeden Schritt wartet - so läuft ein Verkauf nie über eine ältere, niedrigere Untergrenze hinaus oder startet mit einer alten Leistung. Wird lokal über Modbus geschrieben; braucht eine Verbindung zum Stick. 32 % sind etwa 5,1 kW, 20 % etwa 3,2 kW."
         },
         "args": [
           {
@@ -2241,7 +2856,8 @@
             "step": 1,
             "title": {
               "en": "Sell down to (%)",
-              "nl": "Verkopen tot (%)"
+              "nl": "Verkopen tot (%)",
+              "de": "Verkaufen bis (%)"
             }
           },
           {
@@ -2252,7 +2868,8 @@
             "step": 1,
             "title": {
               "en": "Power (% of 16 kW)",
-              "nl": "Vermogen (% van 16 kW)"
+              "nl": "Vermogen (% van 16 kW)",
+              "de": "Leistung (% von 16 kW)"
             }
           }
         ]
@@ -2261,11 +2878,13 @@
         "id": "stop_to_selfuse",
         "title": {
           "en": "Stop charging or selling, back to Self-Consumption",
-          "nl": "Stop laden of verkopen, terug naar Zelfconsumptie"
+          "nl": "Stop laden of verkopen, terug naar Zelfconsumptie",
+          "de": "Laden oder Verkaufen stoppen, zurück zum Eigenverbrauch"
         },
         "hint": {
           "en": "Sets the Force Charge power to 0 and switches to Self-Consumption, in that order. The zero keeps a later switch back into Force Charge from resuming at the old rate. Without a local connection only the mode is switched, through the cloud.",
-          "nl": "Zet het Force Charge-vermogen op 0 en schakelt naar Zelfconsumptie, in die volgorde. De nul voorkomt dat een latere switch terug naar Force Charge op het oude vermogen verdergaat. Zonder lokale verbinding wordt alleen de modus geschakeld, via de cloud."
+          "nl": "Zet het Force Charge-vermogen op 0 en schakelt naar Zelfconsumptie, in die volgorde. De nul voorkomt dat een latere switch terug naar Force Charge op het oude vermogen verdergaat. Zonder lokale verbinding wordt alleen de modus geschakeld, via de cloud.",
+          "de": "Stellt die Leistung der Zwangsladung auf 0 und schaltet in den Eigenverbrauch, in dieser Reihenfolge. Die Null verhindert, dass ein späterer Wechsel zurück in die Zwangsladung mit der alten Leistung weitermacht. Ohne lokale Verbindung wird nur der Modus umgeschaltet, über die Cloud."
         },
         "args": [
           {
@@ -2279,11 +2898,13 @@
         "id": "charge_to_plan",
         "title": {
           "en": "Charge to what the dear hours will need",
-          "nl": "Laad tot wat de dure uren vragen"
+          "nl": "Laad tot wat de dure uren vragen",
+          "de": "Laden bis zu dem, was die teuren Stunden brauchen"
         },
         "hint": {
           "en": "Sets the Force Charge target to the floor plus what the coming dear slots will draw from the house, plus what the slots where selling pays can export (see the \"selling power\" setting), capped at 95%. Only sets the target; \"Start charging to what the dear hours will need\" also starts the charge.",
-          "nl": "Zet het Force Charge-doel op de ontlaadgrens plus wat de komende dure kwartieren van het huis vragen, plus wat de kwartieren waarin verkopen loont kunnen terugleveren (zie de instelling \"Verkoopvermogen\"), met 95% als plafond. Zet alleen het doel; \"Start laden tot wat de dure uren vragen\" start ook het laden."
+          "nl": "Zet het Force Charge-doel op de ontlaadgrens plus wat de komende dure kwartieren van het huis vragen, plus wat de kwartieren waarin verkopen loont kunnen terugleveren (zie de instelling \"Verkoopvermogen\"), met 95% als plafond. Zet alleen het doel; \"Start laden tot wat de dure uren vragen\" start ook het laden.",
+          "de": "Stellt das Ziel der Zwangsladung auf die Untergrenze plus das, was die kommenden teuren Viertelstunden aus dem Haus ziehen, plus das, was die Viertelstunden, in denen sich Verkaufen lohnt, einspeisen können (siehe Einstellung \"Verkaufsleistung\"), begrenzt auf 95 %. Stellt nur das Ziel ein; \"Laden starten bis zu dem, was die teuren Stunden brauchen\" startet auch das Laden."
         },
         "args": [
           {
@@ -2297,15 +2918,18 @@
         "id": "report_other_battery",
         "title": {
           "en": "Report that another battery is ...",
-          "nl": "Meld dat een andere accu ..."
+          "nl": "Meld dat een andere accu ...",
+          "de": "Melden, dass eine andere Batterie ..."
         },
         "titleFormatted": {
           "en": "Report that another battery is [[state]]",
-          "nl": "Meld dat een andere accu [[state]]"
+          "nl": "Meld dat een andere accu [[state]]",
+          "de": "Melden, dass eine andere Batterie [[state]]"
         },
         "hint": {
           "en": "This app only sees its own devices, so it cannot tell what other batteries on the same meter are doing. Call this from a Flow while the state holds — once a minute is fine. The report expires by itself after three minutes, so a disabled Flow or a restart opens the guards again instead of holding this battery back forever.",
-          "nl": "Deze app ziet alleen zijn eigen apparaten en weet dus niet wat andere accu's op dezelfde meter doen. Roep dit aan vanuit een flow zolang de toestand geldt — één keer per minuut is genoeg. De melding vervalt na drie minuten vanzelf, zodat een uitgezette flow of een herstart de remmen weer opent in plaats van deze accu eeuwig tegen te houden."
+          "nl": "Deze app ziet alleen zijn eigen apparaten en weet dus niet wat andere accu's op dezelfde meter doen. Roep dit aan vanuit een flow zolang de toestand geldt — één keer per minuut is genoeg. De melding vervalt na drie minuten vanzelf, zodat een uitgezette flow of een herstart de remmen weer opent in plaats van deze accu eeuwig tegen te houden.",
+          "de": "Diese App sieht nur ihre eigenen Geräte und kann daher nicht wissen, was andere Batterien am selben Zähler tun. Rufe dies aus einem Flow auf, solange der Zustand anhält — einmal pro Minute genügt. Die Meldung läuft nach drei Minuten von selbst ab, sodass ein deaktivierter Flow oder ein Neustart die Sperren wieder öffnet, statt diese Batterie für immer zurückzuhalten."
         },
         "args": [
           {
@@ -2318,21 +2942,24 @@
             "type": "dropdown",
             "title": {
               "en": "State",
-              "nl": "Toestand"
+              "nl": "Toestand",
+              "de": "Zustand"
             },
             "values": [
               {
                 "id": "charging",
                 "title": {
                   "en": "charging",
-                  "nl": "laadt"
+                  "nl": "laadt",
+                  "de": "lädt"
                 }
               },
               {
                 "id": "discharging",
                 "title": {
                   "en": "discharging",
-                  "nl": "ontlaadt"
+                  "nl": "ontlaadt",
+                  "de": "entlädt"
                 }
               }
             ]
@@ -2345,11 +2972,13 @@
         "id": "battery_mode_is",
         "title": {
           "en": "Battery mode !{{is|is not}}",
-          "nl": "Batterijmodus !{{is|is niet}}"
+          "nl": "Batterijmodus !{{is|is niet}}",
+          "de": "Batteriemodus !{{ist|ist nicht}}"
         },
         "titleFormatted": {
           "en": "Battery mode !{{is|is not}} [[mode]]",
-          "nl": "Batterijmodus !{{is|is niet}} [[mode]]"
+          "nl": "Batterijmodus !{{is|is niet}} [[mode]]",
+          "de": "Batteriemodus !{{ist|ist nicht}} [[mode]]"
         },
         "args": [
           {
@@ -2362,70 +2991,80 @@
             "type": "dropdown",
             "title": {
               "en": "Mode",
-              "nl": "Modus"
+              "nl": "Modus",
+              "de": "Modus"
             },
             "values": [
               {
                 "id": "1",
                 "label": {
                   "en": "Self-Consumption",
-                  "nl": "Eigen verbruik"
+                  "nl": "Eigen verbruik",
+                  "de": "Eigenverbrauch"
                 }
               },
               {
                 "id": "2",
                 "label": {
                   "en": "Economy",
-                  "nl": "Economie"
+                  "nl": "Economie",
+                  "de": "Sparmodus"
                 }
               },
               {
                 "id": "3",
                 "label": {
                   "en": "Backup",
-                  "nl": "Noodstroom"
+                  "nl": "Noodstroom",
+                  "de": "Backup"
                 }
               },
               {
                 "id": "4",
                 "label": {
                   "en": "Off-Grid",
-                  "nl": "Off-Grid"
+                  "nl": "Off-Grid",
+                  "de": "Inselbetrieb"
                 }
               },
               {
                 "id": "5",
                 "label": {
                   "en": "Force Charge",
-                  "nl": "Force Charge (geforceerd laden)"
+                  "nl": "Force Charge (geforceerd laden)",
+                  "de": "Zwangsladung"
                 }
               },
               {
                 "id": "6",
                 "label": {
                   "en": "Force Discharge",
-                  "nl": "Force Discharge (geforceerd ontladen)"
+                  "nl": "Force Discharge (geforceerd ontladen)",
+                  "de": "Zwangsentladung"
                 }
               },
               {
                 "id": "7",
                 "label": {
                   "en": "Peak Shaving",
-                  "nl": "Pieksturing"
+                  "nl": "Pieksturing",
+                  "de": "Lastspitzenkappung"
                 }
               },
               {
                 "id": "8",
                 "label": {
                   "en": "Time of Use",
-                  "nl": "Tijdafhankelijk"
+                  "nl": "Tijdafhankelijk",
+                  "de": "Zeitsteuerung"
                 }
               },
               {
                 "id": "9",
                 "label": {
                   "en": "AI Mode",
-                  "nl": "AI-modus"
+                  "nl": "AI-modus",
+                  "de": "KI-Modus"
                 }
               }
             ]
@@ -2436,7 +3075,8 @@
         "id": "battery_charging",
         "title": {
           "en": "Battery !{{is|is not}} charging",
-          "nl": "Batterij is !{{aan het laden|niet aan het laden}}"
+          "nl": "Batterij is !{{aan het laden|niet aan het laden}}",
+          "de": "Batterie !{{lädt|lädt nicht}}"
         },
         "args": [
           {
@@ -2444,21 +3084,29 @@
             "type": "device",
             "filter": "driver_id=hione"
           }
-        ]
+        ],
+        "hint": {
+          "en": "True when the battery charges at more than 50 W. Smaller readings are measurement noise around zero, the same margin the idle and discharging cards use by default.",
+          "nl": "Waar als de accu met meer dan 50 W laadt. Kleinere waarden zijn meetruis rond nul; dezelfde marge die de kaarten voor inactief en ontladen standaard gebruiken.",
+          "de": "Wahr, wenn die Batterie mit mehr als 50 W lädt. Kleinere Werte sind Messrauschen um null, derselbe Spielraum, den die Karten für Ruhe und Entladen standardmäßig verwenden."
+        }
       },
       {
         "id": "battery_idle",
         "title": {
           "en": "Battery !{{is|is not}} idle",
-          "nl": "Batterij is !{{inactief|niet inactief}}"
+          "nl": "Batterij is !{{inactief|niet inactief}}",
+          "de": "Batterie !{{ruht|ruht nicht}}"
         },
         "titleFormatted": {
           "en": "Battery !{{is|is not}} idle (within ±[[threshold]] W)",
-          "nl": "Batterij is !{{inactief|niet inactief}} (binnen ±[[threshold]] W)"
+          "nl": "Batterij is !{{inactief|niet inactief}} (binnen ±[[threshold]] W)",
+          "de": "Batterie !{{ruht|ruht nicht}} (innerhalb ±[[threshold]] W)"
         },
         "hint": {
           "en": "True when the battery power is near zero (neither charging nor discharging), within the given threshold in watts.",
-          "nl": "Waar als het accuvermogen vrijwel nul is (niet aan het laden of ontladen), binnen de opgegeven drempel in watt."
+          "nl": "Waar als het accuvermogen vrijwel nul is (niet aan het laden of ontladen), binnen de opgegeven drempel in watt.",
+          "de": "Wahr, wenn die Batterieleistung nahe null liegt (weder Laden noch Entladen), innerhalb der angegebenen Schwelle in Watt."
         },
         "args": [
           {
@@ -2474,11 +3122,13 @@
             "step": 10,
             "placeholder": {
               "en": "50",
-              "nl": "50"
+              "nl": "50",
+              "de": "50"
             },
             "title": {
               "en": "Threshold (W)",
-              "nl": "Drempel (W)"
+              "nl": "Drempel (W)",
+              "de": "Schwelle (W)"
             }
           }
         ]
@@ -2487,15 +3137,18 @@
         "id": "battery_discharging",
         "title": {
           "en": "Battery !{{is|is not}} discharging",
-          "nl": "Batterij is !{{aan het ontladen|niet aan het ontladen}}"
+          "nl": "Batterij is !{{aan het ontladen|niet aan het ontladen}}",
+          "de": "Batterie !{{entlädt|entlädt nicht}}"
         },
         "titleFormatted": {
           "en": "Battery !{{is|is not}} discharging (more than [[threshold]] W)",
-          "nl": "Batterij is !{{aan het ontladen|niet aan het ontladen}} (meer dan [[threshold]] W)"
+          "nl": "Batterij is !{{aan het ontladen|niet aan het ontladen}} (meer dan [[threshold]] W)",
+          "de": "Batterie !{{entlädt|entlädt nicht}} (mehr als [[threshold]] W)"
         },
         "hint": {
           "en": "True when the battery is discharging faster than the given threshold in watts.",
-          "nl": "Waar als de batterij sneller ontlaadt dan de opgegeven drempel in watt."
+          "nl": "Waar als de batterij sneller ontlaadt dan de opgegeven drempel in watt.",
+          "de": "Wahr, wenn die Batterie schneller entlädt als die angegebene Schwelle in Watt."
         },
         "args": [
           {
@@ -2511,11 +3164,13 @@
             "step": 10,
             "placeholder": {
               "en": "50",
-              "nl": "50"
+              "nl": "50",
+              "de": "50"
             },
             "title": {
               "en": "Threshold (W)",
-              "nl": "Drempel (W)"
+              "nl": "Drempel (W)",
+              "de": "Schwelle (W)"
             }
           }
         ]
@@ -2524,7 +3179,8 @@
         "id": "grid_importing",
         "title": {
           "en": "Grid !{{is|is not}} importing power",
-          "nl": "Net !{{importeert|exporteert}} stroom"
+          "nl": "Net !{{importeert|exporteert}} stroom",
+          "de": "Netz !{{liefert|liefert keinen}} Strom"
         },
         "args": [
           {
@@ -2538,7 +3194,8 @@
         "id": "connection_is_local",
         "title": {
           "en": "Connection !{{is|is not}} local (LAN)",
-          "nl": "Verbinding is !{{lokaal|niet lokaal}} (LAN)"
+          "nl": "Verbinding is !{{lokaal|niet lokaal}} (LAN)",
+          "de": "Verbindung !{{ist|ist nicht}} lokal (LAN)"
         },
         "args": [
           {
@@ -2552,11 +3209,13 @@
         "id": "price_is_buy_moment",
         "title": {
           "en": "It !{{is|is not}} a buy moment",
-          "nl": "Het !{{is|is geen}} koopmoment"
+          "nl": "Het !{{is|is geen}} koopmoment",
+          "de": "Es !{{ist|ist kein}} Kaufmoment"
         },
         "hint": {
           "en": "True when buying now pays: no meaningfully cheaper slot comes before the next dear stretch, and that stretch - up to the next cheaper refill, across midnight if need be - holds a price that covers the round trip, wear and margin. Never true in a slot dear enough to discharge into.",
-          "nl": "Waar als nu inkopen loont: vóór de volgende dure periode komt geen noemenswaardig goedkoper kwartier, en die periode - tot de volgende goedkopere herlaadkans, zo nodig over middernacht heen - bevat een prijs die heen- en terugreis, slijtage en marge dekt. Nooit waar in een kwartier dat duur genoeg is om te ontladen."
+          "nl": "Waar als nu inkopen loont: vóór de volgende dure periode komt geen noemenswaardig goedkoper kwartier, en die periode - tot de volgende goedkopere herlaadkans, zo nodig over middernacht heen - bevat een prijs die heen- en terugreis, slijtage en marge dekt. Nooit waar in een kwartier dat duur genoeg is om te ontladen.",
+          "de": "Wahr, wenn sich Kaufen jetzt lohnt: Vor der nächsten teuren Strecke kommt keine nennenswert günstigere Viertelstunde, und diese Strecke - bis zur nächsten günstigeren Nachladung, notfalls über Mitternacht hinweg - enthält einen Preis, der Hin- und Rückweg, Verschleiß und Marge deckt. Nie wahr in einer Viertelstunde, die teuer genug zum Entladen ist."
         },
         "args": [
           {
@@ -2570,11 +3229,13 @@
         "id": "price_discharge_pays",
         "title": {
           "en": "Discharging !{{pays|does not pay}}",
-          "nl": "Ontladen !{{loont|loont niet}}"
+          "nl": "Ontladen !{{loont|loont niet}}",
+          "de": "Entladen !{{lohnt sich|lohnt sich nicht}}"
         },
         "hint": {
           "en": "True when the price is above the break-even on today's low, plus the required margin.",
-          "nl": "Waar als de prijs boven de break-even op het dagminimum ligt, plus de gevraagde marge."
+          "nl": "Waar als de prijs boven de break-even op het dagminimum ligt, plus de gevraagde marge.",
+          "de": "Wahr, wenn der Preis über der Gewinnschwelle auf Basis des heutigen Tiefs liegt, plus der geforderten Marge."
         },
         "args": [
           {
@@ -2588,11 +3249,13 @@
         "id": "price_is_sell_moment",
         "title": {
           "en": "It !{{is|is not}} a sell moment",
-          "nl": "Het !{{is|is geen}} verkoopmoment"
+          "nl": "Het !{{is|is geen}} verkoopmoment",
+          "de": "Es !{{ist|ist kein}} Verkaufsmoment"
         },
         "hint": {
           "en": "True when exporting pays and this quarter is among the dearest the charge on board can fill before a cheaper refill takes over, so a long peak is sold whole when the charge is there. When the charge is not known: no meaningfully higher price is left before that refill.",
-          "nl": "Waar als terugleveren loont en dit kwartier hoort bij de duurste die de lading aan boord kan vullen voordat een goedkopere herlaadkans komt; zo wordt een lange piek helemaal verkocht als de lading er is. Is de lading onbekend: er komt vóór die herlaadkans geen noemenswaardig hogere prijs meer."
+          "nl": "Waar als terugleveren loont en dit kwartier hoort bij de duurste die de lading aan boord kan vullen voordat een goedkopere herlaadkans komt; zo wordt een lange piek helemaal verkocht als de lading er is. Is de lading onbekend: er komt vóór die herlaadkans geen noemenswaardig hogere prijs meer.",
+          "de": "Wahr, wenn sich Einspeisen lohnt und diese Viertelstunde zu den teuersten gehört, die die Ladung an Bord füllen kann, bevor eine günstigere Nachladung kommt; so wird eine lange Preisspitze ganz verkauft, wenn die Ladung da ist. Ist die Ladung unbekannt: Vor dieser Nachladung kommt kein nennenswert höherer Preis mehr."
         },
         "args": [
           {
@@ -2606,11 +3269,13 @@
         "id": "price_spread_pays",
         "title": {
           "en": "Today's spread !{{pays|does not pay}}",
-          "nl": "De dagspreiding !{{loont|loont niet}}"
+          "nl": "De dagspreiding !{{loont|loont niet}}",
+          "de": "Die heutige Preisspanne !{{lohnt sich|lohnt sich nicht}}"
         },
         "hint": {
           "en": "True when the gap between the cheapest and dearest hour covers wear and losses.",
-          "nl": "Waar als het gat tussen het goedkoopste en duurste uur de slijtage en verliezen dekt."
+          "nl": "Waar als het gat tussen het goedkoopste en duurste uur de slijtage en verliezen dekt.",
+          "de": "Wahr, wenn der Abstand zwischen der günstigsten und der teuersten Stunde Verschleiß und Verluste deckt."
         },
         "args": [
           {
@@ -2624,11 +3289,13 @@
         "id": "price_charge_needed",
         "title": {
           "en": "The battery !{{still needs|does not need}} charging",
-          "nl": "De accu !{{moet nog laden|hoeft niet te laden}}"
+          "nl": "De accu !{{moet nog laden|hoeft niet te laden}}",
+          "de": "Die Batterie !{{muss noch|muss nicht mehr}} laden"
         },
         "hint": {
           "en": "True while the charge is below what the dear hours still ahead will draw. Put it in front of a Flow that switches to Force Charge: that mode charges TO its target and nothing more, so once the target is met the inverter sits idle and stops taking in surplus solar - only Self-Consumption does that. Without this check a cheap sunny afternoon parks the battery while the sun goes to the grid.",
-          "nl": "Waar zolang de lading onder ligt wat de dure uren die nog komen vragen. Zet dit voor een flow die naar Force Charge schakelt: die modus laadt TOT zijn doel en verder niets, dus zodra dat doel gehaald is staat de omvormer stil en neemt hij geen zonoverschot meer op - dat doet alleen Zelfconsumptie. Zonder deze controle zet een goedkope zonnige middag de accu stil terwijl de zon het net op gaat."
+          "nl": "Waar zolang de lading onder ligt wat de dure uren die nog komen vragen. Zet dit voor een flow die naar Force Charge schakelt: die modus laadt TOT zijn doel en verder niets, dus zodra dat doel gehaald is staat de omvormer stil en neemt hij geen zonoverschot meer op - dat doet alleen Zelfconsumptie. Zonder deze controle zet een goedkope zonnige middag de accu stil terwijl de zon het net op gaat.",
+          "de": "Wahr, solange die Ladung unter dem liegt, was die noch kommenden teuren Stunden ziehen werden. Setze es vor einen Flow, der in die Zwangsladung schaltet: Dieser Modus lädt BIS zu seinem Ziel und nicht mehr, ist das Ziel erreicht, steht der Wechselrichter also still und nimmt keinen Solarüberschuss mehr auf - das tut nur der Eigenverbrauch. Ohne diese Prüfung parkt ein günstiger sonniger Nachmittag die Batterie, während die Sonne ins Netz geht."
         },
         "args": [
           {
@@ -2642,11 +3309,13 @@
         "id": "price_is_peak_hour",
         "title": {
           "en": "This quarter hour !{{is|is not}} one of the dearest the battery can still cover",
-          "nl": "Dit kwartier !{{hoort|hoort niet}} bij de duurste momenten die de accu nog haalt"
+          "nl": "Dit kwartier !{{hoort|hoort niet}} bij de duurste momenten die de accu nog haalt",
+          "de": "Diese Viertelstunde !{{gehört|gehört nicht}} zu den teuersten, die die Batterie noch abdecken kann"
         },
         "hint": {
           "en": "Ranks the quarter hours up to the next cheaper refill (across midnight if need be) by price and keeps as many as the charge on board can serve at the house load. A battery that cannot cover the whole expensive stretch should spend itself on the dearest part of it. A single quarter just outside a run is counted in, so the battery does not stop for fifteen minutes.",
-          "nl": "Rangschikt de kwartieren tot de volgende goedkopere herlaadkans (zo nodig over middernacht heen) op prijs en houdt er zoveel over als de lading aan boord bij het huisverbruik kan dekken. Een accu die de hele dure periode niet haalt, moet zich aan het duurste deel ervan uitgeven. Eén los kwartier net buiten een reeks telt mee, zodat de accu niet een kwartier stilvalt."
+          "nl": "Rangschikt de kwartieren tot de volgende goedkopere herlaadkans (zo nodig over middernacht heen) op prijs en houdt er zoveel over als de lading aan boord bij het huisverbruik kan dekken. Een accu die de hele dure periode niet haalt, moet zich aan het duurste deel ervan uitgeven. Eén los kwartier net buiten een reeks telt mee, zodat de accu niet een kwartier stilvalt.",
+          "de": "Ordnet die Viertelstunden bis zur nächsten günstigeren Nachladung (notfalls über Mitternacht hinweg) nach Preis und behält so viele, wie die Ladung an Bord beim Hausverbrauch bedienen kann. Eine Batterie, die die ganze teure Strecke nicht schafft, sollte sich für deren teuersten Teil ausgeben. Eine einzelne Viertelstunde knapp außerhalb einer Reihe zählt mit, damit die Batterie nicht für fünfzehn Minuten stoppt."
         },
         "args": [
           {
@@ -2660,11 +3329,13 @@
         "id": "price_cheaper_refill_ahead",
         "title": {
           "en": "A cheaper refill !{{is|is not}} coming before the dearest moment",
-          "nl": "Er !{{komt|komt geen}} goedkoper laadmoment voor het duurste moment"
+          "nl": "Er !{{komt|komt geen}} goedkoper laadmoment voor het duurste moment",
+          "de": "Eine günstigere Nachladung !{{kommt|kommt nicht}} vor dem teuersten Moment"
         },
         "hint": {
           "en": "True when some hour before the dearest hour still ahead refills the battery for less than the energy is worth right now - charging losses and wear included. Then holding the charge is the worse trade: spend it now and buy it back in the dip. Put it INVERTED in front of a Flow that parks the battery, so it only parks when the charge really cannot be replaced in time. Without it an overnight stretch at 35 ct parks the battery to serve a 45 ct evening that the 17 ct afternoon in between would have filled for a third of the price.",
-          "nl": "Waar zodra een uur voor het duurste uur dat nog komt de accu goedkoper vult dan wat de energie op dit moment waard is, inclusief laadverlies en slijtage. Dan is vasthouden de slechtere ruil: nu gebruiken en in het dal terugkopen. Zet deze OMGEKEERD voor een flow die de accu vastzet, zodat dat alleen gebeurt als de lading echt niet op tijd te vervangen is. Zonder deze controle zet een nacht van 35 ct de accu stil voor een avond van 45 ct, terwijl de middag van 17 ct ertussen hem voor een derde van die prijs had gevuld."
+          "nl": "Waar zodra een uur voor het duurste uur dat nog komt de accu goedkoper vult dan wat de energie op dit moment waard is, inclusief laadverlies en slijtage. Dan is vasthouden de slechtere ruil: nu gebruiken en in het dal terugkopen. Zet deze OMGEKEERD voor een flow die de accu vastzet, zodat dat alleen gebeurt als de lading echt niet op tijd te vervangen is. Zonder deze controle zet een nacht van 35 ct de accu stil voor een avond van 45 ct, terwijl de middag van 17 ct ertussen hem voor een derde van die prijs had gevuld.",
+          "de": "Wahr, wenn irgendeine Stunde vor der teuersten noch kommenden Stunde die Batterie für weniger nachlädt, als die Energie jetzt wert ist - Ladeverluste und Verschleiß eingerechnet. Dann ist das Halten der Ladung der schlechtere Handel: jetzt ausgeben und im Preistal zurückkaufen. Setze es INVERTIERT vor einen Flow, der die Batterie parkt, damit sie nur parkt, wenn die Ladung wirklich nicht rechtzeitig ersetzt werden kann. Ohne das parkt eine Nachtstrecke bei 35 ct die Batterie für einen Abend bei 45 ct, den der Nachmittag bei 17 ct dazwischen für ein Drittel des Preises gefüllt hätte."
         },
         "args": [
           {
@@ -2678,11 +3349,13 @@
         "id": "other_battery_charging",
         "title": {
           "en": "Another battery !{{is|is not}} charging",
-          "nl": "Een andere accu !{{laadt|laadt niet}}"
+          "nl": "Een andere accu !{{laadt|laadt niet}}",
+          "de": "Eine andere Batterie !{{lädt|lädt nicht}}"
         },
         "hint": {
           "en": "True while a Flow has recently reported another battery on this meter as charging. Charging this battery at the same time would buy the same energy twice; discharging into it would be a round trip for nothing.",
-          "nl": "Waar zolang een flow kort geleden heeft gemeld dat een andere accu op deze meter aan het laden is. Deze accu tegelijk laden koopt dezelfde energie twee keer; erin ontladen is een rondje voor niets."
+          "nl": "Waar zolang een flow kort geleden heeft gemeld dat een andere accu op deze meter aan het laden is. Deze accu tegelijk laden koopt dezelfde energie twee keer; erin ontladen is een rondje voor niets.",
+          "de": "Wahr, solange ein Flow kürzlich gemeldet hat, dass eine andere Batterie an diesem Zähler lädt. Diese Batterie gleichzeitig zu laden würde dieselbe Energie zweimal kaufen; in sie hinein zu entladen wäre ein Hin und Zurück für nichts."
         },
         "args": [
           {
@@ -2696,11 +3369,13 @@
         "id": "other_battery_discharging",
         "title": {
           "en": "Another battery !{{is|is not}} discharging",
-          "nl": "Een andere accu !{{ontlaadt|ontlaadt niet}}"
+          "nl": "Een andere accu !{{ontlaadt|ontlaadt niet}}",
+          "de": "Eine andere Batterie !{{entlädt|entlädt nicht}}"
         },
         "hint": {
           "en": "True while a Flow has recently reported another battery on this meter as discharging. Charging this battery from that export just moves energy between batteries and loses a little on the way.",
-          "nl": "Waar zolang een flow kort geleden heeft gemeld dat een andere accu op deze meter aan het ontladen is. Deze accu daaruit laden verplaatst alleen energie tussen accu's en verliest onderweg een deel."
+          "nl": "Waar zolang een flow kort geleden heeft gemeld dat een andere accu op deze meter aan het ontladen is. Deze accu daaruit laden verplaatst alleen energie tussen accu's en verliest onderweg een deel.",
+          "de": "Wahr, solange ein Flow kürzlich gemeldet hat, dass eine andere Batterie an diesem Zähler entlädt. Diese Batterie aus dieser Einspeisung zu laden verschiebt nur Energie zwischen Batterien und verliert unterwegs ein wenig."
         },
         "args": [
           {
@@ -2711,5 +3386,23 @@
         ]
       }
     ]
+  },
+  "widgets": {
+    "price_plan": {
+      "id": "price_plan",
+      "name": {
+        "en": "Price plan",
+        "nl": "Prijsplan",
+        "de": "Preisplan"
+      },
+      "height": 220,
+      "settings": [],
+      "api": {
+        "getPrices": {
+          "method": "GET",
+          "path": "/"
+        }
+      }
+    }
   }
 }

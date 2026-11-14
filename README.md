@@ -109,11 +109,14 @@ The thresholds move with the day: on a day where every quarter is expensive the 
 - **Conditions:** *buy moment*, *discharging pays*, *sell moment*, *today's spread pays*, *still needs charging*, *one of the dearest quarters the battery can still cover*, *a cheaper refill is coming before the dearest moment*
 - **Actions:** *start charging to what the dear hours will need* — a charge target calculated from the coming expensive quarters and the house load, instead of a fixed 95 %
 - **Price chart** under *Configure → Prices*, for today and tomorrow, with the verdict per quarter
+- **Dashboard widget** *Price plan*: the same chart on a Homey dashboard, with the plan's verdict, the price now and a tap on any quarter for its details
 - **Insights** logs the buy and sell moments as on/off, the discharge floor in ct/kWh and the battery mode as a number (1 = Self-Consumption, 5 = Force Charge, …), so a graph shows afterwards when the plan wanted to trade and why it did not
 
-**Prices come from Frank Energie's public API** (no account or key). It works with any Dutch supplier: the market price is the same for everyone, and a different supplier markup shifts every quarter by the same amount, which the decisions hardly notice. When Frank cannot be reached, **[dynamisch-tarief.nl](https://www.dynamisch-tarief.nl)** stands in automatically (same market price); Frank takes over again as soon as it is back.
+**In the Netherlands, prices come from Frank Energie's public API** (no account or key). It works with any Dutch supplier: the market price is the same for everyone, and a different supplier markup shifts every quarter by the same amount, which the decisions hardly notice. When Frank cannot be reached, **[dynamisch-tarief.nl](https://www.dynamisch-tarief.nl)** stands in automatically (same market price); Frank takes over again as soon as it is back.
 
-**Check the settings before letting Flows trade** (device settings → *Price plan*): battery wear, round-trip efficiency, required margin, usable capacity, discharge floor and how much less exporting earns than using the energy yourself. The defaults are tuned to the tested system and a Dutch contract with net metering.
+**Other countries get the day-ahead market price from [Energy-Charts](https://www.energy-charts.info)** (Fraunhofer ISE, no account or key): Germany/Luxembourg, Austria, Belgium, France, Switzerland, Poland, Czechia, Hungary, Slovenia, Denmark (DK1/DK2), Norway South (NO2), Sweden South (SE4) and Italy North. The country is taken from Homey's time zone, or chosen under device settings → *Price plan* → *Country / price zone*. That price is the bare market price, so enter your own **surcharge** (taxes, grid fees and supplier markup per kWh) and **VAT** there as well: the price tile then shows what you actually pay, and the plan knows that an exported kWh does not earn those back.
+
+**Check the settings before letting Flows trade** (device settings → *Price plan*): battery wear, round-trip efficiency, required margin, usable capacity, discharge floor and how much less exporting earns than using the energy yourself. The defaults are tuned to the tested system and a Dutch contract with net metering; outside the Netherlands, start with the surcharge and VAT.
 
 ---
 
@@ -121,9 +124,11 @@ The thresholds move with the day: on a day where every quarter is expensive the 
 
 ### Triggers
 - Battery mode changed
+- The battery was held at its current charge — fires only when the hold actually moved the reserve, so a notification on it does not repeat
+- A buy moment, sell moment or peak the battery can cover started / ended — starts a Flow in the minute the price plan changes its mind, instead of asking every five minutes
 
 ### Conditions
-- Battery **is / is not** charging, idle or discharging
+- Battery **is / is not** charging (more than 50 W), idle or discharging
 - Battery mode **is / is not** …
 - Grid **is / is not** importing power
 - Connection **is / is not** local
@@ -162,13 +167,22 @@ The thresholds move with the day: on a day where every quarter is expensive the 
 - **[homeassistant-hoymiles-cloud](https://github.com/Philra94/homeassistant-hoymiles-cloud)** — Home Assistant integration for the S-Miles Cloud API
 - **[hoymiles-wifi](https://github.com/suaveolent/hoymiles-wifi)** — Python library for the native local protocol of Hoymiles DTUs
 - **[hoymiles-web-api](https://github.com/hosssa/hoymiles-web-api)** — Web API wrapper for Hoymiles cloud communication
-- **[Frank Energie](https://www.frankenergie.nl)** and **[dynamisch-tarief.nl](https://www.dynamisch-tarief.nl)** — day-ahead prices
+- **[es.ardbol.smiles](https://github.com/tibistibi/es.ardbol.smiles)** — Homey app that sets the power limit of Hoymiles microinverters through the S-Miles Cloud, for DTUs that are not on Homey's network
+- **[Frank Energie](https://www.frankenergie.nl)** and **[dynamisch-tarief.nl](https://www.dynamisch-tarief.nl)** — day-ahead prices for the Netherlands
+- **[Energy-Charts](https://www.energy-charts.info)** (Fraunhofer ISE) — day-ahead prices for the other countries; data from Bundesnetzagentur | SMARD.de, CC BY 4.0
 
 ---
 
 ## Contributing
 
 Issues and pull requests are welcome on [GitHub](https://github.com/ItsRaYnor/homey-app-hoymiles-hione/issues). For questions, the Homey Community topic is the place.
+
+Where things live:
+
+- `drivers/hione/device.js` — the device: polling, capabilities and the Flow actions. Larger concerns sit beside it in `drivers/hione/parts/` (price plan, state of charge, the DTS stick, capability migration); their methods are copied onto the device's prototype, so it is still one class at runtime.
+- `lib/` — protocol and data sources: Modbus, the cloud API, Frank Energie and Energy-Charts prices, the network scan.
+- `widgets/price_plan/` — the dashboard widget.
+- `test/` — unit tests, run with `npm test` (Node's built-in test runner, no dependencies). GitHub Actions runs them and `homey app validate` on every push.
 
 ---
 

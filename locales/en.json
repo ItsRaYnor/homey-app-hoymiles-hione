@@ -28,7 +28,8 @@
     "hold": "Wait for {{price}}",
     "flat": "Flat day",
     "unknown": "No prices",
-    "save": "Saving for peak"
+    "save": "Saving for peak",
+    "no_zone": "Choose price zone"
   },
   "labels": {
     "reserve_selfuse": "the Self-Consumption reserve",

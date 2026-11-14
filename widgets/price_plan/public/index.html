@@ -1,0 +1,235 @@
+<html>
+  <head>
+    <style>
+      html, body { height: 100%; margin: 0; }
+      body { display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; }
+      .row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--homey-su-2); }
+      #plan { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      #now { white-space: nowrap; }
+      #chart { flex: 1; min-height: 0; margin: var(--homey-su-2) 0; touch-action: pan-y; }
+      #chart svg { display: block; }
+      #status { flex: 1; display: none; align-items: center; justify-content: center; text-align: center; }
+      #detail { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .tabs { display: flex; gap: var(--homey-su-1); flex-shrink: 0; }
+      .tabs button {
+        font: inherit; font-size: var(--homey-font-size-small); line-height: var(--homey-line-height-small);
+        color: var(--homey-text-color-light); background: none; cursor: pointer;
+        border: var(--homey-line); border-radius: var(--homey-border-radius-small);
+        padding: 0 var(--homey-su-2);
+      }
+      .tabs button.active { color: var(--homey-text-color); border-color: var(--homey-text-color-light); }
+      .dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; }
+      svg text { font-size: 9px; fill: var(--homey-text-color-light); }
+      /* Bar colours: the same verdicts as the chart on the settings page. */
+      .buy { fill: #00A94F; background: #00A94F; }
+      .sell { fill: #d32f2f; background: #d32f2f; }
+      .peak { fill: #f4a261; background: #f4a261; }
+      .later { fill: rgba(244, 162, 97, 0.4); background: rgba(244, 162, 97, 0.4); }
+      .hold { fill: var(--homey-line-color); background: var(--homey-line-color); }
+      .floor { stroke: #d32f2f; stroke-width: 1; stroke-dasharray: 4 3; }
+      .mark { fill: none; stroke: var(--homey-text-color); stroke-width: 1.5; }
+    </style>
+  </head>
+
+  <body class="homey-widget">
+    <div class="row">
+      <span id="plan" class="homey-text-bold"></span>
+      <span id="now" class="homey-text-small-light"></span>
+    </div>
+    <div id="chart"></div>
+    <div id="status" class="homey-text-small-light"></div>
+    <div class="row">
+      <span id="detail" class="homey-text-small-light"></span>
+      <span class="tabs">
+        <button id="tab-today" class="active"></button>
+        <button id="tab-tomorrow"></button>
+      </span>
+    </div>
+
+    <script type="text/javascript">
+      var i18n = {
+        en: {
+          today: 'Today', tomorrow: 'Tomorrow', now: 'Now', low: 'Low', high: 'High',
+          buy: 'Buy', sell: 'Sell', peak: 'Discharge', later: 'Pays, more later', hold: 'Do nothing',
+          no_device: 'Add a HiOne device first.',
+          disabled: 'The price plan is switched off in the device settings.',
+          no_zone: 'Choose a country / price zone in the device settings.',
+          no_prices: 'No prices available right now.',
+          not_yet: 'Tomorrow\'s prices are not out yet. They usually arrive around 13:00.',
+          error: 'Could not load the prices.'
+        },
+        nl: {
+          today: 'Vandaag', tomorrow: 'Morgen', now: 'Nu', low: 'Laag', high: 'Hoog',
+          buy: 'Kopen', sell: 'Verkopen', peak: 'Ontladen', later: 'Loont, later meer', hold: 'Niets doen',
+          no_device: 'Voeg eerst een HiOne-apparaat toe.',
+          disabled: 'Het prijsplan staat uit in de apparaatinstellingen.',
+          no_zone: 'Kies een land / prijszone in de apparaatinstellingen.',
+          no_prices: 'Op dit moment geen prijzen beschikbaar.',
+          not_yet: 'De prijzen van morgen zijn er nog niet. Ze komen meestal rond 13:00.',
+          error: 'De prijzen konden niet worden geladen.'
+        },
+        de: {
+          today: 'Heute', tomorrow: 'Morgen', now: 'Jetzt', low: 'Tief', high: 'Hoch',
+          buy: 'Kaufen', sell: 'Verkaufen', peak: 'Entladen', later: 'Lohnt, später mehr', hold: 'Nichts tun',
+          no_device: 'Füge zuerst ein HiOne-Gerät hinzu.',
+          disabled: 'Der Preisplan ist in den Geräteeinstellungen ausgeschaltet.',
+          no_zone: 'Wähle ein Land / eine Preiszone in den Geräteeinstellungen.',
+          no_prices: 'Im Moment keine Preise verfügbar.',
+          not_yet: 'Die Preise von morgen sind noch nicht da. Sie kommen meist gegen 13:00 Uhr.',
+          error: 'Die Preise konnten nicht geladen werden.'
+        }
+      };
+
+      var REFRESH_MS = 60 * 1000;
+      var _homey = null;
+      var _day = 'today';
+      var _data = null;      // the last answer, kept for redrawing on a resize
+      var _selected = -1;    // the slot a finger is on, -1 for none
+
+      function texts() {
+        return i18n[(_data && _data.language) || 'en'] || i18n.en;
+      }
+
+      function cents(value) {
+        var text = (value * 100).toFixed(1);
+        return _data && _data.language === 'en' ? text : text.replace('.', ',');
+      }
+
+      function clock(ms) {
+        var date = new Date(ms);
+        return date.getHours() + ':' + String(date.getMinutes()).padStart(2, '0');
+      }
+
+      function el(id) { return document.getElementById(id); }
+
+      function showStatus(message) {
+        el('chart').style.display = 'none';
+        el('status').style.display = 'flex';
+        el('status').textContent = message;
+        el('plan').textContent = '';
+        el('now').textContent = '';
+        el('detail').textContent = '';
+      }
+
+      function summary() {
+        var t = texts();
+        el('detail').innerHTML = t.low + ' <b>' + cents(_data.dayLow) + '</b> · '
+          + t.high + ' <b>' + cents(_data.dayHigh) + '</b> ct';
+      }
+
+      function detail(index) {
+        var t = texts();
+        var slot = _data.slots[index];
+        el('detail').innerHTML = "<i class='dot " + slot.verdict + "'></i><b>" + clock(slot.from) + '–'
+          + clock(slot.till) + '</b> · ' + cents(slot.price) + ' ct · ' + t[slot.verdict];
+      }
+
+      function draw() {
+        var t = texts();
+        el('tab-today').textContent = t.today;
+        el('tab-tomorrow').textContent = t.tomorrow;
+        el('tab-today').className = _day === 'today' ? 'active' : '';
+        el('tab-tomorrow').className = _day === 'tomorrow' ? 'active' : '';
+        if (!_data) return;
+        if (_data.state === 'loading') { showStatus(''); return; }
+        if (_data.state !== 'ok') { showStatus(t[_data.state] || t.error); return; }
+
+        var chart = el('chart');
+        el('status').style.display = 'none';
+        chart.style.display = 'block';
+
+        var slots = _data.slots;
+        var current = slots.filter(function (slot) { return slot.now; })[0];
+        el('plan').textContent = _data.planText || t[_day];
+        el('now').textContent = current ? t.now + ' ' + cents(current.price) + ' ct' : '';
+
+        // Drawn at the size the dashboard gives the widget, so the labels stay
+        // the same size on a phone and on a wall tablet.
+        var W = chart.clientWidth || 300;
+        var H = chart.clientHeight || 110;
+        var padL = 26, padB = 12, padT = 4;
+        var plot = H - padB - padT;
+        var top = Math.max(_data.dayHigh, _data.dischargeFloor) * 1.08 || 1;
+        var step = (W - padL) / slots.length;
+        var bar = step > 9 ? step - 3 : Math.max(1, step - 1);
+        var y = function (value) { return padT + plot - (Math.max(0, value) / top) * plot; };
+
+        var svg = ["<svg width='" + W + "' height='" + H + "' viewBox='0 0 " + W + ' ' + H + "'>"];
+        var floorY = y(_data.dischargeFloor);
+        svg.push("<line class='floor' x1='" + padL + "' y1='" + floorY + "' x2='" + W + "' y2='" + floorY + "'/>");
+        svg.push("<text x='0' y='" + (floorY + 3) + "'>" + cents(_data.dischargeFloor) + '</text>');
+
+        slots.forEach(function (slot, index) {
+          var x = padL + index * step;
+          var barTop = y(slot.price);
+          var height = Math.max(1, padT + plot - barTop);
+          svg.push("<rect class='" + slot.verdict + "' x='" + x.toFixed(1) + "' y='" + barTop.toFixed(1)
+            + "' width='" + bar.toFixed(1) + "' height='" + height.toFixed(1) + "' rx='1'/>");
+          if (slot.now || index === _selected) {
+            svg.push("<rect class='mark' x='" + (x - 1.5).toFixed(1) + "' y='" + (barTop - 1.5).toFixed(1)
+              + "' width='" + (bar + 3).toFixed(1) + "' height='" + (height + 3).toFixed(1) + "' rx='2'/>");
+          }
+          var start = new Date(slot.from);
+          if (start.getMinutes() === 0 && start.getHours() % 6 === 0) {
+            svg.push("<text x='" + (x + bar / 2).toFixed(1) + "' y='" + (H - 2) + "' text-anchor='middle'>"
+              + start.getHours() + '</text>');
+          }
+        });
+        svg.push('</svg>');
+        chart.innerHTML = svg.join('');
+        chart.dataset.padL = padL;
+        chart.dataset.step = step;
+
+        if (_selected >= 0 && slots[_selected]) detail(_selected); else summary();
+      }
+
+      function load() {
+        _homey.api('GET', '/?day=' + _day)
+          .then(function (data) {
+            // A late answer for the other tab must not overwrite this one.
+            if (data && data.day && data.day !== _day) return;
+            _data = data;
+            draw();
+          })
+          .catch(function () {
+            if (!_data || _data.state !== 'ok') {
+              _data = { state: 'error', language: _data && _data.language };
+              draw();
+            }
+          });
+      }
+
+      function pick(event) {
+        if (!_data || _data.state !== 'ok') return;
+        var chart = el('chart');
+        var x = event.clientX - chart.getBoundingClientRect().left - Number(chart.dataset.padL);
+        var index = Math.floor(x / Number(chart.dataset.step));
+        _selected = index >= 0 && index < _data.slots.length ? index : -1;
+        draw();
+      }
+
+      function switchDay(day) {
+        if (day === _day) return;
+        _day = day;
+        _selected = -1;
+        _data = _data ? { state: 'loading', language: _data.language } : null;
+        el('chart').innerHTML = '';
+        draw();
+        load();
+      }
+
+      function onHomeyReady(Homey) {
+        _homey = Homey;
+        el('tab-today').addEventListener('click', function () { switchDay('today'); });
+        el('tab-tomorrow').addEventListener('click', function () { switchDay('tomorrow'); });
+        el('chart').addEventListener('pointerdown', pick);
+        el('chart').addEventListener('pointermove', function (event) { if (event.buttons) pick(event); });
+        window.addEventListener('resize', draw);
+        draw();
+        load();
+        setInterval(load, REFRESH_MS);
+        Homey.ready();
+      }
+    </script>
+  </body>
+</html>

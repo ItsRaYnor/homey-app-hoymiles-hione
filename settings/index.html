@@ -223,6 +223,117 @@
 
   <script>
     var i18n = {
+      de: {
+        title: 'Hoymiles HiOne — Einstellungen',
+        disclaimer: 'Ändere die API-URL nur, wenn Hoymiles auf einen anderen Endpunkt umzieht. Die Standard-URL ist <strong>https://neapi.hoymiles.com</strong>.',
+        hint: 'Basis-URL der S-Miles-Cloud-API. Leer lassen für die Standard-URL.',
+        save: 'Speichern',
+        invalidUrl: 'Ungültige URL. Verwende das Format https://...',
+        saveFailed: 'Speichern fehlgeschlagen: ',
+        saveOk: 'Gespeichert! Bestehende Geräte verwenden die neue URL nach einem Neustart.',
+        accTitle: 'S-Miles-Cloud-Konto',
+        accHint: 'Melde dich hier einmal an — ein Gerät über die Cloud hinzuzufügen geht danach mit einem Tipp.',
+        advTitle: 'Erweitert',
+        email: 'E-Mail-Adresse',
+        password: 'Passwort',
+        loginSave: 'Anmelden & speichern',
+        loginBusy: 'Anmeldung läuft…',
+        loginOk: 'Angemeldet! Dein Konto ist für das Koppeln gespeichert.',
+        loginFailed: 'Anmeldung fehlgeschlagen: ',
+        loginEmpty: 'Bitte beide Felder ausfüllen.',
+        savedAs: 'Gespeichertes Konto: <strong>{email}</strong>',
+        forget: 'Konto vergessen',
+        forgotten: 'Konto entfernt.',
+        diagBtn: 'Unterstützte Batteriemodi anzeigen',
+        diagStation: 'Station (wenn dein Konto mehrere Batterien hat)',
+        srcTitle: 'Woher kommt welcher Wert?',
+        srcHelp: 'Mit einer lokalen Modbus-Verbindung werden diese Werte direkt vom DTS-Stick gelesen — live, ohne Verzögerung durch die Cloud. Auch der Batteriemodus, die Ladeobergrenze, die Untergrenzen und die Leistungsgrenzen werden lokal geschrieben: Das kommt in Sekunden an, während eine Änderung über die Cloud etwa vier Minuten braucht. Die Cloud bleibt die Ausweichlösung für einen Stick, der nicht erreichbar ist, und für Einstellungen, die es nur dort gibt. Alles, was unten als Cloud aufgeführt ist, hängt ein paar Minuten nach.',
+        tabAccount: 'Konto',
+        tabLan: 'Verbindung',
+        tabData: 'Werte',
+        tabPrices: 'Preise',
+        priceTitle: 'Preise von heute',
+        priceTitleTomorrow: 'Preise von morgen',
+        priceHint: 'Der All-in-Preis pro Viertelstunde bei Frank Energie, mit dem Urteil der App daneben. Insights zeigt nur, was der Preis war; dies zeigt auch die Viertelstunden, die noch kommen.',
+        priceToday: 'Heute',
+        priceTomorrow: 'Morgen',
+        priceHintMarket: 'Der Day-Ahead-Marktpreis für die Zone {zone} pro Viertelstunde (Energy-Charts), plus dein eigener Aufschlag und deine Mehrwertsteuer aus den Geräteeinstellungen, mit dem Urteil der App daneben. Insights zeigt nur, was der Preis war; dies zeigt auch die Viertelstunden, die noch kommen.',
+        priceNotYet: 'Die Preise von morgen sind noch nicht da. Sie werden meist gegen 13:00 Uhr veröffentlicht.',
+        priceFallback: 'Frank Energie war nicht erreichbar; diese Preise kommen von dynamisch-tarief.nl (gleicher Marktpreis, All-in mit dem durchschnittlichen Aufschlag).',
+        priceTomorrowNote: 'Morgen, wie es um Mitternacht aussieht: Die Farben gehen vom Tief von morgen selbst aus und kennen die Ladung noch nicht, mit der die Batterie beginnt.',
+        priceRefLow: 'rechnet mit dem Tief von morgen',
+        priceLow: 'Niedrigster',
+        priceHigh: 'Höchster',
+        priceFloor: 'Entladeschwelle',
+        priceBuy: 'Kaufen',
+        priceDetailBuy: 'Bezug',
+        priceDetailExport: 'Einspeisung',
+        priceLater: 'Lohnt sich, später aber mehr',
+        priceDischarge: 'Entladen lohnt sich',
+        priceSell: 'Verkaufen',
+        priceMarket: 'Einspeisepreis (Markt)',
+        priceMarketPeak: 'Höchster Einspeisepreis',
+        priceCovered: 'Batterie deckt noch {n} Stunden',
+        priceHold: 'Nichts tun',
+        priceErr: 'Keine Preise: ',
+        priceActions: {
+          buy: 'Jetzt kaufen: Der Preis liegt nahe am Tagestief.',
+          sell: 'Jetzt verkaufen: Heute kommt kein höherer Preis mehr.',
+          discharge: 'Entladen lohnt sich: Die Batterie darf das Haus versorgen.',
+          hold: 'Warten: Die Batterie steht still bis zum Tief oder zur Spitze.',
+          save: 'Sparen: Entladen lohnt sich, aber es kommen teurere Stunden, die die Batterie stattdessen bedienen kann.',
+          flat: 'Flacher Tag: Die Preisspanne deckt den Verschleiß nicht, nicht handeln.'
+        },
+        scanTitle: 'Registerscan',
+        scanHint: 'Liest die drei FC04-Fenster mit Live-Daten (0x0000, 0x0400, 0x0800) und zwei FC03-Blöcke: die geräteweiten Grenzen bei 0x0100 (Ladeobergrenze 0x0134 und Entladeuntergrenze 0x0135, die in jedem Modus gelten) und den Einstellungsblock je Modus bei 0x10C0, dessen erstes Wort 0x10CC der Batteriemodus selbst ist — nullbasiert, Register 4 bedeutet also Modus 5. Halteregister haben das Präfix FC03, weil diese Adressen von FC04 getrennt sind. Register, die die App verwendet, sind markiert, und negative Werte stehen in Klammern.',
+        srcLocal: 'Lokal über Modbus (Unit-ID {unit})',
+        srcCloud: 'Nur Cloud',
+        srcDevice: 'Gerät',
+        srcCloudDevice: 'Alles über die Cloud: Dieses Gerät steht auf "Nur Cloud" und hat keinen lokalen Stick',
+        srcReg: 'Register',
+        diagBusy: 'Wird abgerufen…',
+        diagErr: 'Diagnose fehlgeschlagen: ',
+        diagNoAcc: 'Melde dich zuerst oben mit deinem Konto an.',
+        modesTitle: 'Betriebsmodi der Batterie',
+        modesHelp: "<ul style='margin:0;padding-left:18px;line-height:1.6'>" +
+          '<li><strong>Eigenverbrauch</strong> — erst Solar, dann Batterie, dann Netz.</li>' +
+          '<li><strong>Sparmodus</strong> — Zeitplan nach Tarifzeiten, um Spitzentarife zu vermeiden.</li>' +
+          '<li><strong>Backup</strong> — entlädt nur bei Netzausfall.</li>' +
+          '<li><strong>Inselbetrieb</strong> — keine Netzverbindung.</li>' +
+          '<li><strong>Zwangsladung</strong> — lädt zwangsweise bis zum eingestellten SOC. <em>Stelle die max. Leistung auf 0 %, um das Laden ganz zu stoppen</em> — damit die Batterie keinen Strom aufnimmt, den andere Quellen ins Netz einspeisen (z. B. andere Batterien, die bei hohen dynamischen Tarifen entladen).</li>' +
+          '<li><strong>Zwangsentladung</strong> — entlädt zwangsweise bis zum eingestellten SOC.</li>' +
+          '<li><strong>Lastspitzenkappung</strong> — begrenzt den Netzbezug auf eine eingestellte Leistung.</li>' +
+          '<li><strong>Zeitsteuerung</strong> — geplante Lade- und Entladefenster.</li>' +
+          '<li><strong>KI-Modus</strong> — Optimierung durch die Cloud anhand von Strompreisen, Prognosen und Verbrauch.</li>' +
+          '</ul>',
+        lanTitle: 'Lokale Verbindung (LAN)',
+        lanHint: 'Die IP-Adresse des DTS-WL-G3-Sticks in deinem Netzwerk. Hier gespeichert, wird sie beim Koppeln vorausgefüllt. Zieht der Stick auf eine andere Adresse um, findet die App ihn wieder und aktualisiert dieses Feld — anders als das Feld am Gerät selbst, das behält, was du eingetippt hast.',
+        lanIp: 'IP-Adresse des Gateways/DTS',
+        lanProto: 'Lokales Protokoll',
+        lanPort: 'Lokaler Port',
+        lanUnit: 'Modbus-Unit-ID',
+        lanPortHint: 'Für den DTS-G3 nimm Modbus TCP auf Port 502. Probiere zuerst Unit-ID 1 — das funktioniert bei einem DTS-WL-G3 ab Werk. Nur wenn keine Antwort kommt, siehe den Hinweis unten.',
+        modbusHelp: '<strong>Keine Modbus-Antwort?</strong> Ein DTS-WL-G3 antwortet normalerweise ohne jede Konfiguration auf Unit-ID 1. Bleibt deiner stumm, steht er vielleicht im Modus Export Management: Öffne die App S-Miles Installer → Me → Local Install Assistant / Toolkit → DTU Information → RS485 Port Config → wähle <strong>Remote Control</strong> (NICHT Export Control — das blockiert Modbus) und nimm die dort eingestellte Modbus-/RS485-Adresse (101–254).',
+        lanSave: 'Speichern',
+        lanInvalidIp: 'Ungültiges Format der IP-Adresse.',
+        lanInvalidPort: 'Ungültiger Port (1-65535).',
+        lanInvalidUnit: 'Ungültige Unit-ID (1-254).',
+        lanSaved: 'Gespeichert! Wird beim Koppeln verwendet und von bestehenden Geräten nach einem Neustart.',
+        scanBtn: 'Modbus-Register testen & scannen',
+        scanBusy: 'Scan läuft…',
+        scanNoIp: 'Gib zuerst eine IP-Adresse ein und speichere sie.',
+        protoNativeClosed: 'Bei diesem Gateway ist Port 10081 nicht offen, das native Protokoll kann hier also nicht funktionieren. Wähle Modbus TCP.',
+        protoAutoNoNative: 'Port 10081 ist bei diesem Gateway geschlossen, Auto landet also immer bei Modbus. Das ist in Ordnung — Modbus TCP zu wählen spart nur jedes Mal einen Fehlversuch.',
+        bmsTitle: 'Zellen je Batteriemodul',
+        bmsHint: 'Liest Zellspannungen und Temperaturen direkt aus der Batterie. Nur auf Anfrage, weil es sehr viele Werte sind. Die Zellspreizung steht als Kachel auf der Gerätekarte, mit Verlauf.',
+        bmsBtn: 'Zelldaten lesen',
+        bmsBusy: 'Wird gelesen…',
+        bmsErr: 'Lesen fehlgeschlagen: ',
+        scanGaps: '{n} Register konnten nicht gelesen werden (ein erneuter Versuch kann helfen)',
+        scanUnreach: 'Keine Modbus-Antwort auf Port 502. Probiere Unit-ID 1 und prüfe sonst "Remote Control" am Stick.',
+        scanReach: 'Modbus antwortet! Register unten — teile sie, damit die Batteriewerte zugeordnet werden können.',
+        scanErr: 'Scan fehlgeschlagen: '
+      },
       nl: {
         title: 'Hoymiles HiOne — Instellingen',
         disclaimer: 'Wijzig de API URL alleen als Hoymiles naar een ander endpoint migreert. De standaard URL is <strong>https://neapi.hoymiles.com</strong>.',
@@ -257,7 +368,8 @@
         priceHint: 'De all-in prijs per kwartier bij Frank Energie, met het oordeel van de app erbij. Insights toont alleen wat de prijs was; dit toont ook de kwartieren die nog komen.',
         priceToday: 'Vandaag',
         priceTomorrow: 'Morgen',
-        priceNotYet: 'De prijzen van morgen zijn er nog niet. Frank publiceert ze meestal rond 13:00.',
+        priceHintMarket: 'De dagprijs van de markt voor zone {zone} per kwartier (Energy-Charts), plus je eigen opslag en btw uit de apparaatinstellingen, met het oordeel van de app erbij. Insights toont alleen wat de prijs was; dit toont ook de kwartieren die nog komen.',
+        priceNotYet: 'De prijzen van morgen zijn er nog niet. Ze worden meestal rond 13:00 gepubliceerd.',
         priceFallback: 'Frank Energie was niet bereikbaar; deze prijzen komen van dynamisch-tarief.nl (zelfde marktprijs, all-in met de gemiddelde opslag).',
         priceTomorrowNote: 'Morgen zoals het er om middernacht voor staat: de kleuren gaan uit van het dal van morgen zelf en nog zonder de lading waarmee de accu begint.',
         priceRefLow: 'rekent met het dal van morgen',
@@ -367,7 +479,8 @@
         priceHint: 'The all-in price per quarter hour at Frank Energie, with the verdict of the app beside it. Insights can only show what the price was; this also shows the quarters still to come.',
         priceToday: 'Today',
         priceTomorrow: 'Tomorrow',
-        priceNotYet: 'Tomorrow\'s prices are not out yet. Frank usually publishes them around 13:00.',
+        priceHintMarket: 'The day-ahead market price for zone {zone} per quarter hour (Energy-Charts), plus your own surcharge and VAT from the device settings, with the verdict of the app beside it. Insights can only show what the price was; this also shows the quarters still to come.',
+        priceNotYet: 'Tomorrow\'s prices are not out yet. They are usually published around 13:00.',
         priceFallback: 'Frank Energie could not be reached; these prices come from dynamisch-tarief.nl (same market price, all-in with the average markup).',
         priceTomorrowNote: 'Tomorrow as it stands at midnight: the colours use tomorrow\'s own low and do not yet know the charge the battery starts with.',
         priceRefLow: 'uses tomorrow\'s low',
@@ -446,6 +559,9 @@
     };
 
     var _lang = 'en';
+    // What the toggle switches to from English: the language Homey runs in,
+    // when this page has it, and Dutch otherwise.
+    var _home = 'nl';
 
     var _homey = null;
     var _savedEmail = null;
@@ -460,13 +576,15 @@
     }
 
     function applyLang(lang) {
+      if (!i18n[lang]) lang = 'en';
+      if (lang !== 'en') _home = lang;
       _lang = lang;
-      var t = i18n[lang] || i18n.en;
+      var t = i18n[lang];
       document.getElementById('t-title').textContent = t.title;
       document.getElementById('t-disclaimer').innerHTML = t.disclaimer;
       document.getElementById('t-hint').textContent = t.hint;
       document.getElementById('save').textContent = t.save;
-      document.getElementById('lang-toggle').textContent = lang === 'nl' ? 'EN' : 'NL';
+      document.getElementById('lang-toggle').textContent = lang === 'en' ? _home.toUpperCase() : 'EN';
       document.getElementById('t-accTitle').textContent = t.accTitle;
       document.getElementById('t-accHint').textContent = t.accHint;
       document.getElementById('t-advTitle').textContent = t.advTitle;
@@ -510,7 +628,7 @@
     }
 
     function toggleLang() {
-      applyLang(_lang === 'nl' ? 'en' : 'nl');
+      applyLang(_lang === 'en' ? _home : 'en');
     }
 
     function showSavedAccount(email) {
@@ -691,7 +809,11 @@
     }
 
     function drawPrices(data, t) {
-      var ct = function (value) { return (value * 100).toFixed(1).replace('.', _lang === 'nl' ? ',' : '.'); };
+      // The hint names the source, and only the Netherlands has Frank Energie.
+      document.getElementById('t-priceHint').textContent = data.zone && data.zone !== 'NL'
+        ? t.priceHintMarket.replace('{zone}', data.zone)
+        : t.priceHint;
+      var ct = function (value) { return (value * 100).toFixed(1).replace('.', _lang === 'en' ? '.' : ','); };
       var hours = data.hours;
       var top = Math.max(data.dayHigh, data.dischargeFloor) * 1.08;
       var W = 460, H = 200, padL = 34, padB = 18, padT = 8;
@@ -809,7 +931,7 @@
         + t.priceFloor + ' <b>' + ct(data.dischargeFloor) + '</b> ct' + refNote + '<br>'
         + t.priceMarketPeak + ' <b>' + ct(data.marketHigh) + '</b> ct'
         + (data.hoursCovered ? ' · ' + t.priceCovered.replace('{n}',
-          String(data.hoursCovered).replace('.', _lang === 'nl' ? ',' : '.')) : '')
+          String(data.hoursCovered).replace('.', _lang === 'en' ? '.' : ',')) : '')
         + '<br>' + planText
         + (data.source === 'fallback' ? "<br><span style='color:#b26a00'>" + t.priceFallback + '</span>' : '');
 

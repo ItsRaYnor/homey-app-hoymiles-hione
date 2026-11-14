@@ -65,6 +65,18 @@
 
   <script>
     var i18n = {
+      de: {
+        title: 'Wie möchtest du verbinden?',
+        localTitle: 'Lokal (LAN) <span class="badge">offline</span>',
+        localDesc: 'Direkt über die IP-Adresse. Kein Konto nötig. Funktioniert auch ohne Internet.',
+        bothTitle: 'Lokal + Cloud <span class="badge">empfohlen</span>',
+        bothDesc: 'Vorrangig lokal, S-Miles Cloud als Ausweichlösung. Konto erforderlich.',
+        cloudTitle: 'Nur Cloud',
+        cloudDesc: 'Über die S-Miles-Cloud-API. Konto bei hoymiles.com erforderlich.',
+        next: 'Weiter',
+        disclaimer: '\u26a0\ufe0f Inoffiziell \u2014 nicht mit Hoymiles verbunden. Nutzung auf eigene Gefahr.',
+        compat: 'Kompatibel mit allen HiOne-Wechselrichtern (ein- und dreiphasig).'
+      },
       nl: {
         title: 'Hoe wil je verbinden?',
         localTitle: 'Lokaal (LAN) <span class="badge">offline</span>',
@@ -92,10 +104,15 @@
     };
 
     var _lang = 'en';
+    // What the toggle switches to from English: the language Homey runs in,
+    // when this page has it, and Dutch otherwise.
+    var _home = 'nl';
 
     function applyLang(lang) {
+      if (!i18n[lang]) lang = 'en';
+      if (lang !== 'en') _home = lang;
       _lang = lang;
-      var t = i18n[lang] || i18n.en;
+      var t = i18n[lang];
       document.getElementById('t-title').textContent = t.title;
       document.getElementById('t-compat').textContent = t.compat;
       document.getElementById('t-local-title').innerHTML = t.localTitle;
@@ -106,11 +123,11 @@
       document.getElementById('t-cloud-desc').textContent = t.cloudDesc;
       document.getElementById('t-next').textContent = t.next;
       document.getElementById('t-disclaimer').textContent = t.disclaimer;
-      document.getElementById('lang-toggle').textContent = lang === 'nl' ? 'EN' : 'NL';
+      document.getElementById('lang-toggle').textContent = lang === 'en' ? _home.toUpperCase() : 'EN';
     }
 
     function toggleLang() {
-      applyLang(_lang === 'nl' ? 'en' : 'nl');
+      applyLang(_lang === 'en' ? _home : 'en');
     }
 
     var _mode = 'local';

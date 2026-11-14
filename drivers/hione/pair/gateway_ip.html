@@ -114,6 +114,35 @@
   <button class='btn-primary' id='t-next' onclick='proceed()'>Next</button>
   <script>
     var i18n = {
+      de: {
+        title: 'IP-Adresse des Gateways/DTS',
+        tip: 'Du findest die IP in deinem Router unter „Verbundene Geräte“.<br>Suche nach <strong>DTS-\u2026</strong>, <strong>DTUBI-\u2026</strong> oder <strong>HiBox</strong>.<br>Tipp: Gib dem Gateway im Router eine <strong>feste IP-Adresse</strong> (DHCP-Reservierung), damit die lokale Verbindung bestehen bleibt.',
+        label: 'IP-Adresse',
+        hint: 'Standard: Modbus TCP, Port 502. Nativ 10081 nur, wenn der Scan es findet.',
+        hintNative: 'Port 10081 (nativ) wird verwendet.',
+        hintModbus: 'Port 502 (Modbus) wird verwendet.',
+        next: 'Weiter',
+        errorEmpty: 'Bitte eine IP-Adresse eingeben.',
+        errorInvalid: 'Ungültiges Format der IP-Adresse.',
+        scanBtn: 'Mein Netzwerk durchsuchen',
+        scanning: 'Suche läuft… (dauert ~5 Sek.)',
+        scanFound: 'Geräte gefunden — zum Auswählen anklicken:',
+        scanNone: 'Kein Hoymiles-Gerät gefunden. Gib die IP-Adresse von Hand ein.',
+        scanError: 'Suche fehlgeschlagen. Gib die IP-Adresse von Hand ein.',
+        badgeNative: 'Nativ 10081',
+        badgeModbus: 'Modbus 502',
+        badgeUnverified: 'Port offen',
+        helpToggle: 'Wie finde ich die IP-Adresse?',
+        helpHtml:
+          '<ol>' +
+          '<li>Verbinde den Datenstick <strong>DTS-G3</strong> über das <strong>Netzwerkkabel (Ethernet)</strong> mit deinem Router oder Switch. Der Stick bekommt automatisch per DHCP eine IP-Adresse.</li>' +
+          '<li>Öffne die Verwaltungsseite deines Routers (meist <strong>192.168.1.1</strong> oder <strong>192.168.0.1</strong>) und gehe zur Liste <strong>„Verbundene Geräte“</strong> oder <strong>„DHCP-Clients“</strong>.</li>' +
+          '<li>Suche nach einem Gerät namens <strong>DTS-…</strong>, <strong>DTUBI-…</strong> oder <strong>HiBox</strong>. Kein eindeutiger Name? Suche nach einem unbekannten Hersteller mit einer MAC-Adresse, die mit <strong>48:53:25</strong> beginnt.</li>' +
+          '<li>Kein Zugriff auf den Router? Nimm eine Netzwerkscanner-App wie <strong>Fing</strong> und durchsuche dein Netzwerk nach einem offenen Port <strong>502</strong> oder <strong>10081</strong>.</li>' +
+          '<li>Notiere die IP-Adresse (z. B. <strong>192.168.1.100</strong>) und trage sie oben ein.</li>' +
+          '</ol>' +
+          '<div class="note">Tipp: Gib dem Stick im Router eine <strong>feste IP-Adresse</strong> (DHCP-Reservierung), damit sie sich nach einem Neustart nicht ändert.</div>'
+      },
       nl: {
         title: 'IP-adres gateway/DTS',
         tip: 'Vind het IP in je router onder \'verbonden apparaten\'.<br>Zoek op <strong>DTS-\u2026</strong>, <strong>DTUBI-\u2026</strong> of <strong>HiBox</strong>.<br>Tip: geef de gateway een <strong>vast IP-adres</strong> (DHCP-reservering) in je router, dan blijft de lokale verbinding altijd werken.',
@@ -175,6 +204,9 @@
     };
 
     var _lang = 'en';
+    // What the toggle switches to from English: the language Homey runs in,
+    // when this page has it, and Dutch otherwise.
+    var _home = 'nl';
     var _scanProtocol = 'modbus';  // default Modbus TCP; scan may pin native
 
     // Manual edits reset to Modbus TCP (DTS-WL-G3 default)
@@ -189,8 +221,10 @@
     }
 
     function applyLang(lang) {
+      if (!i18n[lang]) lang = 'en';
+      if (lang !== 'en') _home = lang;
       _lang = lang;
-      var t = i18n[lang] || i18n.en;
+      var t = i18n[lang];
       document.getElementById('t-title').textContent = t.title;
       document.getElementById('t-tip').innerHTML = t.tip;
       document.getElementById('t-label-text').textContent = t.label;
@@ -199,11 +233,11 @@
       document.getElementById('t-help-toggle').textContent = t.helpToggle;
       document.getElementById('help-box').innerHTML = t.helpHtml;
       document.getElementById('t-next').textContent = t.next;
-      document.getElementById('lang-toggle').textContent = lang === 'nl' ? 'EN' : 'NL';
+      document.getElementById('lang-toggle').textContent = lang === 'en' ? _home.toUpperCase() : 'EN';
     }
 
     function toggleLang() {
-      applyLang(_lang === 'nl' ? 'en' : 'nl');
+      applyLang(_lang === 'en' ? _home : 'en');
     }
 
     function toggleHelp() {

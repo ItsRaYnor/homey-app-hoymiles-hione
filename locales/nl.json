@@ -28,7 +28,8 @@
     "hold": "Wacht op {{price}}",
     "flat": "Vlakke dag",
     "unknown": "Geen prijzen",
-    "save": "Piek afwachten"
+    "save": "Piek afwachten",
+    "no_zone": "Kies prijszone"
   },
   "labels": {
     "reserve_selfuse": "de reserve voor Zelfconsumptie",

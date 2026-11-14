@@ -1,0 +1,43 @@
+{
+  "errors": {
+    "poll_failed": "S-Miles Cloud nicht erreichbar. Prüfe deine Internetverbindung.",
+    "login_failed": "Anmeldung fehlgeschlagen. Prüfe E-Mail und Passwort deines S-Miles-Cloud-Kontos.",
+    "missing_credentials": "Zugangsdaten fehlen. Bitte das Gerät neu koppeln.",
+    "no_soc": "Noch kein Ladezustand — versuche es gleich noch einmal.",
+    "no_prices": "Keine Preise verfügbar — der Flow wurde in Ruhe gelassen, statt auf eine Vermutung hin zu handeln.",
+    "no_target": "Noch kein Ladeziel — der Preisplan oder der Hausverbrauch fehlt.",
+    "gateway_moved": "Der DTS-Stick ist auf {{ip}} umgezogen und wurde dort wiedergefunden. Die App spricht wieder lokal. Eine feste DHCP-Reservierung im Router verhindert, dass das erneut passiert.",
+    "set_failed": "HiOne: {{what}} konnte nicht eingestellt werden — {{reason}}",
+    "cloud_only": "Dieses Gerät steht auf \"Nur Cloud\", und diese Aktion braucht den lokalen Stick.",
+    "cloud_only_reserve": "Dieses Gerät steht auf \"Nur Cloud\": Die Cloud kann nur die Reserve des gerade aktiven Modus ändern."
+  },
+  "pair": {
+    "login_title": "Bei S-Miles Cloud anmelden",
+    "login_disclaimer": "Diese App nutzt eine inoffizielle API. Deine Zugangsdaten werden nur an hoymiles.com gesendet.",
+    "no_stations": "Anmeldung erfolgreich, aber in deinem S-Miles-Cloud-Konto wurde noch keine Anlage (Station) gefunden. Installiere zuerst dein HiOne-System und füge es in der S-Miles-App hinzu, dann versuche es erneut."
+  },
+  "flow": {
+    "charging": "Lädt",
+    "discharging": "Entlädt",
+    "idle": "Ruht"
+  },
+  "price": {
+    "buy": "Kaufen ≤ {{price}}",
+    "sell": "Verkaufen ≥ {{price}}",
+    "discharge": "Entladen ≥{{price}}",
+    "hold": "Warten auf {{price}}",
+    "flat": "Flacher Tag",
+    "unknown": "Keine Preise",
+    "save": "Sparen für die Spitze",
+    "no_zone": "Preiszone wählen"
+  },
+  "labels": {
+    "reserve_selfuse": "die Eigenverbrauchs-Reserve",
+    "reserve_forcecharge": "die Reserve der Zwangsladung",
+    "reserve_forcedischarge": "die Reserve der Zwangsentladung",
+    "max_charge_power": "die maximale Ladeleistung",
+    "max_discharge_power": "die maximale Entladeleistung",
+    "charge_ceiling": "der maximale Ladestand",
+    "grid_limit": "die Netzleistungsgrenze"
+  }
+}
