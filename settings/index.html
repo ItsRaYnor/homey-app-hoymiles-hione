@@ -86,6 +86,12 @@
     }
     .price-detail b { color: #1a1a1a; }
     .price-detail i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 4px; vertical-align: -1px; }
+    /* Output blocks: the Homey app's webview blocks text selection by default. */
+    pre.copyable { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+    .copy-row { display: none; align-items: center; gap: 10px; margin-top: 6px; }
+    .copy-row button { width: auto; margin: 0; padding: 6px 14px; font-size: 13px; }
+    .copy-row span { font-size: 12px; color: #666; }
+    .copy-fallback { width: 100%; box-sizing: border-box; height: 160px; margin-top: 6px; font: 11px monospace; }
   </style>
 </head>
 <body>
@@ -129,6 +135,10 @@
   <button class='btn-secondary' id='t-diagBtn' onclick='runDiagnostics()' style='margin-top:10px'>Show supported battery modes</button>
   <div class='status' id='diag_status'></div>
   <pre id='diag_out' style='display:none; font-size:11px; background:#f5f5f5; border-radius:8px; padding:10px; margin-top:8px; max-height:300px; overflow:auto; white-space:pre-wrap;'></pre>
+
+  <button class='btn-secondary' id='t-alarmBtn' onclick='loadAlarms()' style='margin-top:10px'>Fetch active alarms</button>
+  <div class='status' id='alarm_status'></div>
+  <pre id='alarm_out' style='display:none; font-size:12px; background:#f5f5f5; border-radius:8px; padding:10px; margin-top:8px; max-height:400px; overflow:auto; white-space:pre-wrap;'></pre>
 
   <h3 class='section-title' id='t-modesTitle' style='margin-top:28px'>Battery working modes</h3>
   <div class='hint' id='t-modesHelp' style='margin-bottom:10px'></div>
@@ -245,6 +255,19 @@
         forget: 'Konto vergessen',
         forgotten: 'Konto entfernt.',
         diagBtn: 'Unterstützte Batteriemodi anzeigen',
+        alarmBtn: 'Aktive Störungen abrufen',
+        alarmBusy: 'Wird abgerufen…',
+        alarmErr: 'Abruf fehlgeschlagen: ',
+        alarmNone: 'Keine aktiven Störungen.',
+        alarmHistory: 'Beendete Störungen der letzten {days} Tage',
+        alarmHistoryRaw: 'Verlauf',
+        alarmFlag: 'Alarm am {device}, ohne Störungscode in der Cloud.',
+        alarmFlagAdvice: 'Die Cloud liefert keine Details. Öffne in der S-Miles-App den Wechselrichter und frage seine Ereignisse ab.',
+        alarmSince: 'seit',
+        alarmRaw: 'Rohantwort der Cloud',
+        copyBtn: 'Kopieren',
+        copyOk: 'Kopiert.',
+        copyManual: 'Kopieren nicht möglich — der Text ist unten markiert, kopiere ihn von Hand.',
         diagStation: 'Station (wenn dein Konto mehrere Batterien hat)',
         srcTitle: 'Woher kommt welcher Wert?',
         srcHelp: 'Mit einer lokalen Modbus-Verbindung werden diese Werte direkt vom DTS-Stick gelesen — live, ohne Verzögerung durch die Cloud. Auch der Batteriemodus, die Ladeobergrenze, die Untergrenzen und die Leistungsgrenzen werden lokal geschrieben: Das kommt in Sekunden an, während eine Änderung über die Cloud etwa vier Minuten braucht. Die Cloud bleibt die Ausweichlösung für einen Stick, der nicht erreichbar ist, und für Einstellungen, die es nur dort gibt. Alles, was unten als Cloud aufgeführt ist, hängt ein paar Minuten nach.',
@@ -260,7 +283,12 @@
         priceHintMarket: 'Der Day-Ahead-Marktpreis für die Zone {zone} pro Viertelstunde (Energy-Charts), plus dein eigener Aufschlag und deine Mehrwertsteuer aus den Geräteeinstellungen, mit dem Urteil der App daneben. Insights zeigt nur, was der Preis war; dies zeigt auch die Viertelstunden, die noch kommen.',
         priceNotYet: 'Die Preise von morgen sind noch nicht da. Sie werden meist gegen 13:00 Uhr veröffentlicht.',
         priceFallback: 'Frank Energie war nicht erreichbar; diese Preise kommen von dynamisch-tarief.nl (gleicher Marktpreis, All-in mit dem durchschnittlichen Aufschlag).',
-        priceTomorrowNote: 'Morgen, wie es um Mitternacht aussieht: Die Farben gehen vom Tief von morgen selbst aus und kennen die Ladung noch nicht, mit der die Batterie beginnt.',
+        priceTomorrowNote: 'Morgen, wie es um Mitternacht aussieht. Über der Entladegrenze ist dann voraussichtlich keine Ladung übrig (oder sie ist nicht bekannt), daher gehen die Farben vom Tief von morgen selbst aus.',
+        priceTomorrowBoard: 'Morgen, wie es um Mitternacht aussieht. Die Batterie beginnt voraussichtlich mit {kwh} kWh über der Entladegrenze, eingekauft für {cost} ct. Diese Ladung geht an die teuersten Viertelstunden über der Schwelle für die Ladung an Bord; ist sie aufgebraucht, gilt die Schwelle für neu geladenen Strom, gerechnet vom Tief von morgen.',
+        priceFloorBoard: 'Schwelle Ladung an Bord',
+        priceFloorNew: 'Schwelle neu geladen',
+        priceCost: 'Ladung an Bord eingekauft für',
+        priceCostGuess: 'geschätzt: günstigste Viertelstunde der letzten 24 Stunden',
         priceRefLow: 'rechnet mit dem Tief von morgen',
         priceLow: 'Niedrigster',
         priceHigh: 'Höchster',
@@ -356,6 +384,19 @@
         forget: 'Account vergeten',
         forgotten: 'Account verwijderd.',
         diagBtn: 'Toon ondersteunde batterijmodi',
+        alarmBtn: 'Actieve storingen opvragen',
+        alarmBusy: 'Bezig met opvragen…',
+        alarmErr: 'Opvragen mislukt: ',
+        alarmNone: 'Geen actieve storingen.',
+        alarmHistory: 'Afgelopen storingen van de laatste {days} dagen',
+        alarmHistoryRaw: 'historie',
+        alarmFlag: 'Alarm op de {device}, zonder storingscode in de cloud.',
+        alarmFlagAdvice: 'De cloud geeft geen details. Open in de S-Miles-app de omvormer en vraag de omvormergebeurtenissen op.',
+        alarmSince: 'sinds',
+        alarmRaw: 'Ruw antwoord van de cloud',
+        copyBtn: 'Kopiëren',
+        copyOk: 'Gekopieerd.',
+        copyManual: 'Kopiëren lukt niet — de tekst staat hieronder geselecteerd, kopieer hem met de hand.',
         diagStation: 'Station (bij meerdere batterijen op je account)',
         srcTitle: 'Waar komt welke waarde vandaan?',
         srcHelp: 'Met een lokale Modbus-verbinding worden deze waarden rechtstreeks van de DTS-stick gelezen — direct, zonder cloudvertraging. Ook de batterijmodus, het laadplafond, de ondergrenzen en de vermogensgrenzen worden lokaal geschreven: dat landt in seconden, waar een wijziging via de cloud er ongeveer vier minuten over doet. De cloud blijft het vangnet voor een onbereikbare stick, en voor instellingen die alleen daar bestaan. Wat hieronder als cloud staat, loopt enkele minuten achter.',
@@ -371,7 +412,12 @@
         priceHintMarket: 'De dagprijs van de markt voor zone {zone} per kwartier (Energy-Charts), plus je eigen opslag en btw uit de apparaatinstellingen, met het oordeel van de app erbij. Insights toont alleen wat de prijs was; dit toont ook de kwartieren die nog komen.',
         priceNotYet: 'De prijzen van morgen zijn er nog niet. Ze worden meestal rond 13:00 gepubliceerd.',
         priceFallback: 'Frank Energie was niet bereikbaar; deze prijzen komen van dynamisch-tarief.nl (zelfde marktprijs, all-in met de gemiddelde opslag).',
-        priceTomorrowNote: 'Morgen zoals het er om middernacht voor staat: de kleuren gaan uit van het dal van morgen zelf en nog zonder de lading waarmee de accu begint.',
+        priceTomorrowNote: 'Morgen zoals het er om middernacht voor staat. Boven de ontlaadgrens is dan naar verwachting geen lading over (of die is niet bekend), dus de kleuren gaan uit van het dal van morgen zelf.',
+        priceTomorrowBoard: 'Morgen zoals het er om middernacht voor staat. De accu begint naar verwachting met {kwh} kWh boven de ontlaadgrens, ingekocht voor {cost} ct. Die lading gaat naar de duurste kwartieren boven de drempel voor lading aan boord; is die op, dan geldt de drempel voor nieuw geladen stroom, gerekend vanaf het dal van morgen.',
+        priceFloorBoard: 'Drempel lading aan boord',
+        priceFloorNew: 'Drempel nieuw geladen',
+        priceCost: 'Lading aan boord ingekocht voor',
+        priceCostGuess: 'geschat: goedkoopste kwartier van de afgelopen 24 uur',
         priceRefLow: 'rekent met het dal van morgen',
         priceLow: 'Laagste',
         priceHigh: 'Hoogste',
@@ -467,6 +513,19 @@
         forget: 'Forget account',
         forgotten: 'Account removed.',
         diagBtn: 'Show supported battery modes',
+        alarmBtn: 'Fetch active alarms',
+        alarmBusy: 'Fetching…',
+        alarmErr: 'Fetch failed: ',
+        alarmNone: 'No active alarms.',
+        alarmHistory: 'Ended alarms of the last {days} days',
+        alarmHistoryRaw: 'history',
+        alarmFlag: 'Alarm on the {device}, without a code in the cloud.',
+        alarmFlagAdvice: 'The cloud gives no details. In the S-Miles app, open the inverter and request its events.',
+        alarmSince: 'since',
+        alarmRaw: 'Raw cloud reply',
+        copyBtn: 'Copy',
+        copyOk: 'Copied.',
+        copyManual: 'Copying is not possible — the text is selected below, copy it by hand.',
         diagStation: 'Station (when your account has multiple batteries)',
         srcTitle: 'Where each value comes from',
         srcHelp: 'With a local Modbus connection these values are read straight from the DTS stick — live, without cloud delay. The battery mode, the charge ceiling, the floors and the power limits are written locally as well: that lands in seconds, where a change through the cloud takes about four minutes. The cloud stays as the fallback for a stick that cannot be reached, and for settings that only exist there. Anything listed below as cloud lags by a few minutes.',
@@ -482,7 +541,12 @@
         priceHintMarket: 'The day-ahead market price for zone {zone} per quarter hour (Energy-Charts), plus your own surcharge and VAT from the device settings, with the verdict of the app beside it. Insights can only show what the price was; this also shows the quarters still to come.',
         priceNotYet: 'Tomorrow\'s prices are not out yet. They are usually published around 13:00.',
         priceFallback: 'Frank Energie could not be reached; these prices come from dynamisch-tarief.nl (same market price, all-in with the average markup).',
-        priceTomorrowNote: 'Tomorrow as it stands at midnight: the colours use tomorrow\'s own low and do not yet know the charge the battery starts with.',
+        priceTomorrowNote: 'Tomorrow as it stands at midnight. No charge is expected to be left above the discharge floor by then (or it is not known), so the colours use tomorrow\'s own low.',
+        priceTomorrowBoard: 'Tomorrow as it stands at midnight. The battery is expected to start with {kwh} kWh above the discharge floor, bought for {cost} ct. That charge goes to the dearest quarters above the floor for the charge on board; once it is spent, the floor for newly charged energy applies, worked out from tomorrow\'s low.',
+        priceFloorBoard: 'Floor for charge on board',
+        priceFloorNew: 'Floor for new charge',
+        priceCost: 'Charge on board bought for',
+        priceCostGuess: 'estimated: cheapest quarter of the last 24 hours',
         priceRefLow: 'uses tomorrow\'s low',
         priceLow: 'Lowest',
         priceHigh: 'Highest',
@@ -603,6 +667,8 @@
       document.getElementById('login-btn').textContent = t.loginSave;
       document.getElementById('t-forget').textContent = t.forget;
       document.getElementById('t-diagBtn').textContent = t.diagBtn;
+      document.getElementById('t-alarmBtn').textContent = t.alarmBtn;
+      Array.prototype.forEach.call(document.querySelectorAll('.copy-btn'), function (b) { b.textContent = t.copyBtn; });
       document.getElementById('t-diagStation').textContent = t.diagStation;
       document.getElementById('t-srcTitle').textContent = t.srcTitle;
       document.getElementById('t-srcDevice').textContent = t.srcDevice;
@@ -829,13 +895,30 @@
 
       var svg = ["<svg viewBox='0 0 " + W + ' ' + H + "' width='100%' role='img'>"];
 
-      // The line every decision hangs on: below it a stored kWh loses money.
-      var floorY = y(data.dischargeFloor);
-      svg.push("<line x1='" + padL + "' y1='" + floorY + "' x2='" + W + "' y2='" + floorY
-        + "' stroke='#d32f2f' stroke-width='1' stroke-dasharray='4 3'/>");
-      svg.push("<text x='2' y='" + (floorY + 3) + "' font-size='9' fill='#d32f2f'>" + ct(data.dischargeFloor) + '</text>');
-      svg.push("<text x='2' y='" + (y(data.dayHigh) + 3) + "' font-size='9' fill='#999'>" + ct(data.dayHigh) + '</text>');
-      svg.push("<text x='2' y='" + (y(data.dayLow) + 3) + "' font-size='9' fill='#999'>" + ct(data.dayLow) + '</text>');
+      // The lines every decision hangs on: below them a stored kWh loses money.
+      // A charge already on board only has to beat what it cost, so while there
+      // is one and that is lower, it gets its own line under the one for new
+      // charge. Each carries its name and value, so the two cannot be confused.
+      var hasBoard = data.onBoardFloor !== null && data.onBoardFloor !== undefined
+        && data.onBoardFloor < data.dischargeFloor;
+      // Drawn after the bars, so a label is never hidden behind one; the white
+      // halo keeps it readable where it crosses a bar.
+      var floorLine = function (value, colour, label, below) {
+        var fy = y(value);
+        svg.push("<line x1='" + padL + "' y1='" + fy + "' x2='" + W + "' y2='" + fy
+          + "' stroke='" + colour + "' stroke-width='1' stroke-dasharray='4 3'/>");
+        svg.push("<text x='2' y='" + (fy + 3) + "' font-size='9' fill='" + colour + "'>" + ct(value) + '</text>');
+        svg.push("<text x='" + (W - 2) + "' y='" + (below ? fy + 10 : fy - 3) + "' font-size='9' fill='" + colour
+          + "' stroke='#fff' stroke-width='3' paint-order='stroke' text-anchor='end'>"
+          + label + ' (' + ct(value) + ' ct)</text>');
+      };
+      // The day's high and low on the axis, unless a floor's value sits there already.
+      var floorYs = [y(data.dischargeFloor)].concat(hasBoard ? [y(data.onBoardFloor)] : []);
+      [data.dayHigh, data.dayLow].forEach(function (value) {
+        var vy = y(value);
+        if (floorYs.some(function (fy) { return Math.abs(fy - vy) < 9; })) return;
+        svg.push("<text x='2' y='" + (vy + 3) + "' font-size='9' fill='#999'>" + ct(value) + '</text>');
+      });
 
       // Amber is a slot the battery should actually serve; pale amber is a slot
       // that clears the floor but loses the ranking, so it is worth more later
@@ -871,6 +954,9 @@
         return (padL + index * slot + bar / 2) + ',' + y(hour.market);
       }).join(' ');
       svg.push("<polyline points='" + line + "' fill='none' stroke='#5b6b7f' stroke-width='2'/>");
+
+      floorLine(data.dischargeFloor, '#d32f2f', hasBoard ? t.priceFloorNew : t.priceFloor, false);
+      if (hasBoard) floorLine(data.onBoardFloor, '#8a5a00', t.priceFloorBoard, true);
 
       // The cursor: a hairline through the chosen slot and a dot where it meets
       // the feed-in line, so the exact value of that line can be read off too.
@@ -918,17 +1004,29 @@
       var nowIndex = hours.findIndex(function (hour) { return hour.now; });
       show(nowIndex >= 0 ? nowIndex : 0);
 
+      var kwhText = function (value) { return value.toFixed(1).replace('.', _lang === 'en' ? '.' : ','); };
       var planText = data.day === 'tomorrow'
-        ? t.priceTomorrowNote
+        ? (hasBoard
+          ? t.priceTomorrowBoard.replace('{kwh}', kwhText(data.onBoardKwh)).replace('{cost}', ct(data.costBasis))
+          : t.priceTomorrowNote)
         : (data.plan ? (t.priceActions[data.plan.action] || data.plan.action) : '');
+      // What the charge on board cost, and whether that is measured or assumed.
+      var costText = hasBoard && data.day !== 'tomorrow'
+        ? '<br>' + t.priceCost + ' <b>' + ct(data.costBasis) + '</b> ct'
+          + (data.costSource === 'fallback' ? ' (' + t.priceCostGuess + ')' : '')
+        : '';
+      var floorText = hasBoard
+        ? t.priceFloorBoard + ' <b>' + ct(data.onBoardFloor) + '</b> ct · '
+          + t.priceFloorNew + ' <b>' + ct(data.dischargeFloor) + '</b> ct'
+        : t.priceFloor + ' <b>' + ct(data.dischargeFloor) + '</b> ct';
       // Today's floor drops once tomorrow's cheaper low is known; say so, or
       // the dashed line sits below the day's own low without explanation.
       var refNote = data.day !== 'tomorrow' && data.referenceLow < data.dayLow
         ? ' (' + t.priceRefLow + ' ' + ct(data.referenceLow) + ')'
         : '';
       document.getElementById('price_summary').innerHTML =
-        t.priceLow + ' <b>' + ct(data.dayLow) + '</b> · ' + t.priceHigh + ' <b>' + ct(data.dayHigh) + '</b> · '
-        + t.priceFloor + ' <b>' + ct(data.dischargeFloor) + '</b> ct' + refNote + '<br>'
+        t.priceLow + ' <b>' + ct(data.dayLow) + '</b> · ' + t.priceHigh + ' <b>' + ct(data.dayHigh) + '</b><br>'
+        + floorText + refNote + costText + '<br>'
         + t.priceMarketPeak + ' <b>' + ct(data.marketHigh) + '</b> ct'
         + (data.hoursCovered ? ' · ' + t.priceCovered.replace('{n}',
           String(data.hoursCovered).replace('.', _lang === 'en' ? '.' : ',')) : '')
@@ -1059,6 +1157,91 @@
         html += "<div style='font-weight:600;margin:12px 0 4px'>" + t.srcCloud + "</div>";
         (res.cloudOnly || []).forEach(function (r) { html += row(r.label, '☁', r.value); });
         box.innerHTML = html;
+      });
+    }
+
+    // Fills the station picker shared with the diagnostics above; only worth
+    // showing when the account has more than one station.
+    function fillStationPicker(stations, current) {
+      if (!stations || stations.length < 2) return;
+      var sel = document.getElementById('diag_station');
+      sel.innerHTML = '';
+      stations.forEach(function (s) {
+        var o = document.createElement('option');
+        o.value = s.id;
+        o.textContent = (s.name || 'Station') + ' (' + s.id + ')';
+        if (String(s.id) === String(current)) o.selected = true;
+        sel.appendChild(o);
+      });
+      document.getElementById('diag_station_row').style.display = 'block';
+    }
+
+    // Active alarms of the picked station, asked once per click - nothing is polled.
+    function loadAlarms() {
+      var t = i18n[_lang] || i18n.en;
+      var btn = document.getElementById('t-alarmBtn');
+      var st  = document.getElementById('alarm_status');
+      var out = document.getElementById('alarm_out');
+      var row = document.getElementById('diag_station_row');
+      var stationId = row.style.display === 'block' ? document.getElementById('diag_station').value : null;
+      st.style.display = 'none'; out.style.display = 'none';
+      btn.disabled = true; btn.textContent = t.alarmBusy;
+
+      _homey.api('POST', '/alarms', stationId ? { stationId: stationId } : {}, function (err, res) {
+        btn.disabled = false; btn.textContent = t.alarmBtn;
+        if (err || !res) {
+          var msg = (err && err.message) || '?';
+          st.textContent = /saved S-Miles account/i.test(msg) ? t.diagNoAcc : t.alarmErr + msg;
+          st.className = 'status err'; st.style.display = 'block';
+          return;
+        }
+        fillStationPicker(res.stations, res.stationId);
+
+        var lines = ['Station: ' + res.stationId, ''];
+        var active = (res.alarms || []).filter(function (a) { return !a.until; });
+        var flagged = res.flaggedWithoutCode || [];
+        if (!active.length && !flagged.length) lines.push(t.alarmNone);
+        flagged.forEach(function (d) {
+          lines.push(t.alarmFlag.replace('{device}', (d.model || d.serial) + ' ' + d.serial));
+          lines.push(t.alarmFlagAdvice);
+          lines.push('');
+        });
+        active.forEach(function (a) {
+          lines.push((a.title || '?') + '  (' + a.code + ')' + (a.since ? '  ' + t.alarmSince + ' ' + a.since : ''));
+          if (a.advice) lines.push(a.advice);
+          lines.push('');
+        });
+        // Ended alarms of the last days, from the inverter's history.
+        var ended = (res.history || []).filter(function (a) { return a.until; });
+        if (ended.length) {
+          lines.push(t.alarmHistory.replace('{days}', res.historyDays || 7) + ':');
+          ended.forEach(function (a) {
+            lines.push('- ' + (a.title || '?') + '  (' + a.code + ')  ' + (a.since || '?') + ' – ' + a.until);
+          });
+          lines.push('');
+        }
+        // The cloud's reply format is not documented: show it, so a code the
+        // parser missed is still visible.
+        lines.push('');
+        lines.push(t.alarmRaw + ':');
+        lines.push('Account type: ' + (res.userType == null ? '?' : res.userType));
+        if (res.station) {
+          lines.push('Station: ' + (res.station.error ? res.station.error : JSON.stringify(res.station.raw, null, 2)));
+        }
+        (res.devices || []).forEach(function (d) {
+          lines.push(d.serial + (d.model ? ' ' + d.model : '') + (d.type ? ' (' + d.type + ')' : '') + ': '
+            + (d.error ? d.error : JSON.stringify(d.raw, null, 2)));
+          if (d.history) {
+            lines.push(d.serial + ' ' + t.alarmHistoryRaw + ': '
+              + (d.history.error ? d.history.error : JSON.stringify(d.history.raw, null, 2)));
+          }
+        });
+        // Which device the portal flags: {connect, warn, ...} per device.
+        (res.flags || []).forEach(function (f) {
+          lines.push(f.type + ' ' + f.serial + (f.model ? ' ' + f.model : '') + ': ' + JSON.stringify(f.warn));
+        });
+        out.textContent = lines.join('\n');
+        out.style.display = 'block';
       });
     }
 
@@ -1199,6 +1382,75 @@
       // Loaded on demand when the Values tab is opened — it reads the stick live.
       Homey.ready();
     }
+
+    // A copy button under every output block. The clipboard API is tried
+    // first, then the older execCommand route; when the webview allows
+    // neither, the text lands in a selected text box to copy by hand.
+    var COPY_TARGETS = ['alarm_out', 'diag_out', 'scan_out', 'bms_out'];
+
+    function copyText(text, row) {
+      var t = i18n[_lang] || i18n.en;
+      var note = row.querySelector('span');
+      function done(ok) {
+        note.textContent = ok ? t.copyOk : t.copyManual;
+        if (!ok) showCopyFallback(text, row);
+      }
+      function legacy() {
+        var area = document.createElement('textarea');
+        area.value = text;
+        area.setAttribute('readonly', '');
+        area.style.position = 'fixed'; area.style.top = '0'; area.style.opacity = '0';
+        document.body.appendChild(area);
+        area.focus(); area.select(); area.setSelectionRange(0, text.length);
+        var ok = false;
+        try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+        document.body.removeChild(area);
+        done(ok);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { done(true); }, legacy);
+      } else {
+        legacy();
+      }
+    }
+
+    function showCopyFallback(text, row) {
+      var area = row.nextElementSibling;
+      if (!area || !area.classList.contains('copy-fallback')) {
+        area = document.createElement('textarea');
+        area.className = 'copy-fallback';
+        area.setAttribute('readonly', '');
+        row.parentNode.insertBefore(area, row.nextSibling);
+      }
+      area.value = text;
+      area.focus(); area.select(); area.setSelectionRange(0, text.length);
+    }
+
+    function setupCopyButtons() {
+      COPY_TARGETS.forEach(function (id) {
+        var pre = document.getElementById(id);
+        if (!pre) return;
+        pre.classList.add('copyable');
+        var row = document.createElement('div');
+        row.className = 'copy-row';
+        var btn = document.createElement('button');
+        btn.className = 'btn-secondary copy-btn';
+        btn.textContent = (i18n[_lang] || i18n.en).copyBtn;
+        var note = document.createElement('span');
+        btn.onclick = function () { note.textContent = ''; copyText(pre.textContent, row); };
+        row.appendChild(btn); row.appendChild(note);
+        pre.parentNode.insertBefore(row, pre.nextSibling);
+        // Show the row whenever the block is shown, and clear an old note.
+        new MutationObserver(function () {
+          var shown = pre.style.display !== 'none' && pre.textContent !== '';
+          row.style.display = shown ? 'flex' : 'none';
+          note.textContent = '';
+          var old = row.nextElementSibling;
+          if (old && old.classList.contains('copy-fallback')) old.parentNode.removeChild(old);
+        }).observe(pre, { attributes: true, attributeFilter: ['style'], childList: true, characterData: true });
+      });
+    }
+    document.addEventListener('DOMContentLoaded', setupCopyButtons);
   </script>
 </body>
 </html>

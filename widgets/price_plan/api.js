@@ -44,6 +44,8 @@ module.exports = {
       dayLow: curve.dayLow,
       dayHigh: curve.dayHigh,
       dischargeFloor: curve.dischargeFloor,
+      // The lower floor for the charge on board, when there is one (else null).
+      onBoardFloor: Number.isFinite(curve.onBoardFloor) ? curve.onBoardFloor : null,
       // Only what a bar needs: 96 quarters go over the wire every minute.
       slots: curve.hours.map((slot) => ({
         from: slot.from,

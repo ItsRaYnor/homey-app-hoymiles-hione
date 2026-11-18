@@ -173,6 +173,7 @@ class HiOneDevice extends Device {
     this._lastPriceRefresh = 0;
     this._otherBatteryReports = { charging: 0, discharging: 0 };
     this._pricePlan = null;
+    this._priceRefreshInFlight = null;
     this._createPrices();
 
     this._gatewayOverride = null;
@@ -268,6 +269,7 @@ class HiOneDevice extends Device {
         'labels.grid_limit'));
 
     this._startPolling();
+    this._startQuarterTimer();
     await this._poll();
     this.log('HiOne device ready');
   }
@@ -289,6 +291,7 @@ class HiOneDevice extends Device {
 
   async onDeleted() {
     this._stopPolling();
+    this._stopQuarterTimer();
     this._clearFollowupPolls();
     if (this._gatewayWatch) this.homey.clearInterval(this._gatewayWatch);
     if (this._modeChangeTimer) this.homey.clearTimeout(this._modeChangeTimer);
@@ -593,6 +596,8 @@ class HiOneDevice extends Device {
     }
     if (changedKeys.some((key) => ['price_zone', 'price_surcharge', 'price_vat'].includes(key))) {
       this.log('Price source settings changed — fetching prices again');
+      // Rankings made from the old prices would keep choosing their quarters.
+      await this.setStoreValue('price_rankings', null).catch(() => {});
       this._createPrices(newSettings);
     }
     if (changedKeys.includes('poll_interval')) {
@@ -718,7 +723,7 @@ class HiOneDevice extends Device {
 
   /** True while a report of that state is still fresh. */
   otherBatteryIs(state) {
-    const at = this._otherBatteryReports[state] || 0;
+    const at = (this._otherBatteryReports && this._otherBatteryReports[state]) || 0;
     return Date.now() - at < OTHER_BATTERY_TTL_MS;
   }
 
@@ -746,6 +751,9 @@ class HiOneDevice extends Device {
       await this._setCapabilitySafe('hoymiles_connection_source',   data.source);
       await this._refreshLocalSettings();
       await this._refreshBmsData();
+      // Before the plan: the charge cost of this poll is priced at the quarter
+      // the last plan was made for, which is the one it flowed in.
+      this._trackChargeCost(data);
       await this._refreshPricePlan();
       await this._applyCloudMarkers(data.source);
 
@@ -1094,6 +1102,42 @@ class HiOneDevice extends Device {
     await this._setModeNow(1);
     this._refreshLocalSettings().catch(() => {});
     this._scheduleLivePollBurst();
+  }
+
+  /**
+   * Ask the cloud once for the station's active alarms, for the Flow card.
+   * Returns the card's tokens. Nothing is polled: this runs only when a Flow
+   * runs the card.
+   */
+  async fetchAlarms() {
+    if (!this._hybrid) throw new Error(this.homey.__('errors.not_ready'));
+    const result = await this._hybrid.getAlarms(this.homey.i18n.getLanguage());
+
+    // The reply's shape is not documented; keep it in the log so a first run
+    // shows what the cloud sends.
+    for (const d of result.devices) {
+      this.log(`[Alarms] ${d.serial}: ${d.error || JSON.stringify(d.raw).slice(0, 2000)}`);
+    }
+
+    const active = result.alarms.filter((a) => !a.until);
+    // A device the portal marks as in alarm without any list naming a code
+    // still counts, so a Flow can warn about it.
+    const flagged = result.flaggedWithoutCode || [];
+    const label = (a) => `${a.title || this.homey.__('flow.alarm_unknown')} (${a.code})`;
+    const texts = [
+      ...active.map(label),
+      ...flagged.map((d) => this.homey.__('flow.alarm_flag', { device: d.model || d.serial })),
+    ];
+    const advice = active
+      .filter((a) => a.advice)
+      .map((a) => (texts.length > 1 ? `${label(a)}:\n${a.advice}` : a.advice));
+    if (flagged.length) advice.push(this.homey.__('flow.alarm_flag_advice'));
+
+    return {
+      alarm_count:  texts.length,
+      alarm_text:   texts.length ? texts.join('; ') : this.homey.__('flow.no_alarms'),
+      alarm_advice: advice.join('\n\n'),
+    };
   }
 
   /**

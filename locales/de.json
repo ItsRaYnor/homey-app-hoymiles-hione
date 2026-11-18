@@ -9,7 +9,9 @@
     "gateway_moved": "Der DTS-Stick ist auf {{ip}} umgezogen und wurde dort wiedergefunden. Die App spricht wieder lokal. Eine feste DHCP-Reservierung im Router verhindert, dass das erneut passiert.",
     "set_failed": "HiOne: {{what}} konnte nicht eingestellt werden — {{reason}}",
     "cloud_only": "Dieses Gerät steht auf \"Nur Cloud\", und diese Aktion braucht den lokalen Stick.",
-    "cloud_only_reserve": "Dieses Gerät steht auf \"Nur Cloud\": Die Cloud kann nur die Reserve des gerade aktiven Modus ändern."
+    "cloud_only_reserve": "Dieses Gerät steht auf \"Nur Cloud\": Die Cloud kann nur die Reserve des gerade aktiven Modus ändern.",
+    "not_ready": "Das Gerät startet noch — bitte gleich noch einmal versuchen.",
+    "invalid_power": "Die Ladeleistung muss größer als 0 kW sein."
   },
   "pair": {
     "login_title": "Bei S-Miles Cloud anmelden",
@@ -19,7 +21,11 @@
   "flow": {
     "charging": "Lädt",
     "discharging": "Entlädt",
-    "idle": "Ruht"
+    "idle": "Ruht",
+    "alarm_unknown": "Unbekannte Störung",
+    "no_alarms": "Keine Störungen",
+    "alarm_flag": "Alarm am __device__, ohne Störungscode in der Cloud",
+    "alarm_flag_advice": "Die Cloud liefert zu diesem Alarm keine Details. Öffne in der S-Miles-App den Wechselrichter und frage seine Ereignisse ab, um zu sehen, was es ist."
   },
   "price": {
     "buy": "Kaufen ≤ {{price}}",
@@ -39,5 +45,23 @@
     "max_discharge_power": "die maximale Entladeleistung",
     "charge_ceiling": "der maximale Ladestand",
     "grid_limit": "die Netzleistungsgrenze"
+  },
+  "price_widget": {
+    "today": "Heute",
+    "tomorrow": "Morgen",
+    "now": "Jetzt",
+    "low": "Tief",
+    "high": "Hoch",
+    "buy": "Kaufen",
+    "sell": "Verkaufen",
+    "peak": "Entladen",
+    "later": "Lohnt, später mehr",
+    "hold": "Nichts tun",
+    "no_device": "Füge zuerst ein HiOne-Gerät hinzu.",
+    "disabled": "Der Preisplan ist in den Geräteeinstellungen ausgeschaltet.",
+    "no_zone": "Wähle ein Land / eine Preiszone in den Geräteeinstellungen.",
+    "no_prices": "Im Moment keine Preise verfügbar.",
+    "not_yet": "Die Preise von morgen sind noch nicht da. Sie kommen meist gegen 13:00 Uhr.",
+    "error": "Die Preise konnten nicht geladen werden."
   }
 }

@@ -9,7 +9,9 @@
     "gateway_moved": "De DTS-stick is verhuisd naar {{ip}} en daar teruggevonden. De app praat weer lokaal. Zet een vaste DHCP-reservering op je router om dit te voorkomen.",
     "set_failed": "HiOne: {{what}} kon niet worden ingesteld — {{reason}}",
     "cloud_only": "Dit apparaat staat op \"Alleen cloud\" en deze actie heeft de lokale stick nodig.",
-    "cloud_only_reserve": "Dit apparaat staat op \"Alleen cloud\": de cloud kan alleen de reserve van de modus wijzigen die nu actief is."
+    "cloud_only_reserve": "Dit apparaat staat op \"Alleen cloud\": de cloud kan alleen de reserve van de modus wijzigen die nu actief is.",
+    "not_ready": "Het apparaat start nog op — probeer het zo opnieuw.",
+    "invalid_power": "Het laadvermogen moet meer dan 0 kW zijn."
   },
   "pair": {
     "login_title": "Inloggen bij S-Miles Cloud",
@@ -19,7 +21,11 @@
   "flow": {
     "charging": "Laden",
     "discharging": "Ontladen",
-    "idle": "Inactief"
+    "idle": "Inactief",
+    "alarm_unknown": "Onbekende storing",
+    "no_alarms": "Geen storingen",
+    "alarm_flag": "Alarm op de __device__, zonder storingscode in de cloud",
+    "alarm_flag_advice": "De cloud geeft voor dit alarm geen details. Open in de S-Miles-app de omvormer en vraag de omvormergebeurtenissen op om te zien wat het is."
   },
   "price": {
     "buy": "Kopen ≤ {{price}}",
@@ -39,5 +45,23 @@
     "max_discharge_power": "het maximale ontlaadvermogen",
     "charge_ceiling": "het maximale laadniveau",
     "grid_limit": "de netvermogensgrens"
+  },
+  "price_widget": {
+    "today": "Vandaag",
+    "tomorrow": "Morgen",
+    "now": "Nu",
+    "low": "Laag",
+    "high": "Hoog",
+    "buy": "Kopen",
+    "sell": "Verkopen",
+    "peak": "Ontladen",
+    "later": "Loont, later meer",
+    "hold": "Niets doen",
+    "no_device": "Voeg eerst een HiOne-apparaat toe.",
+    "disabled": "Het prijsplan staat uit in de apparaatinstellingen.",
+    "no_zone": "Kies een land / prijszone in de apparaatinstellingen.",
+    "no_prices": "Op dit moment geen prijzen beschikbaar.",
+    "not_yet": "De prijzen van morgen zijn er nog niet. Ze komen meestal rond 13:00.",
+    "error": "De prijzen konden niet worden geladen."
   }
 }

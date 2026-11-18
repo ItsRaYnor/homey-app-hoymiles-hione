@@ -9,7 +9,9 @@
     "gateway_moved": "The DTS stick moved to {{ip}} and was found again there. The app is talking locally once more. A fixed DHCP reservation on your router stops this recurring.",
     "set_failed": "HiOne: {{what}} could not be set — {{reason}}",
     "cloud_only": "This device is set to \"Cloud only\" and this action needs the local stick.",
-    "cloud_only_reserve": "This device is set to \"Cloud only\": the cloud can only change the reserve of the mode that is active right now."
+    "cloud_only_reserve": "This device is set to \"Cloud only\": the cloud can only change the reserve of the mode that is active right now.",
+    "not_ready": "The device is still starting up — try again in a moment.",
+    "invalid_power": "The charging power must be more than 0 kW."
   },
   "pair": {
     "login_title": "Log in to S-Miles Cloud",
@@ -19,7 +21,11 @@
   "flow": {
     "charging": "Charging",
     "discharging": "Discharging",
-    "idle": "Idle"
+    "idle": "Idle",
+    "alarm_unknown": "Unknown alarm",
+    "no_alarms": "No alarms",
+    "alarm_flag": "Alarm on the __device__, without a code in the cloud",
+    "alarm_flag_advice": "The cloud gives no details for this alarm. In the S-Miles app, open the inverter and request its events to see what it is."
   },
   "price": {
     "buy": "Buy ≤ {{price}}",
@@ -39,5 +45,23 @@
     "max_discharge_power": "the maximum discharge power",
     "charge_ceiling": "the maximum charge level",
     "grid_limit": "the grid power limit"
+  },
+  "price_widget": {
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "now": "Now",
+    "low": "Low",
+    "high": "High",
+    "buy": "Buy",
+    "sell": "Sell",
+    "peak": "Discharge",
+    "later": "Pays, more later",
+    "hold": "Do nothing",
+    "no_device": "Add a HiOne device first.",
+    "disabled": "The price plan is switched off in the device settings.",
+    "no_zone": "Choose a country / price zone in the device settings.",
+    "no_prices": "No prices available right now.",
+    "not_yet": "Tomorrow's prices are not out yet. They usually arrive around 13:00.",
+    "error": "Could not load the prices."
   }
 }

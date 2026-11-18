@@ -38,6 +38,15 @@ const LOG_CAPABILITIES = [
   'hoymiles_price_discharge_floor',
 ];
 
+// The cheapest quarter still to come and when it starts (1.1.12). Also last
+// in the order, for the same reason as the log capabilities above.
+const PRICE_AHEAD_CAPABILITIES = [
+  'hoymiles_price_low_ahead',
+  'hoymiles_price_low_ahead_time',
+  // What the charge on board cost (1.1.12).
+  'hoymiles_price_charge_cost',
+];
+
 const NEW_CAPABILITIES = [
   'hoymiles_smartport_power',
   'hoymiles_battery_flow',
@@ -75,6 +84,7 @@ const NEW_CAPABILITIES = [
   'hoymiles_cell_spread',
   'hoymiles_cell_temp_max',
   ...LOG_CAPABILITIES,
+  ...PRICE_AHEAD_CAPABILITIES,
 ];
 
 // Tiles that only the stick can fill. A device set to "cloud only" does not get
@@ -156,6 +166,7 @@ const CAPABILITY_ORDER = [
   'hoymiles_cell_temp_max',
   'hoymiles_connection_source',
   ...LOG_CAPABILITIES,
+  ...PRICE_AHEAD_CAPABILITIES,
 ];
 
 const REMOVED_CAPABILITIES = [

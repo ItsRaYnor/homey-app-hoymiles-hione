@@ -29,6 +29,16 @@ class HiOneDriver extends Driver {
       );
     }
 
+    // Fired at the start of every quarter; each Flow decides with its own count
+    // and time whether this quarter is one of its cheapest. A price outage is a
+    // quiet no rather than an error in the timeline every fifteen minutes.
+    registerListener(
+      this.homey.flow.getDeviceTriggerCard('price_cheapest_quarters_start'),
+      async ({ device, count, time }, state) => device
+        .priceIsCheapestQuarter(count, time, state && state.from)
+        .catch(() => false),
+    );
+
     registerListener(
       this.homey.flow.getActionCard('set_battery_mode'),
       async ({ device, mode }) => device.triggerCapabilityListener('hoymiles_battery_mode', mode)
@@ -165,6 +175,11 @@ class HiOneDriver extends Driver {
       this.homey.flow.getActionCard('stop_to_selfuse'),
       async ({ device }) => device.stopToSelfUse()
     );
+    // On demand only: one cloud call when the Flow runs, tokens for the next step.
+    registerListener(
+      this.homey.flow.getActionCard('fetch_alarms'),
+      async ({ device }) => device.fetchAlarms()
+    );
     registerListener(
       this.homey.flow.getConditionCard('battery_mode_is'),
       async ({ device, mode }) => device.getCapabilityValue('hoymiles_battery_mode') === mode
@@ -233,6 +248,17 @@ class HiOneDriver extends Driver {
     registerListener(
       this.homey.flow.getConditionCard('price_is_peak_hour'),
       async ({ device }) => Boolean((await plan(device)).peakNow),
+    );
+    // Quarter-hour rankings over midnight, for a car charger or anything else
+    // that only needs a number of cheap quarters before a deadline. Same prices
+    // and all-in sum as the plan; ranked once per set of arguments and prices.
+    registerListener(
+      this.homey.flow.getConditionCard('price_is_cheapest_quarters_until'),
+      async ({ device, count, time }) => device.priceIsCheapestQuarter(count, time),
+    );
+    registerListener(
+      this.homey.flow.getConditionCard('price_is_cheapest_for_energy'),
+      async ({ device, kwh, kw, time }) => device.priceIsNeededForEnergy(kwh, kw, time),
     );
     registerListener(
       this.homey.flow.getConditionCard('price_spread_pays'),

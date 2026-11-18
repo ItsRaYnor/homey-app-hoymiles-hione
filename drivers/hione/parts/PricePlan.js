@@ -13,6 +13,7 @@
 
 const FrankPrices = require('../../../lib/FrankPrices');
 const MarketPrices = require('../../../lib/MarketPrices');
+const ChargeCost = require('../../../lib/ChargeCost');
 
 // The day plan only changes when the clock moves into the next price hour, and
 // the prices themselves are fetched once a day. Recomputing every minute would
@@ -25,6 +26,17 @@ const TARGET_TOLERANCE_PCT = 2;
 
 // The price moments a Flow can be started by, and the plan field behind each.
 const PRICE_MOMENTS = { buy: 'buyNow', sell: 'sellNow', peak: 'peakNow' };
+
+const QUARTER_MS = 15 * 60_000;
+// The quarter timer fires this long after the boundary, so the new quarter's
+// price is certainly the one that counts as "now".
+const QUARTER_TICK_DELAY_MS = 3_000;
+
+// The cost of the charge on board is kept every poll but only written to the
+// store when it moved this much (EUR/kWh), or after this long: a restart then
+// loses at most a few minutes of bookkeeping, not every poll a store write.
+const CHARGE_COST_WRITE_STEP = 0.001;
+const CHARGE_COST_WRITE_MS = 15 * 60_000;
 
 class PricePlan {
 
@@ -68,8 +80,6 @@ class PricePlan {
     const settings = settingsOverride || this.getSettings();
     const number = (key) => (Number.isFinite(settings[key]) ? settings[key] : 0);
     this._priceZone = this._resolvePriceZone(settings);
-    this._priceSurcharge = number('price_surcharge') / 100;
-    this._priceVat = number('price_vat') / 100;
     this._pricePlan = null;
     this._lastPriceRefresh = 0;
     if (!this._priceZone) {
@@ -82,11 +92,16 @@ class PricePlan {
       log: (...args) => this.log(...args),
       error: (...args) => this.error(...args),
       zone: this._priceZone,
-      surcharge: this._priceSurcharge,
-      vat: this._priceVat,
+      surcharge: number('price_surcharge') / 100,
+      vat: number('price_vat') / 100,
       store: {
         read: () => this.getStoreValue('frank_prices'),
         write: (value) => this.setStoreValue('frank_prices', value),
+      },
+      // The cheapest-quarter rankings, so a restart does not move a Flow's quarters.
+      rankStore: {
+        read: () => this.getStoreValue('price_rankings'),
+        write: (value) => this.setStoreValue('price_rankings', value),
       },
     });
   }
@@ -142,20 +157,22 @@ class PricePlan {
     };
     const roundTrip = this.getSetting('price_round_trip');
     const capacity = this.getSetting('price_capacity_kwh');
-    // Dutch net metering hands the tax on an exported kWh back, so there the
-    // penalty is only the fees. Nowhere else does: an exported kWh earns the
-    // bare market price and never sees the surcharge it would have cost to
-    // import. Leaving that out would sell at prices that lose money.
-    const exportGap = this._priceZone && this._priceZone !== MarketPrices.FRANK_ZONE
-      ? (this._priceSurcharge || 0) * (1 + (this._priceVat || 0))
-      : 0;
+    const tracked = this._chargeCostState();
     return {
       ...this._batteryState(Number.isFinite(capacity) ? capacity : FrankPrices.DEFAULTS.capacityKwh),
+      // What the charge on board cost; FrankPrices falls back to the cheapest
+      // slot of the last 24 hours when it is not known.
+      chargeCost: tracked && Number.isFinite(tracked.avg) ? tracked.avg : undefined,
       wearCost:   cents('price_wear_cost',  FrankPrices.DEFAULTS.wearCost),
       minMargin:  cents('price_min_margin', FrankPrices.DEFAULTS.minMargin),
       buyBand:    cents('price_buy_band',   FrankPrices.DEFAULTS.buyBand),
       sellBand:   cents('price_sell_band',  FrankPrices.DEFAULTS.sellBand),
-      feedInPenalty: cents('price_feed_in_penalty', FrankPrices.DEFAULTS.feedInPenalty) + exportGap,
+      // What an exported kWh earns: the all-in price minus the fees while the
+      // Netherlands nets, the market price minus the export fee everywhere
+      // else and from 2027 (FrankPrices.exportValue decides per quarter).
+      feedInPenalty: cents('price_feed_in_penalty', FrankPrices.DEFAULTS.feedInPenalty),
+      exportFee:  cents('price_export_fee', FrankPrices.DEFAULTS.exportFee),
+      exportVat:  cents('price_export_vat', FrankPrices.DEFAULTS.exportVat),
       sellKw:     Number.isFinite(this.getSetting('price_sell_kw'))
         ? this.getSetting('price_sell_kw')
         : FrankPrices.DEFAULTS.sellKw,
@@ -204,12 +221,23 @@ class PricePlan {
     return state;
   }
 
-  async _refreshPricePlan() {
+  async _refreshPricePlan({ force = false } = {}) {
     if (this.getSetting('price_enabled') === false) return;
+    // The poll and the quarter timer can both ask at the boundary; the second
+    // waits for the first rather than announcing the same moment twice.
+    if (this._priceRefreshInFlight) {
+      await this._priceRefreshInFlight;
+      if (!force) return;
+    }
     const now = Date.now();
-    if (now - this._lastPriceRefresh < PRICE_REFRESH_MS) return;
+    if (!force && now - this._lastPriceRefresh < PRICE_REFRESH_MS) return;
     this._lastPriceRefresh = now;
+    this._priceRefreshInFlight = this._doRefreshPricePlan()
+      .finally(() => { this._priceRefreshInFlight = null; });
+    await this._priceRefreshInFlight;
+  }
 
+  async _doRefreshPricePlan() {
     const plan = await this.getPricePlan().catch((err) => {
       this.error('Price plan failed: ' + err.message);
       return null;
@@ -225,6 +253,7 @@ class PricePlan {
       for (const capability of [
         'hoymiles_price_now', 'hoymiles_price_market_now', 'hoymiles_price_discharge_floor',
         'hoymiles_price_buy_moment', 'hoymiles_price_sell_moment',
+        'hoymiles_price_low_ahead', 'hoymiles_price_low_ahead_time', 'hoymiles_price_charge_cost',
       ]) {
         if (!this.hasCapability(capability) || this.getCapabilityValue(capability) === null) continue;
         await this.setCapabilityValue(capability, null)
@@ -244,7 +273,146 @@ class PricePlan {
     await this._setCapabilitySafe('hoymiles_price_discharge_floor', ct(plan.dischargeFloor));
     await this._setCapabilitySafe('hoymiles_price_buy_moment',  Boolean(plan.buyNow));
     await this._setCapabilitySafe('hoymiles_price_sell_moment', Boolean(plan.sellNow));
+    // The cheapest quarter still to come, today or tomorrow, and when it starts.
+    await this._setCapabilitySafe('hoymiles_price_low_ahead', ct(plan.lowAhead));
+    await this._setCapabilitySafe('hoymiles_price_low_ahead_time',
+      FrankPrices.clockText(plan.lowAheadFrom, this._clockTimeZone()));
+    // What the charge on board cost (tracked, or the fallback estimate).
+    await this._setCapabilitySafe('hoymiles_price_charge_cost', ct(plan.costBasis));
     await this._firePriceMomentTriggers(plan);
+  }
+
+  /** Homey's own time zone: the one the times on Flow cards are meant in. */
+  _clockTimeZone() {
+    try {
+      return this.homey.clock.getTimezone() || 'Europe/Amsterdam';
+    } catch (err) {
+      return 'Europe/Amsterdam';
+    }
+  }
+
+  // --- the cost of the charge on board -------------------------------------
+
+  /** The tracked average, loaded from the store on first use. */
+  _chargeCostState() {
+    if (this._chargeCost === undefined) {
+      const stored = this.getStoreValue('charge_cost');
+      const avg = stored && Number.isFinite(stored.avg) ? stored.avg : null;
+      // lastAt starts empty: the time the app was down is not bridged.
+      this._chargeCost = { avg, lastAt: null, savedAvg: avg, savedAt: Date.now() };
+    }
+    return this._chargeCost;
+  }
+
+  /**
+   * Book one poll into the cost of the charge on board (see ChargeCost). Needs
+   * the price of the running quarter, from the last plan; without one the
+   * charge in this poll is not priced, rather than priced at a guess.
+   */
+  _trackChargeCost(data, now = Date.now()) {
+    if (this.getSetting('price_enabled') === false) return;
+    const state = this._chargeCostState();
+    // A cloud snapshot on a device that normally reads the stick may be hours
+    // old; its power must not be counted as if it flowed just now.
+    if (data.source === 'cloud' && !this._isCloudOnly()) {
+      state.lastAt = null;
+      return;
+    }
+    const plan = this._pricePlan;
+    const live = Boolean(plan) && now >= plan.from && now < plan.till;
+    const options = this._priceOptions();
+    // While the other battery on the meter discharges, the grid reading hides
+    // what this one takes from the grid: its export cancels our import. The
+    // sun cannot be told apart then, so the whole charge is booked as grid.
+    const gridW = this.otherBatteryIs('discharging') && Number.isFinite(data.batteryPower)
+      ? data.batteryPower
+      : data.gridPower;
+    const next = ChargeCost.step(state, {
+      now,
+      batteryW: data.batteryPower,
+      gridW,
+      price: live ? plan.priceNow : null,
+      exportValue: live && this._prices
+        ? this._prices.exportValueOf({ from: plan.from, price: plan.priceNow, market: plan.marketNow }, options)
+        : null,
+      usableKwh: options.usableKwh,
+      fallback: plan ? plan.costBasis : null,
+    });
+    state.avg = next.avg;
+    state.lastAt = next.lastAt;
+
+    if (!Number.isFinite(state.avg) || state.avg === state.savedAvg) return;
+    const moved = state.savedAvg === null || Math.abs(state.avg - state.savedAvg) >= CHARGE_COST_WRITE_STEP;
+    if (!moved && now - state.savedAt < CHARGE_COST_WRITE_MS) return;
+    state.savedAvg = state.avg;
+    state.savedAt = now;
+    this.setStoreValue('charge_cost', { avg: state.avg, at: now })
+      .catch((err) => this.error('Could not store the charge cost: ' + err.message));
+  }
+
+  // --- the cheapest quarters -----------------------------------------------
+
+  /**
+   * True when the quarter `at` falls in is one of the `count` cheapest known
+   * quarters from now until the next `time` ("07:00"). Throws when there is
+   * no price at all in that window, like the other price conditions.
+   */
+  async priceIsCheapestQuarter(count, time, at = Date.now()) {
+    if (this.getSetting('price_enabled') === false || !this._prices) {
+      throw new Error(this.homey.__('errors.no_prices'));
+    }
+    const n = Math.max(1, Math.round(Number(count) || 0));
+    const until = FrankPrices.nextClockTime(at, time, this._clockTimeZone());
+    const { chosen, known } = await this._prices.cheapestQuarters(n, until, at);
+    if (!known) throw new Error(this.homey.__('errors.no_prices'));
+    return chosen.has(FrankPrices.quarterStart(at));
+  }
+
+  /**
+   * True when the quarter now is one of the cheapest it takes to put `kwh` in
+   * at `kw` before `time`. Nothing to charge is never a yes.
+   */
+  async priceIsNeededForEnergy(kwh, kw, time, at = Date.now()) {
+    if (!(Number(kwh) > 0)) return false;
+    if (!(Number(kw) > 0)) throw new Error(this.homey.__('errors.invalid_power'));
+    return this.priceIsCheapestQuarter(FrankPrices.quartersFor(Number(kwh), Number(kw)), time, at);
+  }
+
+  /** Wake up just after every quarter boundary, for as long as the device lives. */
+  _startQuarterTimer() {
+    this._stopQuarterTimer();
+    this._quarterTimerOn = true;
+    const delay = QUARTER_MS - (Date.now() % QUARTER_MS) + QUARTER_TICK_DELAY_MS;
+    this._quarterTimer = this.homey.setTimeout(() => {
+      this._quarterTimer = null;
+      this._onQuarter()
+        .catch((err) => this.error('Quarter tick failed: ' + err.message))
+        .finally(() => { if (this._quarterTimerOn) this._startQuarterTimer(); });
+    }, delay);
+  }
+
+  _stopQuarterTimer() {
+    this._quarterTimerOn = false;
+    if (this._quarterTimer) this.homey.clearTimeout(this._quarterTimer);
+    this._quarterTimer = null;
+  }
+
+  /**
+   * A new quarter: bring the price tiles up to date right away, then tell the
+   * Flows that wait for one of the cheapest quarters. Each of those Flows
+   * decides for itself, with its own count and time, whether this one counts.
+   */
+  async _onQuarter(now = Date.now()) {
+    const from = FrankPrices.quarterStart(now);
+    if (this._lastQuarterTick === from) return;
+    this._lastQuarterTick = from;
+    await this._refreshPricePlan({ force: true });
+    const plan = this._pricePlan;
+    if (!plan || !(now >= plan.from && now < plan.till)) return;
+    const tokens = { price: Math.round(plan.priceNow * 1000) / 10 };
+    await this.homey.flow.getDeviceTriggerCard('price_cheapest_quarters_start')
+      .trigger(this, tokens, { from })
+      .catch((err) => this.error('Trigger failed: ' + err.message));
   }
 
   /**

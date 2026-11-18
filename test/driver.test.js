@@ -107,3 +107,19 @@ test('every Flow card in the manifest has a listener, except the plain triggers'
     assert.equal(typeof listener === 'function', filtered, card.id);
   }
 });
+
+test('the cheapest-quarter cards ask the device, and the trigger keeps quiet on an outage', async () => {
+  const { run } = await driver();
+  const asked = [];
+  const device = battery({}, {
+    priceIsCheapestQuarter: async (count, time, at) => { asked.push([count, time, at]); return true; },
+    priceIsNeededForEnergy: async (kwh, kw, time) => { asked.push([kwh, kw, time]); return false; },
+  });
+  assert.equal(await run('condition', 'price_is_cheapest_quarters_until', { device, count: 12, time: '07:00' }), true);
+  assert.equal(await run('condition', 'price_is_cheapest_for_energy', { device, kwh: 20, kw: 6.9, time: '07:00' }), false);
+  assert.equal(await run('trigger', 'price_cheapest_quarters_start', { device, count: 4, time: '07:00' }, { from: 900000 }), true);
+  assert.deepEqual(asked, [[12, '07:00', undefined], [20, 6.9, '07:00'], [4, '07:00', 900000]]);
+
+  const failing = battery({}, { priceIsCheapestQuarter: async () => { throw new Error('no_prices'); } });
+  assert.equal(await run('trigger', 'price_cheapest_quarters_start', { device: failing, count: 4, time: '07:00' }, { from: 0 }), false);
+});

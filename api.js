@@ -417,6 +417,34 @@ module.exports = {
    * modes are real vs. which the app exposes.
    * Body: { stationId? }  (defaults to the first station on the account)
    */
+  async alarms({ homey, body }) {
+    const email    = homey.settings.get('saved_email');
+    const password = homey.settings.get('saved_password');
+    if (!email || !password) throw new Error('No saved S-Miles account — log in on this page first');
+
+    // The app's shared client keeps the alarm dictionary between requests.
+    const api = homey.app.api || new HoymilesApi({
+      log:     (...a) => homey.app.log(...a),
+      error:   (...a) => homey.app.error(...a),
+      baseUrl: homey.settings.get('cloud_api_url') || undefined,
+    });
+    await api.ensureToken(email, password);
+
+    // The list goes back too, so the page can offer a station picker.
+    const stations = await api.getStations();
+    const stationId = (body && body.stationId) || (stations.length ? stations[0].id : null);
+    if (!stationId) throw new Error('No station on this account');
+
+    const result = await api.getActiveAlarms(stationId, homey.i18n.getLanguage());
+    homey.app.log('[Alarms] station', result.station.error || JSON.stringify(result.station.raw).slice(0, 2000));
+    for (const d of result.devices) {
+      homey.app.log('[Alarms]', d.serial, d.error || JSON.stringify(d.raw).slice(0, 2000));
+      if (d.history) homey.app.log('[Alarms] history', d.serial, d.history.error || JSON.stringify(d.history.raw).slice(0, 2000));
+    }
+    homey.app.log('[Alarms] flags', JSON.stringify(result.flags));
+    return { ...result, stations };
+  },
+
   async getDiagnostics({ homey, body }) {
     const email    = homey.settings.get('saved_email');
     const password = homey.settings.get('saved_password');

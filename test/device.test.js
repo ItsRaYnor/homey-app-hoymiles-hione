@@ -178,17 +178,34 @@ test('without a zone there is no plan, and no error either', async () => {
   assert.equal(await hione.getPriceCurve(), null);
 });
 
-test('outside the Netherlands an exported kWh also loses the surcharge', () => {
-  const settings = { price_zone: 'DE-LU', price_surcharge: 18, price_vat: 19, price_feed_in_penalty: 0 };
+test('outside the Netherlands an exported kWh earns the market price minus the export fee', () => {
+  const settings = {
+    price_zone: 'DE-LU', price_surcharge: 18, price_vat: 19, price_feed_in_penalty: 5.3, price_export_fee: 1,
+  };
+  const row = { from: Date.UTC(2026, 0, 15, 12), price: 0.40, market: 0.10 };
   const german = device({ settings });
   german._createPrices(settings);
-  assert.ok(Math.abs(german._priceOptions().feedInPenalty - 0.18 * 1.19) < 1e-9);
+  assert.ok(Math.abs(german._prices.exportValueOf(row, german._priceOptions()) - 0.09) < 1e-9);
 
-  // In the Netherlands net metering hands it back: only the fee from the invoice counts.
-  const dutchSettings = { ...settings, price_zone: 'NL', price_feed_in_penalty: 5.3 };
+  // In the Netherlands net metering hands the tax back until 2027: only the
+  // fees from the invoice count.
+  const dutchSettings = { ...settings, price_zone: 'NL' };
   const dutch = device({ settings: dutchSettings });
   dutch._createPrices(dutchSettings);
-  assert.ok(Math.abs(dutch._priceOptions().feedInPenalty - 0.053) < 1e-9);
+  assert.ok(Math.abs(dutch._prices.exportValueOf(row, dutch._priceOptions()) - 0.347) < 1e-9);
+  const in2027 = { ...row, from: Date.UTC(2027, 0, 15, 12) };
+  assert.ok(Math.abs(dutch._prices.exportValueOf(in2027, dutch._priceOptions()) - 0.09) < 1e-9);
+});
+
+test('the cheapest-quarter rankings survive a restart', async () => {
+  const settings = { price_zone: 'NL' };
+  const hione = device({ settings });
+  hione._createPrices(settings);
+  await hione._prices._rankStore.write({ '8|07:00': { chosen: [1], known: 4 } });
+  const restarted = device({ settings });
+  restarted.fake.store = hione.fake.store;
+  restarted._createPrices(settings);
+  assert.deepEqual(await restarted._prices._rankStore.read(), { '8|07:00': { chosen: [1], known: 4 } });
 });
 
 // --- trusted state of charge -------------------------------------------------
@@ -211,4 +228,106 @@ test('a reading the battery cannot have reached is replaced by an estimate', () 
 test('right after a start a cloud reading is not taken as the reference', () => {
   const hione = device({ settings: { price_capacity_kwh: 10 } });
   assert.equal(hione._trustedSoc({ batterySoc: 44, batteryPower: 0, source: 'cloud' }, Date.now()), null);
+});
+
+// --- the cost of the charge on board ----------------------------------------
+
+/** A plan for the quarter `now` is in, as far as the device reads one. */
+const livePlan = (now, extra = {}) => ({
+  from: now - 5 * MINUTE, till: now + 10 * MINUTE, priceNow: 0.21, costBasis: 0.30,
+  buyNow: false, sellNow: false, peakNow: false, action: 'hold', dayLow: 0.21, dayHigh: 0.44,
+  dischargeFloor: 0.3433, lowAhead: 0.15, lowAheadFrom: Date.UTC(2026, 0, 16, 0), ...extra,
+});
+
+test('a charge from the grid is booked at the price of its quarter, and kept over a restart', async () => {
+  const t0 = Date.UTC(2026, 0, 15, 2);
+  const settings = { price_floor_soc: 30, price_capacity_kwh: 10 };
+  const hione = device({ settings, capabilities: { measure_battery: 30.5 } });
+  hione._pricePlan = livePlan(t0);
+  const data = { batteryPower: 5000, gridPower: 5500, source: 'modbus' };
+  hione._trackChargeCost(data, t0);
+  hione._trackChargeCost(data, t0 + MINUTE);
+  // Charged from (nearly) the floor: the purchase is the whole average.
+  assert.ok(Math.abs(hione._priceOptions().chargeCost - 0.21) < 1e-9);
+  assert.ok(Math.abs(hione.getStoreValue('charge_cost').avg - 0.21) < 1e-9);
+
+  const restarted = device({ settings, capabilities: { measure_battery: 31 } });
+  restarted.fake.store = hione.fake.store;
+  assert.ok(Math.abs(restarted._priceOptions().chargeCost - 0.21) < 1e-9);
+});
+
+test('while the other battery discharges, a charge counts as bought from the grid', () => {
+  const t0 = Date.UTC(2026, 0, 15, 12);
+  const settings = { price_floor_soc: 30, price_capacity_kwh: 10 };
+  // The meter shows export: the other battery's 5 kW hides our 5 kW import.
+  const data = { batteryPower: 5000, gridPower: -200, source: 'modbus' };
+  const book = (otherDischarging) => {
+    const hione = device({ settings, capabilities: { measure_battery: 30.5 } });
+    hione._otherBatteryReports = { charging: 0, discharging: otherDischarging ? Date.now() : 0 };
+    hione._pricePlan = livePlan(t0, { priceNow: 0.30, marketNow: 0.10 });
+    hione._prices = { exportValueOf: () => 0.25 };
+    hione._trackChargeCost(data, t0);
+    hione._trackChargeCost(data, t0 + MINUTE);
+    return hione._priceOptions().chargeCost;
+  };
+  assert.ok(Math.abs(book(false) - 0.25) < 1e-9, 'looks like sun');
+  assert.ok(Math.abs(book(true) - 0.30) < 1e-9, 'is the grid');
+});
+
+test('a stale cloud snapshot is not booked as a charge', () => {
+  const t0 = Date.UTC(2026, 0, 15, 2);
+  const hione = device({ settings: { price_floor_soc: 30 }, capabilities: { measure_battery: 31 } });
+  hione._isCloudOnly = () => false;
+  hione._pricePlan = livePlan(t0);
+  hione._trackChargeCost({ batteryPower: 5000, gridPower: 5500, source: 'modbus' }, t0);
+  hione._trackChargeCost({ batteryPower: 5000, gridPower: 5500, source: 'cloud' }, t0 + MINUTE);
+  assert.equal(hione._priceOptions().chargeCost, undefined);
+});
+
+// --- quarters ---------------------------------------------------------------
+
+test('a new quarter refreshes the tiles and starts the cheapest-quarter Flows once', async () => {
+  const now = Date.UTC(2026, 0, 15, 14, 0, 3);
+  const hione = device({ capabilities: {
+    hoymiles_price_low_ahead: null, hoymiles_price_low_ahead_time: null, hoymiles_price_charge_cost: null,
+  } });
+  hione._lastPriceRefresh = 0;
+  hione._prices = {};
+  hione.getPricePlan = async () => livePlan(now);
+  await hione._onQuarter(now);
+  await hione._onQuarter(now + MINUTE);
+
+  assert.deepEqual(fired(hione, 'price_cheapest_quarters_start'), [
+    { tokens: { price: 21 }, state: { from: Date.UTC(2026, 0, 15, 14) } },
+  ]);
+  assert.equal(hione.getCapabilityValue('hoymiles_price_low_ahead'), 15);
+  assert.equal(hione.getCapabilityValue('hoymiles_price_low_ahead_time'), '01:00');
+  assert.equal(hione.getCapabilityValue('hoymiles_price_charge_cost'), 30);
+});
+
+test('nothing to charge is never a cheap quarter, and no power is an error', async () => {
+  const hione = device();
+  hione._prices = { cheapestQuarters: async () => ({ chosen: new Set(), known: 4 }) };
+  assert.equal(await hione.priceIsNeededForEnergy(0, 6.9, '07:00'), false);
+  await assert.rejects(hione.priceIsNeededForEnergy(5, 0, '07:00'), /invalid_power/);
+});
+
+test('a quarter is cheap when the ranking chose it', async () => {
+  const now = Date.UTC(2026, 0, 15, 14, 7);
+  const asked = [];
+  const hione = device();
+  hione._prices = {
+    cheapestQuarters: async (count, until, at) => {
+      asked.push({ count, until, at });
+      return { chosen: new Set([Date.UTC(2026, 0, 15, 14)]), known: 40 };
+    },
+  };
+  assert.equal(await hione.priceIsCheapestQuarter(12, '07:00', now), true);
+  // 5 kWh at 6.9 kW is three quarters.
+  await hione.priceIsNeededForEnergy(5, 6.9, '07:00', now);
+  assert.deepEqual(asked.map((a) => a.count), [12, 3]);
+  assert.equal(asked[0].until, Date.UTC(2026, 0, 16, 6));
+
+  hione._prices = { cheapestQuarters: async () => ({ chosen: new Set(), known: 0 }) };
+  await assert.rejects(hione.priceIsCheapestQuarter(12, '07:00', now), /no_prices/);
 });

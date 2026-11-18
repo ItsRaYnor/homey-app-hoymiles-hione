@@ -30,7 +30,7 @@ Monitor and control your **Hoymiles HiOne** home battery from Homey Pro — **lo
 - **Day-ahead price plan (Netherlands, per quarter hour)** with conditions that move with the day's spread instead of fixed thresholds. See [Price plan](#price-plan).
 - **Works next to other batteries** (e.g. Sessy): a Flow reports what the other battery is doing, and the HiOne does not feed it while it charges.
 - **Cloud-only device** for a second installation whose stick is not on your network.
-- **Diagnostics** in the app settings: the source of every value, a register scan and cell data per battery module.
+- **Diagnostics** in the app settings: the source of every value, a register scan, cell data per battery module, and the active alarms from the cloud on request.
 
 ---
 
@@ -104,9 +104,20 @@ The app fetches the day-ahead prices per quarter hour and turns one question —
 discharging pays  when  price now ≥ day low / efficiency + wear + margin
 ```
 
+A charge that is already on board has been paid for, so it only has to beat what it cost. The app keeps a running average of that cost while the battery charges — the grid at the all-in price of the quarter, the sun at the export price it gave up — and while there is charge above the discharge floor it uses the lower of the two:
+
+```
+charge on board  pays  when  price now ≥ cost of the charge / efficiency + wear + margin
+```
+
+Without a tracked cost (a fresh install) the cheapest quarter of the last 24 hours stands in; the tile *cost of charge on board* shows the figure in use. While the other battery on the meter is reported as discharging, a charge is booked as bought from the grid, because its export hides this battery's import. Tomorrow's chart starts with the charge the plan expects to have at midnight — tonight's buy moments included, at their price — spends it on tomorrow's dearest quarters and shows both floors as labelled lines.
+
+One charge is spent once: the dearest uses come first, whether that is the house in a dear quarter or a sale to the grid, until the charge is gone. An exported kWh is worth the all-in price minus the fees while the Netherlands nets (until 1 January 2027), and the bare market price minus the export fee everywhere else and in the Netherlands from 2027 (plus VAT, if your contract pays the export price including VAT: set *VAT paid on top of the export price*); the plan switches per quarter.
+
 The thresholds move with the day: on a day where every quarter is expensive the battery still buys at the bottom, and on a flat day it does nothing. Tomorrow's prices count once they are published (around 13:00).
 
-- **Conditions:** *buy moment*, *discharging pays*, *sell moment*, *today's spread pays*, *still needs charging*, *one of the dearest quarters the battery can still cover*, *a cheaper refill is coming before the dearest moment*
+- **Conditions:** *buy moment*, *discharging pays*, *sell moment*, *still needs charging*, *one of the dearest quarters the battery can still cover*, *a cheaper refill is coming before the dearest moment*
+- **Cheapest quarters, for a car charger or anything else:** *this quarter is one of the N cheapest quarters until a time* and *this quarter is needed to charge N kWh at N kW before a time* — per quarter hour and across midnight, where Homey's own price cards average per hour and stop at the end of the day. A trigger fires in the first minute of such a quarter; the tiles *lowest price ahead* and *lowest price at* show when the cheapest known quarter comes
 - **Actions:** *start charging to what the dear hours will need* — a charge target calculated from the coming expensive quarters and the house load, instead of a fixed 95 %
 - **Price chart** under *Configure → Prices*, for today and tomorrow, with the verdict per quarter
 - **Dashboard widget** *Price plan*: the same chart on a Homey dashboard, with the plan's verdict, the price now and a tap on any quarter for its details
@@ -114,9 +125,9 @@ The thresholds move with the day: on a day where every quarter is expensive the 
 
 **In the Netherlands, prices come from Frank Energie's public API** (no account or key). It works with any Dutch supplier: the market price is the same for everyone, and a different supplier markup shifts every quarter by the same amount, which the decisions hardly notice. When Frank cannot be reached, **[dynamisch-tarief.nl](https://www.dynamisch-tarief.nl)** stands in automatically (same market price); Frank takes over again as soon as it is back.
 
-**Other countries get the day-ahead market price from [Energy-Charts](https://www.energy-charts.info)** (Fraunhofer ISE, no account or key): Germany/Luxembourg, Austria, Belgium, France, Switzerland, Poland, Czechia, Hungary, Slovenia, Denmark (DK1/DK2), Norway South (NO2), Sweden South (SE4) and Italy North. The country is taken from Homey's time zone, or chosen under device settings → *Price plan* → *Country / price zone*. That price is the bare market price, so enter your own **surcharge** (taxes, grid fees and supplier markup per kWh) and **VAT** there as well: the price tile then shows what you actually pay, and the plan knows that an exported kWh does not earn those back.
+**Other countries get the day-ahead market price from [Energy-Charts](https://www.energy-charts.info)** (Fraunhofer ISE, no account or key): Germany/Luxembourg, Austria, Belgium, France, Switzerland, Poland, Czechia, Hungary, Slovenia, Denmark (DK1/DK2), Norway South (NO2), Sweden South (SE4) and Italy North. The country is taken from Homey's time zone, or chosen under device settings → *Price plan* → *Country / price zone*. That price is the bare market price, so enter your own **surcharge** (taxes, grid fees and supplier markup per kWh) and **VAT** there as well: the price tile then shows what you actually pay, and the plan knows that an exported kWh does not earn those back. An exported kWh is valued at the market price minus the *export fee* setting.
 
-**Check the settings before letting Flows trade** (device settings → *Price plan*): battery wear, round-trip efficiency, required margin, usable capacity, discharge floor and how much less exporting earns than using the energy yourself. The defaults are tuned to the tested system and a Dutch contract with net metering; outside the Netherlands, start with the surcharge and VAT.
+**Check the settings before letting Flows trade** (device settings → *Price plan*): battery wear, round-trip efficiency, required margin, usable capacity, discharge floor, how much less exporting earns than using the energy yourself while netted, and the export fee and VAT on exports once nothing is netted. The defaults are tuned to the tested system and a Dutch contract with net metering; outside the Netherlands, start with the surcharge, VAT and export fee.
 
 ---
 
@@ -126,25 +137,28 @@ The thresholds move with the day: on a day where every quarter is expensive the 
 - Battery mode changed
 - The battery was held at its current charge — fires only when the hold actually moved the reserve, so a notification on it does not repeat
 - A buy moment, sell moment or peak the battery can cover started / ended — starts a Flow in the minute the price plan changes its mind, instead of asking every five minutes
+- One of the N cheapest quarters until a time begins
 
 ### Conditions
 - Battery **is / is not** charging (more than 50 W), idle or discharging
 - Battery mode **is / is not** …
 - Grid **is / is not** importing power
 - Connection **is / is not** local
-- Price plan: buy moment, discharging pays, sell moment, today's spread pays, still needs charging, dearest quarter, cheaper refill ahead
+- Price plan: buy moment, discharging pays, sell moment, still needs charging, dearest quarter, cheaper refill ahead
+- This quarter **is / is not** one of the N cheapest quarters until a time; this quarter **is / is not** needed to charge N kWh at N kW before a time
 - Another battery **is / is not** charging or discharging
 
 ### Actions
 - **Start charging to a level**, **Start charging to what the dear hours will need**, **Start selling down to a level**, **Stop charging or selling, back to Self-Consumption**
 - **Hold the battery at its current charge** — writes only when something changed, to spare the inverter's memory; does nothing while Force Charge runs, since that mode charges to its own target
+- **Fetch the active alarms from the cloud** — on demand only, never polled; returns the number of alarms, their names with code and the troubleshooting steps as tokens, in your Homey language (needs the S-Miles Cloud account)
 - **Report that another battery is charging / discharging** — call it every minute while that holds; the report expires by itself after 3 minutes
 - Set battery mode (Self-Consumption, Economy, Backup, Off-Grid, Force Charge, Force Discharge, Peak Shaving, Time of Use, AI Mode)
-- Set reserve SOC, or the reserve SOC of a specific mode
+- Set the reserve SOC of a specific mode
 - Set the local charge ceiling; limit charge or discharge power locally (keeps the mode)
-- Set max power, max charge power, max discharge power, max SOC, grid power limit
 - Set Peak Shaving parameters, Time of Use period, switch the dry contact
-- Set power limit and turn the inverter on/off (local) — for sticks that support it; the DTS-WL-G3 does not
+
+Ten older cards are hidden from the card picker since 1.1.12; Flows that use them keep working. Eight have a better replacement: *set max power / max charge power / max discharge power* (use *start charging*, *start selling* and the local power limits, which work without the cloud), *set reserve SOC* of the active mode (use the one for a specific mode), *set max SOC* and *set grid power limit* (part of *set Peak Shaving parameters*), *charge to what the dear hours will need* (use *start charging to …*) and *today's spread pays* (use *buy moment* and *discharging pays*). Two never worked on a HiOne: *set power limit* and *turn the inverter on/off* are microinverter commands the DTS-WL-G3 does not answer.
 
 > **Inverter memory:** settings are stored in the inverter's EEPROM, which wears with every write. The app skips writes that would not change anything, but avoid Flows that change a setting every minute back and forth.
 
@@ -156,7 +170,7 @@ The thresholds move with the day: on a day where every quarter is expensive the 
 |---|---|
 | Unofficial interfaces | May break if Hoymiles changes its cloud or the stick firmware |
 | Mode switching | Needs the S-Miles Cloud; not possible during an internet outage |
-| Price plan | Dutch day-ahead prices only |
+| Price plan | Day-ahead prices for the Netherlands (Frank Energie) and 14 other bidding zones (Energy-Charts, bare market price plus your own surcharge and VAT) |
 | Tested hardware | One HiOne-16T-G3 system; other HiOne models untested |
 | Polling | Intervals below 30 seconds can disrupt the cloud and the Hoymiles app |
 

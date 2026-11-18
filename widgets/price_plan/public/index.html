@@ -1,5 +1,8 @@
+<!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
       html, body { height: 100%; margin: 0; }
       body { display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; }
@@ -14,19 +17,21 @@
       .tabs button {
         font: inherit; font-size: var(--homey-font-size-small); line-height: var(--homey-line-height-small);
         color: var(--homey-text-color-light); background: none; cursor: pointer;
-        border: var(--homey-line); border-radius: var(--homey-border-radius-small);
+        border: var(--homey-line, 1px solid var(--homey-text-color-light)); border-radius: var(--homey-border-radius-small);
         padding: 0 var(--homey-su-2);
       }
       .tabs button.active { color: var(--homey-text-color); border-color: var(--homey-text-color-light); }
       .dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; }
       svg text { font-size: 9px; fill: var(--homey-text-color-light); }
-      /* Bar colours: the same verdicts as the chart on the settings page. */
-      .buy { fill: #00A94F; background: #00A94F; }
-      .sell { fill: #d32f2f; background: #d32f2f; }
-      .peak { fill: #f4a261; background: #f4a261; }
-      .later { fill: rgba(244, 162, 97, 0.4); background: rgba(244, 162, 97, 0.4); }
-      .hold { fill: var(--homey-line-color); background: var(--homey-line-color); }
-      .floor { stroke: #d32f2f; stroke-width: 1; stroke-dasharray: 4 3; }
+      /* Bar colours: the same verdicts as the chart on the settings page, from
+         Homey's palette (the hex values only stand in where it is missing). */
+      .buy { fill: var(--homey-color-green-500, #00A94F); background: var(--homey-color-green-500, #00A94F); }
+      .sell { fill: var(--homey-color-red-500, #d32f2f); background: var(--homey-color-red-500, #d32f2f); }
+      .peak { fill: var(--homey-color-orange-500, #f4a261); background: var(--homey-color-orange-500, #f4a261); }
+      .later { fill: var(--homey-color-orange-500, #f4a261); background: var(--homey-color-orange-500, #f4a261); opacity: 0.4; }
+      .hold { fill: var(--homey-text-color-light); background: var(--homey-text-color-light); opacity: 0.3; }
+      .floor { stroke: var(--homey-color-red-500, #d32f2f); stroke-width: 1; stroke-dasharray: 4 3; }
+      .floor.board { stroke: var(--homey-text-color); }
       .mark { fill: none; stroke: var(--homey-text-color); stroke-width: 1.5; }
     </style>
   </head>
@@ -47,37 +52,25 @@
     </div>
 
     <script type="text/javascript">
-      var i18n = {
-        en: {
-          today: 'Today', tomorrow: 'Tomorrow', now: 'Now', low: 'Low', high: 'High',
-          buy: 'Buy', sell: 'Sell', peak: 'Discharge', later: 'Pays, more later', hold: 'Do nothing',
-          no_device: 'Add a HiOne device first.',
-          disabled: 'The price plan is switched off in the device settings.',
-          no_zone: 'Choose a country / price zone in the device settings.',
-          no_prices: 'No prices available right now.',
-          not_yet: 'Tomorrow\'s prices are not out yet. They usually arrive around 13:00.',
-          error: 'Could not load the prices.'
-        },
-        nl: {
-          today: 'Vandaag', tomorrow: 'Morgen', now: 'Nu', low: 'Laag', high: 'Hoog',
-          buy: 'Kopen', sell: 'Verkopen', peak: 'Ontladen', later: 'Loont, later meer', hold: 'Niets doen',
-          no_device: 'Voeg eerst een HiOne-apparaat toe.',
-          disabled: 'Het prijsplan staat uit in de apparaatinstellingen.',
-          no_zone: 'Kies een land / prijszone in de apparaatinstellingen.',
-          no_prices: 'Op dit moment geen prijzen beschikbaar.',
-          not_yet: 'De prijzen van morgen zijn er nog niet. Ze komen meestal rond 13:00.',
-          error: 'De prijzen konden niet worden geladen.'
-        },
-        de: {
-          today: 'Heute', tomorrow: 'Morgen', now: 'Jetzt', low: 'Tief', high: 'Hoch',
-          buy: 'Kaufen', sell: 'Verkaufen', peak: 'Entladen', later: 'Lohnt, später mehr', hold: 'Nichts tun',
-          no_device: 'Füge zuerst ein HiOne-Gerät hinzu.',
-          disabled: 'Der Preisplan ist in den Geräteeinstellungen ausgeschaltet.',
-          no_zone: 'Wähle ein Land / eine Preiszone in den Geräteeinstellungen.',
-          no_prices: 'Im Moment keine Preise verfügbar.',
-          not_yet: 'Die Preise von morgen sind noch nicht da. Sie kommen meist gegen 13:00 Uhr.',
-          error: 'Die Preise konnten nicht geladen werden.'
-        }
+      // English fallback for a Homey that does not hand out the app's
+      // translations; the real texts live in /locales under "price_widget".
+      var FALLBACK = {
+        today: "Today",
+        tomorrow: "Tomorrow",
+        now: "Now",
+        low: "Low",
+        high: "High",
+        buy: "Buy",
+        sell: "Sell",
+        peak: "Discharge",
+        later: "Pays, more later",
+        hold: "Do nothing",
+        no_device: "Add a HiOne device first.",
+        disabled: "The price plan is switched off in the device settings.",
+        no_zone: "Choose a country / price zone in the device settings.",
+        no_prices: "No prices available right now.",
+        not_yet: "Tomorrow's prices are not out yet. They usually arrive around 13:00.",
+        error: "Could not load the prices."
       };
 
       var REFRESH_MS = 60 * 1000;
@@ -86,8 +79,18 @@
       var _data = null;      // the last answer, kept for redrawing on a resize
       var _selected = -1;    // the slot a finger is on, -1 for none
 
+      var _texts = null;
+
       function texts() {
-        return i18n[(_data && _data.language) || 'en'] || i18n.en;
+        if (_texts) return _texts;
+        var out = {};
+        Object.keys(FALLBACK).forEach(function (key) {
+          var text = null;
+          try { text = _homey && _homey.__ ? _homey.__('price_widget.' + key) : null; } catch (err) { text = null; }
+          out[key] = text && text !== 'price_widget.' + key ? text : FALLBACK[key];
+        });
+        if (_homey) _texts = out;
+        return out;
       }
 
       function cents(value) {
@@ -158,6 +161,12 @@
         var floorY = y(_data.dischargeFloor);
         svg.push("<line class='floor' x1='" + padL + "' y1='" + floorY + "' x2='" + W + "' y2='" + floorY + "'/>");
         svg.push("<text x='0' y='" + (floorY + 3) + "'>" + cents(_data.dischargeFloor) + '</text>');
+        // A charge already on board only has to beat what it cost: its own, lower line.
+        if (_data.onBoardFloor !== null && _data.onBoardFloor !== undefined && _data.onBoardFloor < _data.dischargeFloor) {
+          var boardY = y(_data.onBoardFloor);
+          svg.push("<line class='floor board' x1='" + padL + "' y1='" + boardY + "' x2='" + W + "' y2='" + boardY + "'/>");
+          svg.push("<text x='0' y='" + (boardY + 3) + "'>" + cents(_data.onBoardFloor) + '</text>');
+        }
 
         slots.forEach(function (slot, index) {
           var x = padL + index * step;
@@ -183,6 +192,15 @@
         if (_selected >= 0 && slots[_selected]) detail(_selected); else summary();
       }
 
+      // The loading state stays up until there is something to show, so the
+      // dashboard never flashes an empty frame; a slow answer still ends it.
+      var _ready = false;
+      function ready() {
+        if (_ready) return;
+        _ready = true;
+        _homey.ready();
+      }
+
       function load() {
         _homey.api('GET', '/?day=' + _day)
           .then(function (data) {
@@ -196,7 +214,8 @@
               _data = { state: 'error', language: _data && _data.language };
               draw();
             }
-          });
+          })
+          .then(ready);
       }
 
       function pick(event) {
@@ -228,7 +247,7 @@
         draw();
         load();
         setInterval(load, REFRESH_MS);
-        Homey.ready();
+        setTimeout(ready, 5000);
       }
     </script>
   </body>

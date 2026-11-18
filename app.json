@@ -1,6 +1,6 @@
 {
   "id": "com.hoymiles.hione",
-  "version": "1.1.11",
+  "version": "1.1.12",
   "compatibility": ">=12.4.5",
   "sdk": 3,
   "brandColor": "#00A94F",
@@ -76,6 +76,10 @@
     "dayPrices": {
       "method": "POST",
       "path": "/prices"
+    },
+    "alarms": {
+      "method": "POST",
+      "path": "/alarms"
     }
   },
   "images": {
@@ -148,7 +152,10 @@
         "hoymiles_battery_mode_number",
         "hoymiles_price_buy_moment",
         "hoymiles_price_sell_moment",
-        "hoymiles_price_discharge_floor"
+        "hoymiles_price_discharge_floor",
+        "hoymiles_price_low_ahead",
+        "hoymiles_price_low_ahead_time",
+        "hoymiles_price_charge_cost"
       ],
       "capabilitiesOptions": {
         "measure_power": {
@@ -685,17 +692,51 @@
               "id": "price_feed_in_penalty",
               "type": "number",
               "label": {
-                "en": "Export earns less than self-use (ct/kWh)",
-                "nl": "Terugleveren levert minder op dan zelf gebruiken (ct/kWh)",
-                "de": "Einspeisen bringt weniger als Eigenverbrauch (ct/kWh)"
+                "en": "Export earns less than self-use, while netted (ct/kWh)",
+                "nl": "Terugleveren levert minder op dan zelf gebruiken, zolang je salderen mag (ct/kWh)",
+                "de": "Einspeisen bringt weniger als Eigenverbrauch, solange saldiert wird (ct/kWh)"
               },
               "value": 5.3,
               "min": 0,
               "max": 60,
               "hint": {
-                "en": "Read it off your invoice: the supply fee per imported kWh plus the feed-in fee per exported kWh. Where energy tax is levied on the year's net import, that is the whole difference, because an exported kWh removes a taxed one just as a self-consumed one does. Once net metering ends the gap becomes the tax as well, and grows with the price. Outside the Netherlands the surcharge above is counted on top of this automatically, so enter only what exporting costs you beyond that (often 0).",
-                "nl": "Lees het van je factuur: de inkoopvergoeding per ingekochte kWh plus de terugleverkosten per teruggeleverde kWh. Zolang de energiebelasting over het netto jaarverbruik gaat, is dat het hele verschil, want een teruggeleverde kWh haalt net zo goed een belaste kWh van de rekening als een zelf verbruikte. Zodra het salderen stopt komt de belasting er bovenop en groeit het gat mee met de prijs. Buiten Nederland telt de opslag hierboven hier automatisch bij op; vul dan alleen in wat terugleveren je daarbovenop kost (vaak 0).",
-                "de": "Lies es von deiner Rechnung ab: das Bezugsentgelt pro bezogener kWh plus das Einspeiseentgelt pro eingespeister kWh. Wo die Energiesteuer auf den Netto-Jahresbezug erhoben wird, ist das der ganze Unterschied, weil eine eingespeiste kWh genauso eine besteuerte kWh von der Rechnung nimmt wie eine selbst verbrauchte. Endet die Saldierung, kommt die Steuer dazu, und die Lücke wächst mit dem Preis. Außerhalb der Niederlande wird der Aufschlag oben hier automatisch dazugerechnet; trage dann nur ein, was dich das Einspeisen darüber hinaus kostet (oft 0)."
+                "en": "Only used while the Netherlands nets exports against imports (until 1 January 2027). Read it off your invoice: the supply fee per imported kWh plus the feed-in fee per exported kWh. An exported kWh then removes a taxed one from the bill, just like a self-consumed one, so the fees are the whole difference.",
+                "nl": "Alleen gebruikt zolang Nederland saldeert (tot 1 januari 2027). Lees het van je factuur: de inkoopvergoeding per ingekochte kWh plus de terugleverkosten per teruggeleverde kWh. Een teruggeleverde kWh haalt dan net als een zelf verbruikte een belaste kWh van de rekening, dus de vergoedingen zijn het hele verschil.",
+                "de": "Nur verwendet, solange die Niederlande saldieren (bis 1. Januar 2027). Lies es von deiner Rechnung ab: das Bezugsentgelt pro bezogener kWh plus das Einspeiseentgelt pro eingespeister kWh. Eine eingespeiste kWh nimmt dann wie eine selbst verbrauchte eine besteuerte kWh von der Rechnung, die Entgelte sind also der ganze Unterschied."
+              }
+            },
+            {
+              "id": "price_export_fee",
+              "type": "number",
+              "label": {
+                "en": "Kept off the market price per exported kWh (ct/kWh)",
+                "nl": "Ingehouden op de marktprijs per teruggeleverde kWh (ct/kWh)",
+                "de": "Einbehalten vom Marktpreis pro eingespeister kWh (ct/kWh)"
+              },
+              "value": 0,
+              "min": 0,
+              "max": 60,
+              "hint": {
+                "en": "Without net metering (outside the Netherlands, and in the Netherlands from 1 January 2027) an exported kWh earns the bare market price of its quarter. Enter what your supplier keeps off that per kWh, read off your invoice. Selling and the value of solar charge are judged against this.",
+                "nl": "Zonder salderen (buiten Nederland, en in Nederland vanaf 1 januari 2027) levert een teruggeleverde kWh de kale marktprijs van het kwartier op. Vul in wat je leverancier daar per kWh van inhoudt, af te lezen van je factuur. Verkopen en de waarde van zonnelading worden hiertegen afgewogen.",
+                "de": "Ohne Saldierung (außerhalb der Niederlande und in den Niederlanden ab 1. Januar 2027) bringt eine eingespeiste kWh den reinen Marktpreis ihrer Viertelstunde. Trage ein, was dein Lieferant davon pro kWh einbehält, laut Rechnung. Verkauf und der Wert von Solarladung werden daran gemessen."
+              }
+            },
+            {
+              "id": "price_export_vat",
+              "type": "number",
+              "label": {
+                "en": "VAT paid on top of the export price (%)",
+                "nl": "Btw bovenop de terugleververgoeding (%)",
+                "de": "MwSt. auf die Einspeisevergütung (%)"
+              },
+              "value": 0,
+              "min": 0,
+              "max": 30,
+              "hint": {
+                "en": "Only used without net metering (outside the Netherlands, and in the Netherlands from 1 January 2027). Leave 0 when your supplier pays the bare market price per exported kWh. If your contract pays that price including VAT, enter the rate (21 in the Netherlands): an exported kWh is then worth that much more, and selling pays sooner.",
+                "nl": "Alleen gebruikt zonder salderen (buiten Nederland, en in Nederland vanaf 1 januari 2027). Laat 0 staan als je leverancier de kale marktprijs per teruggeleverde kWh betaalt. Betaalt je contract die prijs inclusief btw, vul dan het tarief in (21 in Nederland): een teruggeleverde kWh is dan zoveel meer waard en verkopen loont eerder.",
+                "de": "Nur ohne Saldierung verwendet (außerhalb der Niederlande und in den Niederlanden ab 1. Januar 2027). Lass 0 stehen, wenn dein Lieferant den reinen Marktpreis pro eingespeister kWh zahlt. Zahlt dein Vertrag diesen Preis inklusive MwSt., trage den Satz ein: eine eingespeiste kWh ist dann so viel mehr wert, und Verkaufen lohnt sich früher."
               }
             }
           ]
@@ -1617,9 +1658,9 @@
         "de": "Entladeschwelle"
       },
       "desc": {
-        "en": "The price from which discharging pays: the day's lowest price (or tomorrow's, when lower) divided by the round-trip efficiency, plus wear and margin. Selling to the grid also has to clear the export penalty on top of this.",
-        "nl": "De prijs vanaf waar ontladen loont: de laagste prijs van vandaag (of morgen, als die lager is) gedeeld door het rendement, plus slijtage en marge. Verkopen aan het net moet daarbovenop ook de terugleverkorting goedmaken.",
-        "de": "Der Preis, ab dem sich Entladen lohnt: der niedrigste Preis des Tages (oder der von morgen, wenn er niedriger ist) geteilt durch den Wirkungsgrad, plus Verschleiß und Marge. Beim Verkauf ins Netz muss zusätzlich der Einspeiseabschlag gedeckt sein."
+        "en": "The price from which discharging pays right now. For the charge on board it is what that charge cost (tracked while charging: the grid at the all-in price, the sun at the export price it gave up) divided by the round-trip efficiency, plus wear and margin. For charge still to be bought it is the day's lowest price (or tomorrow's, when lower) worked out the same way. The lower of the two counts while there is charge above the discharge floor. Selling to the grid also has to clear the export penalty on top of this.",
+        "nl": "De prijs vanaf waar ontladen nu loont. Voor de lading aan boord is dat wat die lading kostte (bijgehouden tijdens het laden: net tegen de all-in prijs, zon tegen de gemiste terugleverprijs) gedeeld door het rendement, plus slijtage en marge. Voor lading die nog gekocht moet worden is het de laagste prijs van vandaag (of morgen, als die lager is), op dezelfde manier gerekend. Zolang er lading boven de ontlaadgrens is, telt de laagste van de twee. Verkopen aan het net moet daarbovenop ook de terugleverkorting goedmaken.",
+        "de": "Der Preis, ab dem sich Entladen jetzt lohnt. Für die Ladung an Bord ist es, was diese Ladung gekostet hat (beim Laden erfasst: Netz zum Gesamtpreis, Sonne zum entgangenen Einspeisepreis), geteilt durch den Wirkungsgrad, plus Verschleiß und Marge. Für noch zu kaufende Ladung ist es der niedrigste Preis des Tages (oder von morgen, wenn niedriger), genauso gerechnet. Solange Ladung über der Entladegrenze ist, gilt der niedrigere der beiden. Beim Verkauf ins Netz muss zusätzlich der Einspeiseabschlag gedeckt sein."
       },
       "units": "ct/kWh",
       "insights": true,
@@ -1628,6 +1669,63 @@
       "setable": false,
       "uiComponent": "sensor",
       "icon": "/assets/price-plan.svg"
+    },
+    "hoymiles_price_low_ahead": {
+      "type": "number",
+      "title": {
+        "en": "Lowest price ahead",
+        "nl": "Laagste prijs vooruit",
+        "de": "Niedrigster Preis voraus"
+      },
+      "desc": {
+        "en": "The lowest known all-in price from the running quarter on, today or tomorrow.",
+        "nl": "De laagste bekende all-in prijs vanaf het lopende kwartier, vandaag of morgen.",
+        "de": "Der niedrigste bekannte Gesamtpreis ab der laufenden Viertelstunde, heute oder morgen."
+      },
+      "units": "ct/kWh",
+      "insights": true,
+      "decimals": 1,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/price-low.svg"
+    },
+    "hoymiles_price_low_ahead_time": {
+      "type": "string",
+      "title": {
+        "en": "Lowest price at",
+        "nl": "Laagste prijs om",
+        "de": "Niedrigster Preis um"
+      },
+      "desc": {
+        "en": "When the quarter with the lowest price ahead starts (HH:MM); the earliest of equals.",
+        "nl": "Wanneer het kwartier met de laagste prijs vooruit begint (UU:MM); bij gelijke prijs het eerste.",
+        "de": "Wann die Viertelstunde mit dem niedrigsten Preis voraus beginnt (HH:MM); bei Gleichstand die früheste."
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/price-low.svg"
+    },
+    "hoymiles_price_charge_cost": {
+      "type": "number",
+      "title": {
+        "en": "Cost of charge on board",
+        "nl": "Kostprijs lading aan boord",
+        "de": "Kosten der Ladung an Bord"
+      },
+      "desc": {
+        "en": "What the charge above the discharge floor cost per kWh: a running average of the grid price and the export value of the sun that charged it. Without a tracked charge, the cheapest quarter of the last 24 hours.",
+        "nl": "Wat de lading boven de ontlaadvloer per kWh kostte: een lopend gemiddelde van de netprijs en de terugleverwaarde van de zon waarmee is geladen. Zonder bijgehouden lading het goedkoopste kwartier van de afgelopen 24 uur.",
+        "de": "Was die Ladung über der Entladeschwelle pro kWh gekostet hat: ein laufender Durchschnitt aus Netzpreis und Einspeisewert der Sonne, mit der geladen wurde. Ohne erfasste Ladung die günstigste Viertelstunde der letzten 24 Stunden."
+      },
+      "units": "ct/kWh",
+      "insights": true,
+      "decimals": 1,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/price-low.svg"
     }
   },
   "flow": {
@@ -1858,6 +1956,69 @@
             ]
           }
         ]
+      },
+      {
+        "id": "price_cheapest_quarters_start",
+        "title": {
+          "en": "One of the cheapest quarters until a time begins",
+          "nl": "Een van de goedkoopste kwartieren tot een tijd begint",
+          "de": "Eine der günstigsten Viertelstunden bis zu einer Uhrzeit beginnt"
+        },
+        "titleFormatted": {
+          "en": "One of the [[count]] cheapest quarters until [[time]] begins",
+          "nl": "Een van de [[count]] goedkoopste kwartieren tot [[time]] begint",
+          "de": "Eine der [[count]] günstigsten Viertelstunden bis [[time]] beginnt"
+        },
+        "hint": {
+          "en": "Fires in the first minute of such a quarter, so a Flow does not have to ask every minute. Ranked exactly like the condition \"one of the cheapest quarters until\"; pair it with that condition, inverted, to stop again when a quarter is not one of them.",
+          "nl": "Gaat af in de eerste minuut van zo'n kwartier, zodat een Flow niet elke minuut hoeft te vragen. Precies zo gerangschikt als de conditie \"hoort bij de goedkoopste kwartieren tot\"; gebruik die conditie omgekeerd om weer te stoppen als een kwartier er niet bij hoort.",
+          "de": "Wird in der ersten Minute einer solchen Viertelstunde ausgelöst, damit ein Flow nicht jede Minute fragen muss. Genau so geordnet wie die Bedingung \"gehört zu den günstigsten Viertelstunden bis\"; nutze diese Bedingung umgekehrt, um wieder anzuhalten, wenn eine Viertelstunde nicht dazugehört."
+        },
+        "tokens": [
+          {
+            "name": "price",
+            "type": "number",
+            "title": {
+              "en": "Price now (ct/kWh)",
+              "nl": "Prijs nu (ct/kWh)",
+              "de": "Preis jetzt (ct/kWh)"
+            },
+            "example": 21.4
+          }
+        ],
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "count",
+            "type": "number",
+            "min": 1,
+            "max": 96,
+            "step": 1,
+            "placeholder": {
+              "en": "12",
+              "nl": "12",
+              "de": "12"
+            },
+            "title": {
+              "en": "Number of quarters",
+              "nl": "Aantal kwartieren",
+              "de": "Anzahl Viertelstunden"
+            }
+          },
+          {
+            "name": "time",
+            "type": "time",
+            "title": {
+              "en": "Until",
+              "nl": "Tot",
+              "de": "Bis"
+            }
+          }
+        ]
       }
     ],
     "actions": [
@@ -1982,9 +2143,9 @@
           "de": "Reserve-SOC auf [[soc]] % stellen"
         },
         "hint": {
-          "en": "Relevant for: every mode except Off-Grid (4). Sets the reserved SOC of the ACTIVE battery mode. Written over Modbus when the mode has a known register, otherwise through the cloud. Beware that it means opposite things per mode: a floor the battery discharges to in Self-Consumption, but the ceiling it charges up to in Force Charge. Measured warning: it is not a dependable floor - a battery set to 40 was seen discharging straight through it to 37. The device now also has a slider per mode, each writing its own register locally; those let you set a mode's reserve without that mode being active, and cannot target the wrong one. Be aware that in Self-Consumption this is not only a floor: the inverter also charges the battery UP to this level, from the grid when there is no sun. Setting it above the current state of charge therefore costs money at a high tariff, rather than merely holding energy back.",
-          "nl": "Relevant voor: alle modi behalve Off-Grid (4). Stelt de gereserveerde SOC in van de ACTIEVE batterijmodus. Via Modbus als die modus een bekend register heeft, anders via de cloud. Let op dat het per modus het tegenovergestelde betekent: in Zelfconsumptie de ondergrens waartoe hij ontlaadt, in Force Charge juist de bovengrens waartoe hij laadt. Gemeten waarschuwing: als ondergrens is hij niet betrouwbaar - een accu met 40 ingesteld liep er dwars doorheen tot 37. Het apparaat heeft nu ook een schuif per modus, die elk hun eigen register lokaal wegschrijven; daarmee stel je de reserve van een modus in zonder dat die modus actief is, en kan de verkeerde niet geraakt worden. Let op dat dit in Zelfconsumptie niet alleen een ondergrens is: de omvormer laadt de accu ook TOT dit niveau op, uit het net als er geen zon is. Zet je hem boven de huidige laadtoestand, dan kost dat dus geld bij een hoog tarief, in plaats van alleen energie achterhouden.",
-          "de": "Relevant für: jeden Modus außer Inselbetrieb (4). Stellt den reservierten SOC des AKTIVEN Batteriemodus ein. Wird über Modbus geschrieben, wenn der Modus ein bekanntes Register hat, sonst über die Cloud. Achtung, je Modus bedeutet er das Gegenteil: im Eigenverbrauch eine Untergrenze, bis zu der die Batterie entlädt, in der Zwangsladung aber die Obergrenze, bis zu der sie lädt. Gemessene Warnung: Als Untergrenze ist er nicht verlässlich - eine auf 40 gestellte Batterie entlud einfach hindurch bis 37. Das Gerät hat jetzt auch einen Regler je Modus, der jeweils lokal sein eigenes Register schreibt; damit stellst du die Reserve eines Modus ein, ohne dass dieser aktiv ist, und kannst nicht den falschen treffen. Beachte, dass dies im Eigenverbrauch nicht nur eine Untergrenze ist: Der Wechselrichter lädt die Batterie auch BIS zu diesem Stand auf, aus dem Netz, wenn keine Sonne scheint. Ein Wert über dem aktuellen Ladezustand kostet bei hohem Tarif also Geld, statt nur Energie zurückzuhalten."
+          "en": "Replaced by \"Set reserve SOC of a specific mode\". Existing Flows keep working.",
+          "nl": "Vervangen door \"Stel reserve laadniveau van een specifieke modus in\". Bestaande flows blijven werken.",
+          "de": "Ersetzt durch \"Reserve-SOC eines bestimmten Modus einstellen\". Bestehende Flows funktionieren weiter."
         },
         "args": [
           {
@@ -2004,7 +2165,8 @@
               "de": "Reserve-SOC (%)"
             }
           }
-        ]
+        ],
+        "deprecated": true
       },
       {
         "id": "set_reserve_soc_for_mode",
@@ -2204,9 +2366,9 @@
           "de": "Max. Lade-/Entladeleistung auf [[power]] % stellen"
         },
         "hint": {
-          "en": "Relevant for: Force Charge (mode 5) and Force Discharge (mode 6). Applies to the active mode if it is one of these, otherwise activates Force Charge. For an explicit direction use 'Set max charge power' or 'Set max discharge power' instead. Tip: 0% in Force Charge stops the battery charging — useful to prevent it absorbing power that other sources feed back to the grid (e.g. other batteries discharging during high dynamic tariffs). Cloud connection required.",
-          "nl": "Relevant voor: Force Charge (modus 5) en Force Discharge (modus 6). Past de actieve modus aan als dat een van deze is, anders wordt Force Charge geactiveerd. Voor een expliciete richting gebruik je 'Stel max laadvermogen in' of 'Stel max ontlaadvermogen in'. Tip: 0% in Force Charge stopt het laden — handig om te voorkomen dat de Hoymiles stroom opneemt die andere bronnen terugleveren (bv. andere batterijen die ontladen bij hoge dynamische tarieven). Cloudverbinding vereist.",
-          "de": "Relevant für: Zwangsladung (Modus 5) und Zwangsentladung (Modus 6). Gilt für den aktiven Modus, wenn es einer dieser beiden ist, sonst wird die Zwangsladung aktiviert. Für eine ausdrückliche Richtung nimm stattdessen \"Max. Ladeleistung einstellen\" oder \"Max. Entladeleistung einstellen\". Tipp: 0 % in der Zwangsladung stoppt das Laden der Batterie — nützlich, damit sie keinen Strom aufnimmt, den andere Quellen ins Netz einspeisen (z. B. andere Batterien, die bei hohen dynamischen Tarifen entladen). Cloud-Verbindung erforderlich."
+          "en": "Replaced by \"Start charging to a level\", \"Start selling down to a level\" and the local power limits, which work without the cloud. Existing Flows keep working.",
+          "nl": "Vervangen door \"Start laden tot een niveau\", \"Start verkopen tot een niveau\" en de lokale vermogensbegrenzingen, die zonder cloud werken. Bestaande flows blijven werken.",
+          "de": "Ersetzt durch \"Laden bis zu einem Stand starten\", \"Verkaufen bis zu einem Stand starten\" und die lokalen Leistungsgrenzen, die ohne Cloud funktionieren. Bestehende Flows funktionieren weiter."
         },
         "args": [
           {
@@ -2226,7 +2388,8 @@
               "de": "Max. Leistung (%)"
             }
           }
-        ]
+        ],
+        "deprecated": true
       },
       {
         "id": "set_max_charge_power",
@@ -2241,9 +2404,9 @@
           "de": "Max. Ladeleistung (Zwangsladung) auf [[power]] % stellen"
         },
         "hint": {
-          "en": "Relevant for: Force Charge (mode 5). Sets the charge power limit and switches to that mode. Tip: 0% stops the battery charging — useful to prevent it absorbing power other sources feed back to the grid. Cloud connection required.",
-          "nl": "Relevant voor: Force Charge (modus 5). Stelt de laadvermogenslimiet in en schakelt naar die modus. Tip: 0% stopt het laden — handig om te voorkomen dat de Hoymiles stroom opneemt die andere bronnen terugleveren. Cloudverbinding vereist.",
-          "de": "Relevant für: Zwangsladung (Modus 5). Stellt die Ladeleistungsgrenze ein und schaltet in diesen Modus. Tipp: 0 % stoppt das Laden der Batterie — nützlich, damit sie keinen Strom aufnimmt, den andere Quellen ins Netz einspeisen. Cloud-Verbindung erforderlich."
+          "en": "Replaced by \"Start charging to a level\" and \"Limit charge power (local, keeps mode)\", which work without the cloud. Existing Flows keep working.",
+          "nl": "Vervangen door \"Start laden tot een niveau\" en \"Begrens laadvermogen (lokaal, modus blijft)\", die zonder cloud werken. Bestaande flows blijven werken.",
+          "de": "Ersetzt durch \"Laden bis zu einem Stand starten\" und \"Ladeleistung begrenzen (lokal, Modus bleibt)\", die ohne Cloud funktionieren. Bestehende Flows funktionieren weiter."
         },
         "args": [
           {
@@ -2263,7 +2426,8 @@
               "de": "Max. Ladeleistung (%)"
             }
           }
-        ]
+        ],
+        "deprecated": true
       },
       {
         "id": "set_max_discharge_power",
@@ -2278,9 +2442,9 @@
           "de": "Max. Entladeleistung (Zwangsentladung) auf [[power]] % stellen"
         },
         "hint": {
-          "en": "Relevant for: Force Discharge (mode 6). Sets the discharge power limit and switches to that mode. Cloud connection required.",
-          "nl": "Relevant voor: Force Discharge (modus 6). Stelt de ontlaadvermogenslimiet in en schakelt naar die modus. Cloudverbinding vereist.",
-          "de": "Relevant für: Zwangsentladung (Modus 6). Stellt die Entladeleistungsgrenze ein und schaltet in diesen Modus. Cloud-Verbindung erforderlich."
+          "en": "Replaced by \"Start selling down to a level\" and \"Limit discharge power (local, keeps mode)\", which work without the cloud. Existing Flows keep working.",
+          "nl": "Vervangen door \"Start verkopen tot een niveau\" en \"Begrens ontlaadvermogen (lokaal, modus blijft)\", die zonder cloud werken. Bestaande flows blijven werken.",
+          "de": "Ersetzt durch \"Verkaufen bis zu einem Stand starten\" und \"Entladeleistung begrenzen (lokal, Modus bleibt)\", die ohne Cloud funktionieren. Bestehende Flows funktionieren weiter."
         },
         "args": [
           {
@@ -2300,7 +2464,8 @@
               "de": "Max. Entladeleistung (%)"
             }
           }
-        ]
+        ],
+        "deprecated": true
       },
       {
         "id": "set_charge_limit_local",
@@ -2426,9 +2591,9 @@
           "de": "Max. SOC auf [[soc]] % stellen"
         },
         "hint": {
-          "en": "Relevant for: Peak Shaving (mode 7) — the only mode with a max SOC. Activates Peak Shaving if it is not already active. Cloud connection required.",
-          "nl": "Relevant voor: Pieksturing (modus 7) — de enige modus met een max laadniveau. Activeert Pieksturing als die nog niet actief is. Cloudverbinding vereist.",
-          "de": "Relevant für: Lastspitzenkappung (Modus 7) — der einzige Modus mit einem max. SOC. Aktiviert die Lastspitzenkappung, falls sie noch nicht aktiv ist. Cloud-Verbindung erforderlich."
+          "en": "Replaced by \"Set Peak Shaving parameters\". Existing Flows keep working.",
+          "nl": "Vervangen door \"Stel Pieksturing-parameters in\". Bestaande flows blijven werken.",
+          "de": "Ersetzt durch \"Parameter für Lastspitzenkappung einstellen\". Bestehende Flows funktionieren weiter."
         },
         "args": [
           {
@@ -2448,7 +2613,8 @@
               "de": "Max. SOC (%)"
             }
           }
-        ]
+        ],
+        "deprecated": true
       },
       {
         "id": "set_grid_limit",
@@ -2463,9 +2629,9 @@
           "de": "Netzleistungsgrenze auf [[watts]] W stellen"
         },
         "hint": {
-          "en": "Relevant for: Peak Shaving (mode 7). Sets the grid power limit for Peak Shaving mode and activates it. Cloud connection required.",
-          "nl": "Relevant voor: Pieksturing (modus 7). Stelt de netvermogensgrens in voor de Pieksturing-modus en activeert die. Cloudverbinding vereist.",
-          "de": "Relevant für: Lastspitzenkappung (Modus 7). Stellt die Netzleistungsgrenze für die Lastspitzenkappung ein und aktiviert sie. Cloud-Verbindung erforderlich."
+          "en": "Replaced by \"Set Peak Shaving parameters\". Existing Flows keep working.",
+          "nl": "Vervangen door \"Stel Pieksturing-parameters in\". Bestaande flows blijven werken.",
+          "de": "Ersetzt durch \"Parameter für Lastspitzenkappung einstellen\". Bestehende Flows funktionieren weiter."
         },
         "args": [
           {
@@ -2485,7 +2651,8 @@
               "de": "Netzleistungsgrenze (W)"
             }
           }
-        ]
+        ],
+        "deprecated": true
       },
       {
         "id": "set_tou_period",
@@ -2629,9 +2796,9 @@
           "de": "Wechselrichterleistung auf [[limit]] % begrenzen"
         },
         "hint": {
-          "en": "Limits the inverter output via the local gateway connection (LAN, port 10081). Warning: every change writes to the inverter's EEPROM — avoid changing it more than a few times per day to prevent wear.",
-          "nl": "Beperkt het omvormervermogen via de lokale gateway-verbinding (LAN, poort 10081). Waarschuwing: elke wijziging schrijft naar het EEPROM-geheugen van de omvormer — wijzig dit hooguit een paar keer per dag om slijtage te voorkomen.",
-          "de": "Begrenzt die Wechselrichterleistung über die lokale Gateway-Verbindung (LAN, Port 10081). Warnung: Jede Änderung schreibt ins EEPROM des Wechselrichters — ändere sie nicht öfter als ein paar Mal am Tag, um Verschleiß zu vermeiden."
+          "en": "Not supported by the HiOne: its DTS-WL-G3 stick does not answer these commands. For Hoymiles microinverters use the app \"Hoymiles Wi-Fi Solar Panel\" (local) or es.ardbol.smiles on GitHub (power limit through the cloud).",
+          "nl": "Werkt niet op de HiOne: de DTS-WL-G3-stick reageert niet op deze opdrachten. Voor Hoymiles-micro-omvormers: de app \"Hoymiles Wi-Fi Solar Panel\" (lokaal) of es.ardbol.smiles op GitHub (vermogenslimiet via de cloud).",
+          "de": "Von der HiOne nicht unterstützt: der DTS-WL-G3-Stick beantwortet diese Befehle nicht. Für Hoymiles-Mikrowechselrichter die App \"Hoymiles Wi-Fi Solar Panel\" (lokal) oder es.ardbol.smiles auf GitHub (Leistungsgrenze über die Cloud)."
         },
         "args": [
           {
@@ -2651,7 +2818,8 @@
               "de": "Leistungsgrenze (%)"
             }
           }
-        ]
+        ],
+        "deprecated": true
       },
       {
         "id": "set_inverter_state",
@@ -2666,9 +2834,9 @@
           "de": "Wechselrichter [[serial]] [[state]] schalten"
         },
         "hint": {
-          "en": "Turns an inverter on or off via the local gateway connection. Enter the inverter serial number (from the type plate or the S-Miles app). Useful at negative energy prices.",
-          "nl": "Zet een omvormer aan of uit via de lokale gateway-verbinding. Vul het serienummer van de omvormer in (zie typeplaatje of de S-Miles app). Handig bij negatieve stroomprijzen.",
-          "de": "Schaltet einen Wechselrichter über die lokale Gateway-Verbindung ein oder aus. Trage die Seriennummer des Wechselrichters ein (vom Typenschild oder aus der S-Miles-App). Nützlich bei negativen Strompreisen."
+          "en": "Not supported by the HiOne: its DTS-WL-G3 stick does not answer these commands. For Hoymiles microinverters use the app \"Hoymiles Wi-Fi Solar Panel\" (local) or es.ardbol.smiles on GitHub (power limit through the cloud).",
+          "nl": "Werkt niet op de HiOne: de DTS-WL-G3-stick reageert niet op deze opdrachten. Voor Hoymiles-micro-omvormers: de app \"Hoymiles Wi-Fi Solar Panel\" (lokaal) of es.ardbol.smiles op GitHub (vermogenslimiet via de cloud).",
+          "de": "Von der HiOne nicht unterstützt: der DTS-WL-G3-Stick beantwortet diese Befehle nicht. Für Hoymiles-Mikrowechselrichter die App \"Hoymiles Wi-Fi Solar Panel\" (lokal) oder es.ardbol.smiles auf GitHub (Leistungsgrenze über die Cloud)."
         },
         "args": [
           {
@@ -2717,7 +2885,8 @@
               }
             ]
           }
-        ]
+        ],
+        "deprecated": true
       },
       {
         "id": "hold_battery",
@@ -2895,16 +3064,16 @@
         ]
       },
       {
-        "id": "charge_to_plan",
+        "id": "fetch_alarms",
         "title": {
-          "en": "Charge to what the dear hours will need",
-          "nl": "Laad tot wat de dure uren vragen",
-          "de": "Laden bis zu dem, was die teuren Stunden brauchen"
+          "en": "Fetch active alarms from the cloud",
+          "nl": "Vraag actieve storingen op bij de cloud",
+          "de": "Aktive Störungen aus der Cloud abrufen"
         },
         "hint": {
-          "en": "Sets the Force Charge target to the floor plus what the coming dear slots will draw from the house, plus what the slots where selling pays can export (see the \"selling power\" setting), capped at 95%. Only sets the target; \"Start charging to what the dear hours will need\" also starts the charge.",
-          "nl": "Zet het Force Charge-doel op de ontlaadgrens plus wat de komende dure kwartieren van het huis vragen, plus wat de kwartieren waarin verkopen loont kunnen terugleveren (zie de instelling \"Verkoopvermogen\"), met 95% als plafond. Zet alleen het doel; \"Start laden tot wat de dure uren vragen\" start ook het laden.",
-          "de": "Stellt das Ziel der Zwangsladung auf die Untergrenze plus das, was die kommenden teuren Viertelstunden aus dem Haus ziehen, plus das, was die Viertelstunden, in denen sich Verkaufen lohnt, einspeisen können (siehe Einstellung \"Verkaufsleistung\"), begrenzt auf 95 %. Stellt nur das Ziel ein; \"Laden starten bis zu dem, was die teuren Stunden brauchen\" startet auch das Laden."
+          "en": "Asks the S-Miles Cloud once for the alarms that are active on the inverter, with the text and the troubleshooting steps Hoymiles gives for each. Only runs when the Flow runs: nothing is polled. Needs the cloud account; works for cloud-only devices too.",
+          "nl": "Vraagt de S-Miles Cloud één keer welke storingen er op de omvormer actief zijn, met de tekst en het stappenplan dat Hoymiles bij elke storing geeft. Gebeurt alleen als de Flow loopt: er wordt niets periodiek opgevraagd. Heeft het cloud-account nodig; werkt ook voor apparaten op \"Alleen cloud\".",
+          "de": "Fragt die S-Miles Cloud einmal nach den am Wechselrichter aktiven Störungen, mit dem Text und den Schritten zur Fehlerbehebung, die Hoymiles zu jeder Störung angibt. Läuft nur, wenn der Flow läuft: Es wird nichts regelmäßig abgefragt. Benötigt das Cloud-Konto; funktioniert auch für Geräte mit „Nur Cloud“."
         },
         "args": [
           {
@@ -2912,7 +3081,68 @@
             "type": "device",
             "filter": "driver_id=hione"
           }
+        ],
+        "tokens": [
+          {
+            "name": "alarm_count",
+            "type": "number",
+            "title": {
+              "en": "Number of alarms",
+              "nl": "Aantal storingen",
+              "de": "Anzahl Störungen"
+            },
+            "example": 1
+          },
+          {
+            "name": "alarm_text",
+            "type": "string",
+            "title": {
+              "en": "Alarms",
+              "nl": "Storingen",
+              "de": "Störungen"
+            },
+            "example": {
+              "en": "BMS Communication Fault (10383)",
+              "nl": "Communicatiestoring BMS-CAN (10383)",
+              "de": "BMS-CAN-Kommunikationsfehler (10383)"
+            }
+          },
+          {
+            "name": "alarm_advice",
+            "type": "string",
+            "title": {
+              "en": "What to check",
+              "nl": "Wat te controleren",
+              "de": "Was zu prüfen ist"
+            },
+            "example": {
+              "en": "1. Check whether the communication cable is connected correctly…",
+              "nl": "1. Controleer of de communicatiekabel correct is aangesloten…",
+              "de": "1. Prüfen Sie, ob das Kommunikationskabel richtig angeschlossen ist…"
+            }
+          }
         ]
+      },
+      {
+        "id": "charge_to_plan",
+        "title": {
+          "en": "Charge to what the dear hours will need",
+          "nl": "Laad tot wat de dure uren vragen",
+          "de": "Laden bis zu dem, was die teuren Stunden brauchen"
+        },
+        "hint": {
+          "en": "Replaced by \"Start charging to what the dear hours will need\". Existing Flows keep working.",
+          "nl": "Vervangen door \"Start laden tot wat de dure uren vragen\". Bestaande flows blijven werken.",
+          "de": "Ersetzt durch \"Laden starten bis zu dem, was die teuren Stunden brauchen\". Bestehende Flows funktionieren weiter."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          }
+        ],
+        "deprecated": true
       },
       {
         "id": "report_other_battery",
@@ -3233,9 +3463,9 @@
           "de": "Entladen !{{lohnt sich|lohnt sich nicht}}"
         },
         "hint": {
-          "en": "True when the price is above the break-even on today's low, plus the required margin.",
-          "nl": "Waar als de prijs boven de break-even op het dagminimum ligt, plus de gevraagde marge.",
-          "de": "Wahr, wenn der Preis über der Gewinnschwelle auf Basis des heutigen Tiefs liegt, plus der geforderten Marge."
+          "en": "True when the price is above the discharge floor: what the charge on board cost, or the day's low when that is lower, through the round trip, plus wear and the required margin.",
+          "nl": "Waar als de prijs boven de ontlaaddrempel ligt: wat de lading aan boord kostte, of het dagminimum als dat lager is, door het rendement, plus slijtage en de gevraagde marge.",
+          "de": "Wahr, wenn der Preis über der Entladeschwelle liegt: was die Ladung an Bord gekostet hat, oder das Tagestief, wenn das niedriger ist, über den Wirkungsgrad, plus Verschleiß und die geforderte Marge."
         },
         "args": [
           {
@@ -3273,9 +3503,9 @@
           "de": "Die heutige Preisspanne !{{lohnt sich|lohnt sich nicht}}"
         },
         "hint": {
-          "en": "True when the gap between the cheapest and dearest hour covers wear and losses.",
-          "nl": "Waar als het gat tussen het goedkoopste en duurste uur de slijtage en verliezen dekt.",
-          "de": "Wahr, wenn der Abstand zwischen der günstigsten und der teuersten Stunde Verschleiß und Verluste deckt."
+          "en": "Replaced by \"It is a buy moment\" and \"Discharging pays\", which look across midnight and know what the charge on board cost. Existing Flows keep working.",
+          "nl": "Vervangen door \"Het is koopmoment\" en \"Ontladen loont\", die over middernacht kijken en weten wat de lading aan boord kostte. Bestaande flows blijven werken.",
+          "de": "Ersetzt durch \"Es ist Kaufmoment\" und \"Entladen lohnt sich\", die über Mitternacht hinaus schauen und wissen, was die Ladung an Bord gekostet hat. Bestehende Flows funktionieren weiter."
         },
         "args": [
           {
@@ -3283,7 +3513,8 @@
             "type": "device",
             "filter": "driver_id=hione"
           }
-        ]
+        ],
+        "deprecated": true
       },
       {
         "id": "price_charge_needed",
@@ -3382,6 +3613,125 @@
             "name": "device",
             "type": "device",
             "filter": "driver_id=hione"
+          }
+        ]
+      },
+      {
+        "id": "price_is_cheapest_quarters_until",
+        "title": {
+          "en": "This quarter !{{is|is not}} one of the cheapest quarters until a time",
+          "nl": "Dit kwartier !{{hoort|hoort niet}} bij de goedkoopste kwartieren tot een tijd",
+          "de": "Diese Viertelstunde !{{gehört|gehört nicht}} zu den günstigsten bis zu einer Uhrzeit"
+        },
+        "titleFormatted": {
+          "en": "This quarter !{{is|is not}} one of the [[count]] cheapest quarters until [[time]]",
+          "nl": "Dit kwartier !{{hoort|hoort niet}} bij de [[count]] goedkoopste kwartieren tot [[time]]",
+          "de": "Diese Viertelstunde !{{gehört|gehört nicht}} zu den [[count]] günstigsten Viertelstunden bis [[time]]"
+        },
+        "hint": {
+          "en": "Ranks every quarter from now (the running one included) until the chosen time by all-in purchase price, across midnight: a time earlier than now is tomorrow. Of two quarters at the same price the earlier one wins. Quarters without a price yet (tomorrow, before about 13:00) are left out, so with fewer known quarters than the count every known one is a yes. The choice is fixed until new prices come in or the card changes, so it never flips back and forth.",
+          "nl": "Rangschikt alle kwartieren van nu (het lopende telt mee) tot de gekozen tijd op all-in inkoopprijs, ook over middernacht: ligt de tijd eerder dan nu, dan is het morgen. Bij gelijke prijs gaat het eerdere kwartier voor. Kwartieren zonder prijs (morgen, vóór ongeveer 13:00) tellen niet mee; zijn er minder bekende kwartieren dan het aantal, dan is elk bekend kwartier waar. De keuze ligt vast tot er nieuwe prijzen komen of de kaart verandert, dus hij springt niet heen en weer.",
+          "de": "Ordnet alle Viertelstunden ab jetzt (die laufende zählt mit) bis zur gewählten Uhrzeit nach dem Gesamt-Einkaufspreis, auch über Mitternacht: Liegt die Uhrzeit vor jetzt, ist es morgen. Bei gleichem Preis gewinnt die frühere Viertelstunde. Viertelstunden ohne Preis (morgen, vor etwa 13:00) zählen nicht; gibt es weniger bekannte Viertelstunden als die Anzahl, ist jede bekannte wahr. Die Auswahl steht fest, bis neue Preise kommen oder die Karte sich ändert, sie springt also nicht hin und her."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "count",
+            "type": "number",
+            "min": 1,
+            "max": 96,
+            "step": 1,
+            "placeholder": {
+              "en": "12",
+              "nl": "12",
+              "de": "12"
+            },
+            "title": {
+              "en": "Number of quarters",
+              "nl": "Aantal kwartieren",
+              "de": "Anzahl Viertelstunden"
+            }
+          },
+          {
+            "name": "time",
+            "type": "time",
+            "title": {
+              "en": "Until",
+              "nl": "Tot",
+              "de": "Bis"
+            }
+          }
+        ]
+      },
+      {
+        "id": "price_is_cheapest_for_energy",
+        "title": {
+          "en": "This quarter !{{is|is not}} needed to charge an amount of energy before a time",
+          "nl": "Dit kwartier !{{is|is niet}} nodig om een hoeveelheid energie te laden vóór een tijd",
+          "de": "Diese Viertelstunde !{{wird|wird nicht}} gebraucht, um eine Energiemenge bis zu einer Uhrzeit zu laden"
+        },
+        "titleFormatted": {
+          "en": "This quarter !{{is|is not}} needed to charge [[kwh]] kWh at [[kw]] kW before [[time]]",
+          "nl": "Dit kwartier !{{is|is niet}} nodig om [[kwh]] kWh te laden met [[kw]] kW vóór [[time]]",
+          "de": "Diese Viertelstunde !{{wird|wird nicht}} gebraucht, um [[kwh]] kWh mit [[kw]] kW bis [[time]] zu laden"
+        },
+        "hint": {
+          "en": "For a car or anything else that needs a fixed amount of energy by a deadline. Works out how many quarters that takes (kWh divided by a quarter of an hour at the given power, rounded up: 20 kWh at 6.9 kW is 12 quarters) and is true in the cheapest of them, ranked like \"one of the cheapest quarters until\". The kWh can be a tag, such as the energy a charging session still needs. 0 kWh or less is never true.",
+          "nl": "Voor een auto of iets anders dat vóór een tijdstip een vaste hoeveelheid energie nodig heeft. Rekent uit hoeveel kwartieren dat kost (kWh gedeeld door een kwartier op het opgegeven vermogen, naar boven afgerond: 20 kWh met 6,9 kW is 12 kwartieren) en is waar in de goedkoopste daarvan, gerangschikt zoals bij \"hoort bij de goedkoopste kwartieren tot\". De kWh mag een tag zijn, bijvoorbeeld wat een laadsessie nog nodig heeft. 0 kWh of minder is nooit waar.",
+          "de": "Für ein Auto oder anderes, das bis zu einer Uhrzeit eine feste Energiemenge braucht. Berechnet, wie viele Viertelstunden das dauert (kWh geteilt durch eine Viertelstunde bei der angegebenen Leistung, aufgerundet: 20 kWh mit 6,9 kW sind 12 Viertelstunden), und ist in den günstigsten davon wahr, geordnet wie bei \"gehört zu den günstigsten Viertelstunden bis\". Die kWh dürfen ein Tag sein, etwa was eine Ladesitzung noch braucht. 0 kWh oder weniger ist nie wahr."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=hione"
+          },
+          {
+            "name": "kwh",
+            "type": "number",
+            "min": 0,
+            "max": 500,
+            "step": 0.1,
+            "placeholder": {
+              "en": "20",
+              "nl": "20",
+              "de": "20"
+            },
+            "title": {
+              "en": "Energy (kWh)",
+              "nl": "Energie (kWh)",
+              "de": "Energie (kWh)"
+            }
+          },
+          {
+            "name": "kw",
+            "type": "number",
+            "min": 0.1,
+            "max": 50,
+            "step": 0.1,
+            "placeholder": {
+              "en": "6.9",
+              "nl": "6,9",
+              "de": "6,9"
+            },
+            "title": {
+              "en": "Charging power (kW)",
+              "nl": "Laadvermogen (kW)",
+              "de": "Ladeleistung (kW)"
+            }
+          },
+          {
+            "name": "time",
+            "type": "time",
+            "title": {
+              "en": "Until",
+              "nl": "Tot",
+              "de": "Bis"
+            }
           }
         ]
       }
