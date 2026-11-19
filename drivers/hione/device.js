@@ -171,6 +171,7 @@ class HiOneDevice extends Device {
     this._pollEverSucceeded = false;
     this._settingsRefreshInFlight = null;
     this._lastPriceRefresh = 0;
+    this._planLogsReset = false;
     this._otherBatteryReports = { charging: 0, discharging: 0 };
     this._pricePlan = null;
     this._priceRefreshInFlight = null;

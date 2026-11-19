@@ -38,6 +38,19 @@ const QUARTER_TICK_DELAY_MS = 3_000;
 const CHARGE_COST_WRITE_STEP = 0.001;
 const CHARGE_COST_WRITE_MS = 15 * 60_000;
 
+// The price tiles that can keep the same value for hours or days. Insights
+// only logs a value that differs from the device's current one, and after a
+// Homey restart it has been seen logging a stale value (a days-old snapshot)
+// while the device itself still held the right one: every write of the right
+// value was then "no change", so the graph stayed on the stale value until the
+// value really moved - 15 hours for the discharge floor on 18 November. These
+// are emptied once per start, just before the first plan is written, so that
+// first write is always a change and always lands in Insights.
+const PLAN_LOG_CAPABILITIES = [
+  'hoymiles_price_charge_target', 'hoymiles_price_low_today', 'hoymiles_price_high_today',
+  'hoymiles_price_discharge_floor', 'hoymiles_price_low_ahead', 'hoymiles_price_charge_cost',
+];
+
 class PricePlan {
 
   /**
@@ -262,6 +275,11 @@ class PricePlan {
       return;
     }
 
+    if (!this._planLogsReset) {
+      this._planLogsReset = true;
+      await this._resetPlanLogs();
+    }
+
     const ct = (value) => Math.round(value * 1000) / 10;
     await this._setCapabilitySafe('hoymiles_price_now',        ct(plan.priceNow));
     await this._setCapabilitySafe('hoymiles_price_market_now', ct(plan.marketNow));
@@ -280,6 +298,19 @@ class PricePlan {
     // What the charge on board cost (tracked, or the fallback estimate).
     await this._setCapabilitySafe('hoymiles_price_charge_cost', ct(plan.costBasis));
     await this._firePriceMomentTriggers(plan);
+  }
+
+  /**
+   * Empties the slow price tiles, so the plan written right after is a change
+   * Insights logs (see PLAN_LOG_CAPABILITIES). The gap this leaves in Insights
+   * lasts as long as the writes in between: milliseconds.
+   */
+  async _resetPlanLogs() {
+    for (const capability of PLAN_LOG_CAPABILITIES) {
+      if (!this.hasCapability(capability) || this.getCapabilityValue(capability) === null) continue;
+      await this.setCapabilityValue(capability, null)
+        .catch((err) => this.error(`Could not reset ${capability}: ${err.message}`));
+    }
   }
 
   /** Homey's own time zone: the one the times on Flow cards are meant in. */

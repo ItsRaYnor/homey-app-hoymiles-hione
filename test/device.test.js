@@ -331,3 +331,31 @@ test('a quarter is cheap when the ranking chose it', async () => {
   hione._prices = { cheapestQuarters: async () => ({ chosen: new Set(), known: 0 }) };
   await assert.rejects(hione.priceIsCheapestQuarter(12, '07:00', now), /no_prices/);
 });
+
+// --- Insights after a restart ------------------------------------------------
+
+test('the first plan after a start empties the slow tiles once, so Insights logs it', async () => {
+  const now = Date.UTC(2026, 0, 15, 14, 7);
+  // The device already holds the right floor; Insights may hold a stale one.
+  const hione = device({ capabilities: {
+    hoymiles_price_discharge_floor: 34.3, hoymiles_price_low_today: 21, hoymiles_price_now: 21,
+  } });
+  hione._prices = {};
+  hione.getPricePlan = async () => livePlan(now);
+  const writes = [];
+  const write = hione.setCapabilityValue.bind(hione);
+  hione.setCapabilityValue = async (capability, value) => {
+    writes.push([capability, value]);
+    return write(capability, value);
+  };
+
+  await hione._doRefreshPricePlan();
+  await hione._doRefreshPricePlan();
+
+  const floor = writes.filter(([capability]) => capability === 'hoymiles_price_discharge_floor');
+  assert.deepEqual(floor.map(([, value]) => value), [null, 34.3, 34.3]);
+  assert.deepEqual(writes.filter(([c]) => c === 'hoymiles_price_low_today').map(([, v]) => v), [null, 21, 21]);
+  // The price itself moves every quarter: no gap needed there.
+  assert.ok(!writes.some(([c, v]) => c === 'hoymiles_price_now' && v === null));
+  assert.equal(hione.getCapabilityValue('hoymiles_price_discharge_floor'), 34.3);
+});
