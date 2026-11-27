@@ -19,7 +19,7 @@ Report them privately through GitHub instead:
 
 Do not include your S-Miles Cloud password, tokens or other secrets in the report.
 
-This is a single-maintainer community project. I aim to acknowledge a report within a week and to agree on a fix and a disclosure date with you. If you want to be credited in the release notes, say so in the report.
+This is a single-maintainer community project. I aim to acknowledge a report within two weeks and to agree on a fix and a disclosure date with you. If you want to be credited in the release notes, say so in the report.
 
 ## Scope
 
