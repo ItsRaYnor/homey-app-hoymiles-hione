@@ -1,0 +1,27 @@
+# Weekly check for outdated or vulnerable dependencies. Dependabot opens a pull
+# request per update; security fixes are opened as soon as an advisory is
+# published, independent of this schedule (needs "Dependabot security updates"
+# switched on under Settings > Code security).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:17"
+      timezone: Europe/Amsterdam
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+
+  # The workflows pin actions by tag; keep those tags current too.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:17"
+      timezone: Europe/Amsterdam
+    commit-message:
+      prefix: "ci"
