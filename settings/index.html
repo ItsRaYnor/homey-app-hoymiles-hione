@@ -630,6 +630,15 @@
     var _homey = null;
     var _savedEmail = null;
 
+    // Text from outside the page (an account e-mail, a device name, an error,
+    // a value read from the cloud or the stick) is never markup: escape it
+    // before it goes into innerHTML.
+    function esc(value) {
+      return String(value).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
     // Homey.set rejects null with "missing parameter: value" — unset instead.
     function setOrUnset(key, value, cb) {
       if (value === null || value === undefined || value === '') {
@@ -689,7 +698,7 @@
       document.getElementById('t-modesTitle').textContent = t.modesTitle;
       document.getElementById('t-modesHelp').innerHTML = t.modesHelp;
       if (_savedEmail) {
-        document.getElementById('t-savedAs').innerHTML = t.savedAs.replace('{email}', _savedEmail);
+        document.getElementById('t-savedAs').innerHTML = t.savedAs.replace('{email}', esc(_savedEmail));
       }
     }
 
@@ -1114,24 +1123,24 @@
       _homey.api('POST', '/datasources', deviceId ? { deviceId: deviceId } : {}, function (err, res) {
         if (err || !res) {
           box.innerHTML = "<div style='color:#c00;font-size:12px'>"
-            + ((err && err.message) || 'geen gegevens') + "</div>";
+            + esc((err && err.message) || 'geen gegevens') + "</div>";
           return;
         }
         // Only worth a picker with more than one device.
         var devices = res.devices || [];
         document.getElementById('src_device_row').style.display = devices.length > 1 ? 'block' : 'none';
         select.innerHTML = devices.map(function (d) {
-          return "<option value='" + d.id + "'" + (d.id === res.deviceId ? ' selected' : '') + '>'
-            + d.name + (d.cloudOnly ? ' ☁' : '') + '</option>';
+          return "<option value='" + esc(d.id) + "'" + (d.id === res.deviceId ? ' selected' : '') + '>'
+            + esc(d.name) + (d.cloudOnly ? ' ☁' : '') + '</option>';
         }).join('');
         var html = '';
         var row = function (name, detail, value) {
           return "<div style='display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid #eee'>"
-            + "<span style='flex:1'>" + name + "</span>"
+            + "<span style='flex:1'>" + esc(name) + "</span>"
             + (value !== null && value !== undefined
-              ? "<span style='font-variant-numeric:tabular-nums'>" + value + "</span>" : "")
+              ? "<span style='font-variant-numeric:tabular-nums'>" + esc(value) + "</span>" : "")
             + "<span style='color:#888;font-size:11px;white-space:nowrap;min-width:96px;text-align:right'>"
-            + detail + "</span></div>";
+            + esc(detail) + "</span></div>";
         };
         // The register table, its explanation, the register scan and the cell
         // readout are all about the local stick - meaningless for a cloud-only device.
@@ -1147,7 +1156,7 @@
         html += "<div style='font-weight:600;margin:6px 0 4px'>"
           + t.srcLocal.replace('{unit}', res.unitId) + "</div>";
         if (res.error) {
-          html += "<div style='color:#c00;font-size:12px;margin-bottom:6px'>" + res.error + "</div>";
+          html += "<div style='color:#c00;font-size:12px;margin-bottom:6px'>" + esc(res.error) + "</div>";
         }
         (res.local || []).forEach(function (r) {
           var d = r.register === '—' ? r.scale
