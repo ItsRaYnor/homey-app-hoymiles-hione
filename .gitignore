@@ -20,8 +20,9 @@ credentials*.json
 secrets*.json
 *.local.json
 
-# Claude / AI tooling
-.claude/
+# Claude / AI tooling (project skills are shared, the rest stays local)
+.claude/*
+!.claude/skills/
 CLAUDE.local.md
 # Cursor automations & auto-patch config — local tooling, not part of the app
 .cursor/
